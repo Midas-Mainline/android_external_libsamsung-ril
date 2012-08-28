@@ -126,8 +126,11 @@ static int srs_server_open(void)
 
 	while(t < 5) {
 		unlink(SRS_SOCKET_NAME);
+#if RIL_VERSION >= 6
 		server_fd = socket_local_server(SRS_SOCKET_NAME, ANDROID_SOCKET_NAMESPACE_ABSTRACT, SOCK_STREAM);
-
+#else
+		server_fd = socket_local_server(SRS_SOCKET_NAME, ANDROID_SOCKET_NAMESPACE_RESERVED, SOCK_STREAM);
+#endif
 		if(server_fd >= 0)
 			break;
 
