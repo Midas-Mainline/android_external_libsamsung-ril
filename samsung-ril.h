@@ -147,7 +147,7 @@ void ril_tokens_check(void);
 /**
  * RIL state
  */
- 
+
 typedef enum {
 	SIM_ABSENT			= 0,
 	SIM_NOT_READY			= 1,

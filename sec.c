@@ -83,7 +83,7 @@ void ril_state_update(SIM_Status status)
 	/* If power mode isn't at least normal, don't update RIL state */
 	if(ril_state.power_mode < POWER_MODE_NORMAL)
 		return;
-	
+
 	ril_state.sim_status = status;
 
 	switch(status) {
@@ -107,7 +107,7 @@ void ril_state_update(SIM_Status status)
 			radio_state = RADIO_STATE_SIM_NOT_READY;
 			break;
 	}
-	
+
 
 	ril_state.radio_state = radio_state;
 
@@ -529,7 +529,7 @@ void ipc_sec_phone_lock(struct ipc_message_info *info)
 {
 	int status;
 	struct ipc_sec_phone_lock_response *lock = (struct ipc_sec_phone_lock_response *) info->data;
-	
+
 	status = lock->status;
 
 	RIL_onRequestComplete(reqGetToken(info->aseq), RIL_E_SUCCESS, &status, sizeof(status));

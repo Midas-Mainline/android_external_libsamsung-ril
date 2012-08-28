@@ -124,7 +124,7 @@ int ril_request_sms_new(void)
 
 	if(id < 0) {
 		LOGE("The SMS queue is full, removing the oldest req");
-	
+
 		/* Free the request at index 0 (oldest) */
 		ril_request_sms_del(0);
 
@@ -250,7 +250,7 @@ void ril_request_send_sms(RIL_Token t, void *data, size_t datalen)
 		ril_request_sms_add(reqGetId(t), pdu, pdu_len, NULL, 0);
 
 		ipc_fmt_send_get(IPC_SMS_SVC_CENTER_ADDR, reqGetId(t));
-		
+
 	} else {
 		ril_request_send_sms_complete(t, pdu, smsc);
 	}
@@ -387,7 +387,7 @@ void ril_request_send_sms_complete(RIL_Token t, char *pdu, char *smsc)
 
 	int pdu_tp_udh_index = pdu_tp_da_index + pdu_tp_da_len;
 	unsigned char pdu_tp_udh_len = pdu_dec[pdu_tp_udh_index];
-	
+
 	if(pdu_tp_udh_len > 0xff / 2 || pdu_tp_udh_len < 5) {
 		LOGE("PDU TP-UDH Len failed (0x%x)\n", pdu_tp_udh_len);
 		goto pdu_end;
@@ -510,7 +510,7 @@ void ipc_sms_send_msg(struct ipc_message_info *info)
 {
 	struct ipc_sms_deliv_report_msg *report_msg = (struct ipc_sms_deliv_report_msg *) info->data;
 	RIL_SMS_Response response;
-	
+
 	RIL_Errno ril_ack_err;
 
 	LOGD("Got ACK for msg_tpid #%d\n", report_msg->msg_tpid);

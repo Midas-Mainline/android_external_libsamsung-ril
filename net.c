@@ -800,10 +800,10 @@ void ipc_net_plmn_sel(struct ipc_message_info *info)
 
 	if (!info)
 		return;
-	
+
 	if (!info->data || info->length < sizeof(struct ipc_net_plmn_sel_get))
 		return;
-	
+
 	plmn_sel = (struct ipc_net_plmn_sel_get *) info->data;
 	ril_mode = ipc2ril_plmn_sel(plmn_sel->plmn_sel);
 	RIL_onRequestComplete(reqGetToken(info->aseq),

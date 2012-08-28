@@ -120,7 +120,7 @@ int gsm72ascii(unsigned char *data, char **data_dec, int length)
 	}
 
 	*data_dec = dec;
-	
+
 	return dec_length;
 }
 
@@ -170,7 +170,7 @@ int ascii2gsm7(char *data, unsigned char **data_enc, int length)
 	//FIXME: what is going on here?
 	enc[enc_length - 2] |= 0x30;
 	enc[enc_length - 1] = 0x02;
-	
+
 	return enc_length;
 }
 

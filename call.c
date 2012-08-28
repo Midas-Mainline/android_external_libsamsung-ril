@@ -135,7 +135,7 @@ void ril_request_dial(RIL_Token t, void *data, size_t datalen)
 	memcpy(call.number, dial->address, strlen(dial->address));
 
 	ipc_fmt_send(IPC_CALL_OUTGOING, IPC_TYPE_EXEC, (unsigned char *) &call, sizeof(call), reqGetId(t));
-	
+
 	/* FIXME: This should actually be sent based on the response from baseband */
 	RIL_onRequestComplete(t, RIL_E_SUCCESS, NULL, 0);
 }

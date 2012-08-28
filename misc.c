@@ -167,7 +167,7 @@ void ipc_misc_me_version(struct ipc_message_info *info)
 	if(ril_state.tokens.baseband_version != t) 
 		LOGE("Baseband tokens mismatch (0x%p and 0x%p)",
 			ril_state.tokens.baseband_version, t);
-	
+
 
 	memcpy(sw_version, version->sw_version, 32);
 	sw_version[32] = '\0';

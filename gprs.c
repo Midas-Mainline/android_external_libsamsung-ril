@@ -478,7 +478,7 @@ int ipc_gprs_connection_enable(struct ril_gprs_connection *gprs_connection,
 		(ip_configuration->ip)[3]);
 	// FIXME: subnet isn't reliable!
     asprintf(&subnet_mask, "255.255.255.255");
-    
+
 	asprintf(&dns1, "%i.%i.%i.%i",
 		(ip_configuration->dns1)[0],
 		(ip_configuration->dns1)[1],
@@ -553,7 +553,7 @@ int ipc_gprs_connection_enable(struct ril_gprs_connection *gprs_connection,
 	setup_data_call_response->address = ip;
 	free(gateway);
 #endif
-	
+
 	free(subnet_mask);
 	free(dns1);
 	free(dns2);

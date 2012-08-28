@@ -135,7 +135,7 @@ void ril_request_cancel_ussd(RIL_Token t, void *data, size_t datalen)
 
 	ussd.state = IPC_SS_USSD_TERMINATED_BY_NET;
 	ril_state.ussd_state = IPC_SS_USSD_TERMINATED_BY_NET;
-	
+
 	ipc_gen_phone_res_expect_to_complete(reqGetId(t), IPC_SS_USSD);
 
 	ipc_fmt_send(IPC_SS_USSD, IPC_TYPE_EXEC, (void *) &ussd, sizeof(ussd), reqGetId(t));

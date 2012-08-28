@@ -179,7 +179,7 @@ int ril_client_thread_start(struct ril_client *client)
 
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-	
+
 	rc = pthread_create(&(client->thread), &attr, ril_client_thread, (void *) client);
 
 	if(rc != 0) {
