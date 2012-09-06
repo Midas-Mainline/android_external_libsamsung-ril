@@ -218,8 +218,8 @@ void ipc_fmt_dispatch(struct ipc_message_info *info)
 			ipc_ss_ussd(info);
 			break;
 		/* SEC */
-		case IPC_SEC_PIN_STATUS:
-			ipc_sec_pin_status(info);
+		case IPC_SEC_SIM_STATUS:
+			ipc_sec_sim_status(info);
 			break;
 		case IPC_SEC_LOCK_INFO:
 			ipc_sec_lock_info(info);

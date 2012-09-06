@@ -25,44 +25,46 @@
 #include "samsung-ril.h"
 #include "util.h"
 
-SIM_Status ipc2ril_sim_status(struct ipc_sec_pin_status_response *pin_status)
+SIM_Status ipc2ril_sim_status(struct ipc_sec_sim_status_response *pin_status)
 {
-	switch(pin_status->type) {
-		case IPC_SEC_PIN_SIM_INITIALIZING:
+	switch(pin_status->status) {
+		case IPC_SEC_SIM_STATUS_INITIALIZING:
 			return SIM_NOT_READY;
-		case IPC_SEC_PIN_SIM_LOCK_SC:
-			switch(pin_status->key) {
-				case IPC_SEC_PIN_SIM_LOCK_SC_PIN1_REQ:
+		case IPC_SEC_SIM_STATUS_LOCK_SC:
+			switch(pin_status->facility_lock) {
+				case IPC_SEC_FACILITY_LOCK_TYPE_SC_UNLOCKED:
+					return SIM_READY;
+				case IPC_SEC_FACILITY_LOCK_TYPE_SC_PIN1_REQ:
 					return SIM_PIN;
-				case IPC_SEC_PIN_SIM_LOCK_SC_PUK_REQ:
+				case IPC_SEC_FACILITY_LOCK_TYPE_SC_PUK_REQ:
 					return SIM_PUK;
-				case IPC_SEC_PIN_SIM_LOCK_SC_CARD_BLOCKED:
+				case IPC_SEC_FACILITY_LOCK_TYPE_SC_CARD_BLOCKED:
 					return SIM_BLOCKED;
 				default:
-					LOGE("%s: unknown SC substate %d --> setting SIM_ABSENT", __FUNCTION__, pin_status->key);
+					LOGE("%s: unknown SC substate %d --> setting SIM_ABSENT", __FUNCTION__, pin_status->facility_lock);
 					return SIM_ABSENT;
 			}
 			break;
-		case IPC_SEC_PIN_SIM_LOCK_FD:
+		case IPC_SEC_SIM_STATUS_LOCK_FD:
 			LOGE("%s: FD lock present (unhandled state --> setting SIM_ABSENT)", __FUNCTION__);
 			return SIM_ABSENT;
-		case IPC_SEC_PIN_SIM_LOCK_PN:
+		case IPC_SEC_SIM_STATUS_LOCK_PN:
 			return SIM_NETWORK_PERSO;
-		case IPC_SEC_PIN_SIM_LOCK_PU:
+		case IPC_SEC_SIM_STATUS_LOCK_PU:
 			return SIM_NETWORK_SUBSET_PERSO;
-		case IPC_SEC_PIN_SIM_LOCK_PP:
+		case IPC_SEC_SIM_STATUS_LOCK_PP:
 			return SIM_SERVICE_PROVIDER_PERSO;
-		case IPC_SEC_PIN_SIM_LOCK_PC:
+		case IPC_SEC_SIM_STATUS_LOCK_PC:
 			return SIM_CORPORATE_PERSO;
-		case IPC_SEC_PIN_SIM_INIT_COMPLETE:
+		case IPC_SEC_SIM_STATUS_INIT_COMPLETE:
 			return SIM_READY;
-		case IPC_SEC_PIN_SIM_PB_INIT_COMPLETE:
+		case IPC_SEC_SIM_STATUS_PB_INIT_COMPLETE:
 			/* Ignore phone book init complete */
 			return ril_state.sim_status;
-		case IPC_SEC_PIN_SIM_SIM_LOCK_REQUIRED:
-		case IPC_SEC_PIN_SIM_INSIDE_PF_ERROR:
-		case IPC_SEC_PIN_SIM_CARD_NOT_PRESENT:
-		case IPC_SEC_PIN_SIM_CARD_ERROR:
+		case IPC_SEC_SIM_STATUS_SIM_LOCK_REQUIRED:
+		case IPC_SEC_SIM_STATUS_INSIDE_PF_ERROR:
+		case IPC_SEC_SIM_STATUS_CARD_NOT_PRESENT:
+		case IPC_SEC_SIM_STATUS_CARD_ERROR:
 		default:
 			/* Catchall for locked, card error and unknown states */
 			return SIM_ABSENT;
@@ -116,7 +118,7 @@ void ril_state_update(SIM_Status status)
 	RIL_onUnsolicitedResponse(RIL_UNSOL_RESPONSE_RADIO_STATE_CHANGED, NULL, 0);
 }
 
-void ipc2ril_card_status(struct ipc_sec_pin_status_response *pin_status, RIL_CardStatus *card_status)
+void ipc2ril_card_status(struct ipc_sec_sim_status_response *pin_status, RIL_CardStatus *card_status)
 {
 	SIM_Status sim_status;
 	int app_status_array_length;
@@ -196,7 +198,7 @@ void ril_tokens_pin_status_dump(void)
 }
 
 /**
- * In: IPC_SEC_PIN_STATUS
+ * In: IPC_SEC_SIM_STATUS
  *   Provides SIM initialization/lock status
  *
  * Out: RIL_UNSOL_RESPONSE_SIM_STATUS_CHANGED
@@ -207,10 +209,10 @@ void ril_tokens_pin_status_dump(void)
  *   Indicate when value of RIL_RadioState has changed
  *   Callee will invoke RIL_RadioStateRequest method on main thread
  */
-void ipc_sec_pin_status(struct ipc_message_info *info)
+void ipc_sec_sim_status(struct ipc_message_info *info)
 {
 	RIL_Token t = reqGetToken(info->aseq);
-	struct ipc_sec_pin_status_response *pin_status = (struct ipc_sec_pin_status_response *) info->data;
+	struct ipc_sec_sim_status_response *pin_status = (struct ipc_sec_sim_status_response *) info->data;
 	RIL_CardStatus card_status;
 	SIM_Status sim_status;
 
@@ -235,7 +237,7 @@ void ipc_sec_pin_status(struct ipc_message_info *info)
 			sim_status = ipc2ril_sim_status(pin_status);
 			ril_state_update(sim_status);
 
-			memcpy(&(ril_state.sim_pin_status), pin_status, sizeof(struct ipc_sec_pin_status_response));
+			memcpy(&(ril_state.sim_pin_status), pin_status, sizeof(struct ipc_sec_sim_status_response));
 
 			ril_state.tokens.pin_status = RIL_TOKEN_DATA_WAITING;
 			RIL_onUnsolicitedResponse(RIL_UNSOL_RESPONSE_SIM_STATUS_CHANGED, NULL, 0);
@@ -250,7 +252,7 @@ void ipc_sec_pin_status(struct ipc_message_info *info)
 			ril_state_update(sim_status);
 
 			// Better keeping this up to date
-			memcpy(&(ril_state.sim_pin_status), pin_status, sizeof(struct ipc_sec_pin_status_response));
+			memcpy(&(ril_state.sim_pin_status), pin_status, sizeof(struct ipc_sec_sim_status_response));
 
 			ipc2ril_card_status(pin_status, &card_status);
 			RIL_onRequestComplete(t, RIL_E_SUCCESS, &card_status, sizeof(RIL_CardStatus));
@@ -272,13 +274,13 @@ void ipc_sec_pin_status(struct ipc_message_info *info)
  */
 void ril_request_get_sim_status(RIL_Token t)
 {
-	struct ipc_sec_pin_status_response *pin_status;
+	struct ipc_sec_sim_status_response *pin_status;
 	RIL_CardStatus card_status;
 	SIM_Status sim_status;
 
 	if(ril_state.tokens.pin_status == RIL_TOKEN_DATA_WAITING) {
 		LOGD("Got RILJ request for UNSOL data");
-		hex_dump(&(ril_state.sim_pin_status), sizeof(struct ipc_sec_pin_status_response));
+		hex_dump(&(ril_state.sim_pin_status), sizeof(struct ipc_sec_sim_status_response));
 		pin_status = &(ril_state.sim_pin_status);
 
 		ipc2ril_card_status(pin_status, &card_status);
@@ -292,7 +294,7 @@ void ril_request_get_sim_status(RIL_Token t)
 		/* Request data to the modem */
 		ril_state.tokens.pin_status = t;
 
-		ipc_fmt_send_get(IPC_SEC_PIN_STATUS, reqGetId(t));
+		ipc_fmt_send_get(IPC_SEC_SIM_STATUS, reqGetId(t));
 	} else {
 		LOGE("Another request is going on, returning UNSOL data");
 
@@ -319,7 +321,7 @@ void ril_request_sim_io(RIL_Token t, void *data, size_t datalen)
 {
 	const RIL_SIM_IO *sim_io;
 	unsigned char message[262];
-	struct ipc_sec_rsim_access_request *rsim_data;
+	struct ipc_sec_rsim_access_get *rsim_data;
 
 	unsigned char *rsim_payload;
 	int payload_length;
@@ -328,7 +330,7 @@ void ril_request_sim_io(RIL_Token t, void *data, size_t datalen)
 	rsim_payload = message + sizeof(*rsim_data);
 
 	/* Set up RSIM header */
-	rsim_data = (struct ipc_sec_rsim_access_request*)message;
+	rsim_data = (struct ipc_sec_rsim_access_get*)message;
 	rsim_data->command = sim_io->command;
 	rsim_data->fileid = sim_io->fileid;
 	rsim_data->p1 = sim_io->p1;
@@ -384,12 +386,12 @@ void ipc_sec_rsim_access(struct ipc_message_info *info)
 
 /**
  * In: IPC_GEN_PHONE_RES
- *   Provides result of IPC_SEC_PIN_STATUS SET
+ *   Provides result of IPC_SEC_SIM_STATUS SET
  *
  * Out: RIL_REQUEST_ENTER_SIM_PIN
  *   Returns PIN SIM unlock result
  */
-void ipc_sec_pin_status_complete(struct ipc_message_info *info)
+void ipc_sec_sim_status_complete(struct ipc_message_info *info)
 {
 	struct ipc_gen_phone_res *phone_res = (struct ipc_gen_phone_res *) info->data;
 	int rc;
@@ -443,7 +445,7 @@ void ipc_sec_lock_info(struct ipc_message_info *info)
  * In: RIL_REQUEST_ENTER_SIM_PIN
  *   Supplies SIM PIN. Only called if RIL_CardStatus has RIL_APPSTATE_PIN state
  * 
- * Out: IPC_SEC_PIN_STATUS SET
+ * Out: IPC_SEC_SIM_STATUS SET
  *   Attempts to unlock SIM PIN1
  *
  * Out: IPC_SEC_LOCK_INFO
@@ -463,10 +465,10 @@ void ril_request_enter_sim_pin(RIL_Token t, void *data, size_t datalen)
 
 	ipc_sec_pin_status_set_setup(&pin_status, IPC_SEC_PIN_TYPE_PIN1, pin, NULL);
 
-	ipc_gen_phone_res_expect_to_func(reqGetId(t), IPC_SEC_PIN_STATUS,
-		ipc_sec_pin_status_complete);
+	ipc_gen_phone_res_expect_to_func(reqGetId(t), IPC_SEC_SIM_STATUS,
+		ipc_sec_sim_status_complete);
 
-	ipc_fmt_send_set(IPC_SEC_PIN_STATUS, reqGetId(t), (unsigned char *) &pin_status, sizeof(pin_status));
+	ipc_fmt_send_set(IPC_SEC_SIM_STATUS, reqGetId(t), (unsigned char *) &pin_status, sizeof(pin_status));
 
 	/* 2. Get lock status */
 	// FIXME: This is not clean at all
@@ -485,7 +487,7 @@ void ril_request_change_sim_pin(RIL_Token t, void *data, size_t datalen)
 
 	memset(&locking_pw, 0, sizeof(locking_pw));
 
-	locking_pw.type = IPC_SEC_PIN_SIM_LOCK_SC;
+	locking_pw.facility = IPC_SEC_SIM_STATUS_LOCK_SC;
 
 	locking_pw.length_new = strlen(password_new) > sizeof(locking_pw.password_new)
 				? sizeof(locking_pw.password_new)
@@ -500,7 +502,7 @@ void ril_request_change_sim_pin(RIL_Token t, void *data, size_t datalen)
 	memcpy(locking_pw.password_old, password_old, locking_pw.length_old);
 
 	ipc_gen_phone_res_expect_to_func(reqGetId(t), IPC_SEC_CHANGE_LOCKING_PW,
-		ipc_sec_pin_status_complete);
+		ipc_sec_sim_status_complete);
 
 	ipc_fmt_send_set(IPC_SEC_CHANGE_LOCKING_PW, reqGetId(t), (unsigned char *) &locking_pw, sizeof(locking_pw));
 }
@@ -513,10 +515,10 @@ void ril_request_enter_sim_puk(RIL_Token t, void *data, size_t datalen)
 
 	ipc_sec_pin_status_set_setup(&pin_status, IPC_SEC_PIN_TYPE_PIN1, pin, puk);
 
-	ipc_gen_phone_res_expect_to_func(reqGetId(t), IPC_SEC_PIN_STATUS,
-		ipc_sec_pin_status_complete);
+	ipc_gen_phone_res_expect_to_func(reqGetId(t), IPC_SEC_SIM_STATUS,
+		ipc_sec_sim_status_complete);
 
-	ipc_fmt_send_set(IPC_SEC_PIN_STATUS, reqGetId(t), (unsigned char *) &pin_status, sizeof(pin_status));
+	ipc_fmt_send_set(IPC_SEC_SIM_STATUS, reqGetId(t), (unsigned char *) &pin_status, sizeof(pin_status));
 }
 
 /**
@@ -548,17 +550,17 @@ void ril_request_query_facility_lock(RIL_Token t, void *data, size_t datalen)
 	char *facility = ((char **) data)[0];
 
 	if(!strcmp(facility, "SC")) {
-		lock_request.type = IPC_SEC_PIN_SIM_LOCK_SC;
+		lock_request.facility = IPC_SEC_FACILITY_TYPE_SC;
 	} else if(!strcmp(facility, "FD")) {
-		lock_request.type = IPC_SEC_PIN_SIM_LOCK_FD;
+		lock_request.facility = IPC_SEC_FACILITY_TYPE_FD;
 	} else if(!strcmp(facility, "PN")) {
-		lock_request.type = IPC_SEC_PIN_SIM_LOCK_PN;
+		lock_request.facility = IPC_SEC_FACILITY_TYPE_PN;
 	} else if(!strcmp(facility, "PU")) {
-		lock_request.type = IPC_SEC_PIN_SIM_LOCK_PU;
+		lock_request.facility = IPC_SEC_FACILITY_TYPE_PU;
 	} else if(!strcmp(facility, "PP")) {
-		lock_request.type = IPC_SEC_PIN_SIM_LOCK_PP;
+		lock_request.facility = IPC_SEC_FACILITY_TYPE_PP;
 	} else if(!strcmp(facility, "PC")) {
-		lock_request.type = IPC_SEC_PIN_SIM_LOCK_PC;
+		lock_request.facility = IPC_SEC_FACILITY_TYPE_PC;
 	} else {
 		LOGE("%s: unsupported facility: %s", __FUNCTION__, facility);
 		RIL_onRequestComplete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
@@ -568,7 +570,7 @@ void ril_request_query_facility_lock(RIL_Token t, void *data, size_t datalen)
 
 // Both functions were the same
 #define ipc_sec_phone_lock_complete \
-	ipc_sec_pin_status_complete
+	ipc_sec_sim_status_complete
 
 /**
  * In: RIL_REQUEST_SET_FACILITY_LOCK
@@ -588,17 +590,17 @@ void ril_request_set_facility_lock(RIL_Token t, void *data, size_t datalen)
 	memset(&lock_request, 0, sizeof(lock_request));
 
 	if(!strcmp(facility, "SC")) {
-		lock_request.type = IPC_SEC_PIN_SIM_LOCK_SC;
+		lock_request.type = IPC_SEC_SIM_STATUS_LOCK_SC;
 	} else if(!strcmp(facility, "FD")) {
-		lock_request.type = IPC_SEC_PIN_SIM_LOCK_FD;
+		lock_request.type = IPC_SEC_SIM_STATUS_LOCK_FD;
 	} else if(!strcmp(facility, "PN")) {
-		lock_request.type = IPC_SEC_PIN_SIM_LOCK_PN;
+		lock_request.type = IPC_SEC_SIM_STATUS_LOCK_PN;
 	} else if(!strcmp(facility, "PU")) {
-		lock_request.type = IPC_SEC_PIN_SIM_LOCK_PU;
+		lock_request.type = IPC_SEC_SIM_STATUS_LOCK_PU;
 	} else if(!strcmp(facility, "PP")) {
-		lock_request.type = IPC_SEC_PIN_SIM_LOCK_PP;
+		lock_request.type = IPC_SEC_SIM_STATUS_LOCK_PP;
 	} else if(!strcmp(facility, "PC")) {
-		lock_request.type = IPC_SEC_PIN_SIM_LOCK_PC;
+		lock_request.type = IPC_SEC_SIM_STATUS_LOCK_PC;
 	} else {
 		LOGE("%s: unsupported facility: %s", __FUNCTION__, facility);
 		RIL_onRequestComplete(t, RIL_E_GENERIC_FAILURE, NULL, 0);

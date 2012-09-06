@@ -174,12 +174,12 @@ struct ril_state {
 
 	struct ril_tokens tokens;
 
-	struct ipc_sec_pin_status_response sim_pin_status;
+	struct ipc_sec_sim_status_response sim_pin_status;
 	struct ipc_sec_sim_icc_type sim_type;
 
-	struct ipc_net_regist netinfo;
-	struct ipc_net_regist gprs_netinfo;
-	struct ipc_net_current_plmn plmndata;
+	struct ipc_net_regist_response netinfo;
+	struct ipc_net_regist_response gprs_netinfo;
+	struct ipc_net_current_plmn_response plmndata;
 
 	struct ipc_call_status call_status;
 
@@ -253,11 +253,11 @@ void ipc_ss_ussd(struct ipc_message_info *info);
 
 /* SEC */
 void ril_state_update(SIM_Status status);
-void ipc_sec_pin_status(struct ipc_message_info *info);
+void ipc_sec_sim_status(struct ipc_message_info *info);
 void ril_request_get_sim_status(RIL_Token t);
 void ril_request_sim_io(RIL_Token t, void *data, size_t datalen);
 void ipc_sec_rsim_access(struct ipc_message_info *info);
-void ipc_sec_pin_status_complete(struct ipc_message_info *info);
+void ipc_sec_sim_status_complete(struct ipc_message_info *info);
 void ipc_sec_lock_info(struct ipc_message_info *info);
 void ril_request_enter_sim_pin(RIL_Token t, void *data, size_t datalen);
 void ril_request_change_sim_pin(RIL_Token t, void *data, size_t datalen);
