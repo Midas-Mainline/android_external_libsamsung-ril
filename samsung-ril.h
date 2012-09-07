@@ -352,7 +352,11 @@ void srs_snd_set_call_audio_path(struct srs_message *message);
 struct ril_gprs_connection {
 	int cid;
 	int enabled;
+#if RIL_VERSION >= 6
+	RIL_DataCallFailCause fail_cause;
+#else
 	RIL_LastDataCallActivateFailCause fail_cause;
+#endif
 	char *interface;
 
 	RIL_Token token;

@@ -36,7 +36,11 @@
 struct ril_gprs_connection **ril_gprs_connections;
 int ril_gprs_connections_count;
 
+#if RIL_VERSION >= 6
+RIL_DataCallFailCause ipc2ril_gprs_fail_cause(unsigned short fail_cause)
+#else
 RIL_LastDataCallActivateFailCause ipc2ril_gprs_fail_cause(unsigned short fail_cause)
+#endif
 {
 	switch(fail_cause) {
 
@@ -443,8 +447,13 @@ void ril_request_deactivate_data_call(RIL_Token t, void *data, int length)
 		(void *) &context, sizeof(struct ipc_gprs_pdp_context_set), reqGetId(t));
 }
 
+#if RIL_VERSION >= 6
 int ipc_gprs_connection_enable(struct ril_gprs_connection *gprs_connection,
-	RIL_Data_Call_Response *setup_data_call_response)
+	RIL_Data_Call_Response_v6 *setup_data_call_response)
+#else
+int ipc_gprs_connection_enable(struct ril_gprs_connection *gprs_connection,
+	char **setup_data_call_response)
+#endif
 {
 	struct ipc_client *ipc_client;
         struct ipc_gprs_ip_configuration *ip_configuration;
@@ -453,6 +462,7 @@ int ipc_gprs_connection_enable(struct ril_gprs_connection *gprs_connection,
 	char *ip;
 	char *gateway;
 	char *subnet_mask;
+	in_addr_t subnet_mask_addr;
 	char *dns1;
 	char *dns2;
 
@@ -476,15 +486,16 @@ int ipc_gprs_connection_enable(struct ril_gprs_connection *gprs_connection,
 		(ip_configuration->ip)[1],
 		(ip_configuration->ip)[2],
 		(ip_configuration->ip)[3]);
+
 	// FIXME: subnet isn't reliable!
-    asprintf(&subnet_mask, "255.255.255.255");
+	asprintf(&subnet_mask, "255.255.255.255");
 
 	asprintf(&dns1, "%i.%i.%i.%i",
 		(ip_configuration->dns1)[0],
 		(ip_configuration->dns1)[1],
 		(ip_configuration->dns1)[2],
 		(ip_configuration->dns1)[3]);
-    asprintf(&dns2, "%i.%i.%i.%i",
+	asprintf(&dns2, "%i.%i.%i.%i",
 		(ip_configuration->dns2)[0],
 		(ip_configuration->dns2)[1],
 		(ip_configuration->dns2)[2],
@@ -515,15 +526,19 @@ int ipc_gprs_connection_enable(struct ril_gprs_connection *gprs_connection,
 			"gateway:%s, subnet_mask:%s, dns1:%s, dns2:%s",
 		interface, ip, gateway, subnet_mask, dns1, dns2);
 
-	int subnet_addr = inet_addr(subnet_mask);
-	#if RIL_VERSION >= 6
-		subnet_addr = ipv4NetmaskToPrefixLength(subnet_addr);
-	#endif
+	subnet_mask_addr = inet_addr(subnet_mask);
 
+#if RIL_VERSION >= 6
 	rc = ifc_configure(interface, inet_addr(ip),
-		subnet_addr,
+		ipv4NetmaskToPrefixLength(subnet_mask_addr),
 		inet_addr(gateway),
 		inet_addr(dns1), inet_addr(dns2));
+#else
+	rc = ifc_configure(interface, inet_addr(ip),
+		subnet_mask_addr,
+		inet_addr(gateway),
+		inet_addr(dns1), inet_addr(dns2));
+#endif
 
 	if(rc < 0) {
 		LOGE("ifc_configure failed");
@@ -539,18 +554,21 @@ int ipc_gprs_connection_enable(struct ril_gprs_connection *gprs_connection,
 	snprintf(prop_name, PROPERTY_KEY_MAX, "net.%s.gw", interface);
 	property_set(prop_name, gateway);
 
+#if RIL_VERSION >= 6
+	setup_data_call_response->status = 0;
 	setup_data_call_response->cid = gprs_connection->cid;
 	setup_data_call_response->active = 1;
 	setup_data_call_response->type = strdup("IP");
 
-#if RIL_VERSION >= 6
-	setup_data_call_response->status = 0;
 	setup_data_call_response->ifname = interface;
 	setup_data_call_response->addresses = ip;
 	setup_data_call_response->gateways = gateway;
 	asprintf(&setup_data_call_response->dnses, "%s %s", dns1, dns2);
 #else
-	setup_data_call_response->address = ip;
+	asprintf(&(setup_data_call_response[0]), "%d", gprs_connection->cid);
+	setup_data_call_response[1] = interface;
+	setup_data_call_response[2] = ip;
+
 	free(gateway);
 #endif
 
@@ -603,19 +621,32 @@ int ipc_gprs_connection_disable(struct ril_gprs_connection *gprs_connection)
 	return 0;
 }
 
-static void cleanup_ril_data_call_response(RIL_Data_Call_Response *response) {
-	if (!response) {
-		return;
-	}
-	free(response->type);
-#if RIL_VERSION < 6
-	free(response->apn);
-	free(response->address);
+#if RIL_VERSION >= 6
+void ril_data_call_response_free(RIL_Data_Call_Response_v6 *response)
 #else
-	free(response->addresses);
-	free(response->ifname);
-	free(response->dnses);
-	free(response->gateways);
+void ril_data_call_response_free(RIL_Data_Call_Response *response)
+#endif
+{
+	if(response == NULL)
+		return;
+
+	if(response->type != NULL)
+		free(response->type);
+
+#if RIL_VERSION >= 6
+	if(response->addresses)
+		free(response->addresses);
+	if(response->ifname)
+		free(response->ifname);
+	if(response->dnses)
+		free(response->dnses);
+	if(response->gateways)
+		free(response->gateways);
+#else
+	if(response->apn)
+		free(response->apn);
+	if(response->address)
+		free(response->address);
 #endif
 }
 
@@ -625,8 +656,13 @@ void ipc_gprs_call_status(struct ipc_message_info *info)
 	struct ipc_gprs_call_status *call_status =
 		(struct ipc_gprs_call_status *) info->data;
 
-	RIL_Data_Call_Response setup_data_call_response;
+#if RIL_VERSION >= 6
+	RIL_Data_Call_Response_v6 setup_data_call_response;
 	memset(&setup_data_call_response, 0, sizeof(setup_data_call_response));
+#else
+	char *setup_data_call_response[3] = { NULL, NULL, NULL };
+#endif
+
 	int rc;
 
 	gprs_connection = ril_gprs_connection_get_cid(call_status->cid);
@@ -666,7 +702,16 @@ void ipc_gprs_call_status(struct ipc_message_info *info)
 					sizeof(setup_data_call_response));
 				gprs_connection->token = (RIL_Token) 0x00;
 			}
-			cleanup_ril_data_call_response(&setup_data_call_response);
+#if RIL_VERSION >= 6
+			ril_data_call_response_free(&setup_data_call_response);
+#else
+			if(setup_data_call_response[0] != NULL)
+				free(setup_data_call_response[0]);
+			if(setup_data_call_response[1] != NULL)
+				free(setup_data_call_response[1]);
+			if(setup_data_call_response[2] != NULL)
+				free(setup_data_call_response[2]);
+#endif
 		} else if(gprs_connection->enabled &&
 			call_status->state == IPC_GPRS_STATE_DISABLED &&
 			gprs_connection->token != (RIL_Token) 0x00) {
@@ -786,7 +831,11 @@ fail_cause_return:
  *
  * This shouldn't change anything to healthy structures.
  */
+#if RIL_VERSION >= 6
+void ipc_gprs_pdp_context_fix(RIL_Data_Call_Response_v6 *data_call_list, int c)
+#else
 void ipc_gprs_pdp_context_fix(RIL_Data_Call_Response *data_call_list, int c)
+#endif
 {
 	int i, j, k;
 
@@ -813,7 +862,12 @@ void ipc_gprs_pdp_context(struct ipc_message_info *info)
 	struct ipc_gprs_pdp_context_get *context =
 		(struct ipc_gprs_pdp_context_get *) info->data;
 
+#if RIL_VERSION >= 6
+	RIL_Data_Call_Response_v6 data_call_list[IPC_GPRS_PDP_CONTEXT_GET_DESC_COUNT];
+#else
 	RIL_Data_Call_Response data_call_list[IPC_GPRS_PDP_CONTEXT_GET_DESC_COUNT];
+#endif
+
 	memset(data_call_list, 0, sizeof(data_call_list));
 
 	int i;
@@ -841,14 +895,19 @@ void ipc_gprs_pdp_context(struct ipc_message_info *info)
 				(ip_configuration->ip)[2],
 				(ip_configuration->ip)[3]);
 
+#if RIL_VERSION >= 6
+			RIL_Data_Call_Response_v6 *resp = &data_call_list[i];
+#else
 			RIL_Data_Call_Response *resp = &data_call_list[i];
+#endif
+
 			resp->type = strdup("IP");
 
-			#if RIL_VERSION < 6
+#if RIL_VERSION < 6
 			resp->address = addr;
 			asprintf(&(resp->apn), "%s",
 				gprs_connection->define_context.apn);
-			#else
+#else
 			resp->addresses = addr;
 			resp->gateways = strdup(addr);
 			resp->ifname = strdup(gprs_connection->interface);
@@ -862,7 +921,7 @@ void ipc_gprs_pdp_context(struct ipc_message_info *info)
 				ip_configuration->dns2[1],
 				ip_configuration->dns2[2],
 				ip_configuration->dns2[3]);
-			#endif
+#endif
 		}
 	}
 
@@ -876,7 +935,7 @@ void ipc_gprs_pdp_context(struct ipc_message_info *info)
 			&data_call_list, sizeof(data_call_list));
 
 	for(i = 0; i < IPC_GPRS_PDP_CONTEXT_GET_DESC_COUNT; i++) {
-		cleanup_ril_data_call_response(data_call_list + i);
+		ril_data_call_response_free(data_call_list + i);
 	}
 }
 
