@@ -509,8 +509,8 @@ int ipc_gprs_connection_enable(struct ril_gprs_connection *gprs_connection,
 		}
 	}
 
-	rc = ipc_client_gprs_get_iface(ipc_client, &interface, gprs_connection->cid);
-	if(rc < 0) {
+	interface = ipc_client_gprs_get_iface(ipc_client, gprs_connection->cid);
+	if(interface == NULL) {
 		// This is not a critical issue, fallback to rmnet
 		LOGE("Failed to get interface name!");
 		asprintf(&interface, "rmnet%d", gprs_connection->cid - 1);
@@ -589,8 +589,8 @@ int ipc_gprs_connection_disable(struct ril_gprs_connection *gprs_connection)
 	ipc_client = ((struct ipc_client_object *) ipc_fmt_client->object)->ipc_client;
 
 	if(gprs_connection->interface == NULL) {
-		rc = ipc_client_gprs_get_iface(ipc_client, &interface, gprs_connection->cid);
-		if(rc < 0) {
+		interface = ipc_client_gprs_get_iface(ipc_client, gprs_connection->cid);
+		if(interface == NULL) {
 			// This is not a critical issue, fallback to rmnet
 			LOGE("Failed to get interface name!");
 			asprintf(&interface, "rmnet%d", gprs_connection->cid);

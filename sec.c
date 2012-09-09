@@ -487,7 +487,7 @@ void ril_request_change_sim_pin(RIL_Token t, void *data, size_t datalen)
 {
 	char *password_old = ((char **) data)[0];
 	char *password_new = ((char **) data)[1];
-	struct ipc_sec_change_locking_pw locking_pw;
+	struct ipc_sec_change_locking_pw_set locking_pw;
 
 	memset(&locking_pw, 0, sizeof(locking_pw));
 
