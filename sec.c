@@ -323,35 +323,33 @@ void ril_request_get_sim_status(RIL_Token t)
  */
 void ril_request_sim_io(RIL_Token t, void *data, size_t datalen)
 {
-	const RIL_SIM_IO *sim_io;
-	unsigned char message[262];
-	struct ipc_sec_rsim_access_get *rsim_data;
+	struct ipc_sec_rsim_access_get *rsim_data = NULL;
+	RIL_SIM_IO *sim_io = NULL;
+	int rsim_data_length = sizeof(struct ipc_sec_rsim_access_get);
 
-	unsigned char *rsim_payload;
-	int payload_length;
+	if(data == NULL && datalen < sizeof(RIL_SIM_IO))
+		return;
 
-	sim_io = (const RIL_SIM_IO*)data;
-	rsim_payload = message + sizeof(*rsim_data);
+	sim_io = (RIL_SIM_IO *) data;
+
+	if(sim_io->data != NULL)
+		rsim_data_length += (2 * strlen(sim_io->data));
+
+	rsim_data = (struct ipc_sec_rsim_access_get *) malloc(rsim_data_length);
 
 	/* Set up RSIM header */
-	rsim_data = (struct ipc_sec_rsim_access_get*)message;
 	rsim_data->command = sim_io->command;
 	rsim_data->fileid = sim_io->fileid;
 	rsim_data->p1 = sim_io->p1;
 	rsim_data->p2 = sim_io->p2;
 	rsim_data->p3 = sim_io->p3;
 
-	/* Add payload if present */
-	if(sim_io->data) {
-		payload_length = (2 * strlen(sim_io->data));
+	if(sim_io->data != NULL && rsim_data_length > sizeof(struct ipc_sec_rsim_access_get))
+		hex2bin(sim_io->data, strlen(sim_io->data), (void *) (rsim_data + sizeof(struct ipc_sec_rsim_access_get)));
 
-		if(sizeof(*rsim_data) + payload_length > sizeof(message))
-			return;
+	ipc_fmt_send(IPC_SEC_RSIM_ACCESS, IPC_TYPE_GET, (void *) rsim_data, rsim_data_length, reqGetId(t));
 
-		hex2bin(sim_io->data, strlen(sim_io->data), rsim_payload);
-	}
-
-	ipc_fmt_send(IPC_SEC_RSIM_ACCESS, IPC_TYPE_GET, (unsigned char*)&message, sizeof(message), reqGetId(t));
+	free(rsim_data);
 }
 
 /**
