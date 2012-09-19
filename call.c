@@ -167,6 +167,13 @@ void ipc_call_list(struct ipc_message_info *info)
 	int i;
 
 	num_entries = *((unsigned char *) info->data);
+
+	if(num_entries == 0) {
+		// Don't bother with mem alloc
+
+		RIL_onRequestComplete(reqGetToken(info->aseq), RIL_E_SUCCESS, NULL, 0);
+	}
+
 	entry = (struct ipc_call_list_entry *) ((char *) info->data + 1);
 
 	RIL_Call **calls = (RIL_Call **) malloc(num_entries * sizeof(RIL_Call *));
