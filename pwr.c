@@ -75,7 +75,7 @@ void ipc_pwr_phone_state(struct ipc_message_info *info)
 		break;
 	}
 
-	ril_tokens_checks();
+	ril_tokens_check();
 }
 
 /**
