@@ -147,7 +147,7 @@ struct ril_request_info *ril_request_info_find_token(RIL_Token t)
 
 	list = ril_data.requests;
 	while(list != NULL) {
-		request = list->data;
+		request = (struct ril_request_info *) list->data;
 		if(request == NULL)
 			goto list_continue;
 
@@ -647,7 +647,6 @@ void ril_data_init(void)
 
 void ril_globals_init(void)
 {
-	ril_gprs_connections_init();
 	ril_request_sms_init();
 	ipc_sms_tpid_queue_init();
 }

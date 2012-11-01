@@ -33,9 +33,6 @@
 #include "samsung-ril.h"
 #include "util.h"
 
-struct ril_gprs_connection **ril_gprs_connections;
-int ril_gprs_connections_count;
-
 #if RIL_VERSION >= 6
 RIL_DataCallFailCause ipc2ril_gprs_fail_cause(unsigned short fail_cause)
 #else
@@ -82,111 +79,155 @@ int ipc2ril_gprs_connection_active(unsigned char state)
 	}
 }
 
-void ril_gprs_connections_init(void)
+int ril_gprs_connection_register(int cid)
+{
+	struct ril_gprs_connection *gprs_connection;
+	struct list_head *list_end;
+	struct list_head *list;
+
+	gprs_connection = calloc(1, sizeof(struct ril_gprs_connection));
+	if(gprs_connection == NULL)
+		return -1;
+
+	gprs_connection->cid = cid;
+
+	list_end = ril_data.gprs_connections;
+	while(list_end != NULL && list_end->next != NULL)
+		list_end = list_end->next;
+
+	list = list_head_alloc((void *) gprs_connection, list_end, NULL);
+
+	if(ril_data.gprs_connections == NULL)
+		ril_data.gprs_connections = list;
+
+	return 0;
+}
+
+void ril_gprs_connection_unregister(struct ril_gprs_connection *gprs_connection)
+{
+	struct list_head *list;
+
+	if(gprs_connection == NULL)
+		return;
+
+	list = ril_data.gprs_connections;
+	while(list != NULL) {
+		if(list->data == (void *) gprs_connection) {
+			memset(gprs_connection, 0, sizeof(struct ril_gprs_connection));
+			free(gprs_connection);
+
+			if(list == ril_data.gprs_connections)
+				ril_data.gprs_connections = list->next;
+
+			list_head_free(list);
+
+			break;
+		}
+list_continue:
+		list = list->next;
+	}
+}
+
+struct ril_gprs_connection *ril_gprs_connection_find_cid(int cid)
+{
+	struct ril_gprs_connection *gprs_connection;
+	struct list_head *list;
+
+	list = ril_data.gprs_connections;
+	while(list != NULL) {
+		gprs_connection = (struct ril_gprs_connection *) list->data;
+		if(gprs_connection == NULL)
+			goto list_continue;
+
+		if(gprs_connection->cid == cid)
+			return gprs_connection;
+
+list_continue:
+		list = list->next;
+	}
+
+	return NULL;
+}
+
+struct ril_gprs_connection *ril_gprs_connection_find_token(RIL_Token t)
+{
+	struct ril_gprs_connection *gprs_connection;
+	struct list_head *list;
+
+	list = ril_data.gprs_connections;
+	while(list != NULL) {
+		gprs_connection = (struct ril_gprs_connection *) list->data;
+		if(gprs_connection == NULL)
+			goto list_continue;
+
+		if(gprs_connection->token == t)
+			return gprs_connection;
+
+list_continue:
+		list = list->next;
+	}
+
+	return NULL;
+}
+
+struct ril_gprs_connection *ril_gprs_connection_start(void)
 {
 	struct ipc_client_gprs_capabilities gprs_capabilities;
+	struct ril_gprs_connection *gprs_connection;
 	struct ipc_client *ipc_client;
-	int ril_gprs_connections_size = 0;
+	struct list_head *list;
+	int cid, cid_max;
+	int rc;
+	int i;
 
 	ipc_client = ((struct ipc_client_data *) ril_data.ipc_fmt_client->data)->ipc_client;
 	ipc_client_gprs_get_capabilities(ipc_client, &gprs_capabilities);
+	cid_max = gprs_capabilities.cid_max;
 
-	ril_gprs_connections_size =
-		gprs_capabilities.cid_max * sizeof(struct ril_gprs_connection *);
+	for(i=0 ; i < cid_max ; i++) {
+		cid = i + 1;
+		list = ril_data.gprs_connections;
+		while(list != NULL) {
+			if(list->data == NULL)
+				goto list_continue;
 
-	ril_gprs_connections = (struct ril_gprs_connection **)
-		malloc(ril_gprs_connections_size);
-	memset((void *) ril_gprs_connections, 0, ril_gprs_connections_size);
+			gprs_connection = (struct ril_gprs_connection *) list->data;
+			if(gprs_connection->cid == cid) {
+				cid = 0;
+				break;
+			}
 
-	ril_gprs_connections_count = gprs_capabilities.cid_max;
-}
-
-int ril_gprs_connection_reg_id(void)
-{
-	struct ril_gprs_connection *gprs_connection;
-	int i;
-
-	for(i=0 ; i < ril_gprs_connections_count ; i++) {
-		if(ril_gprs_connections[i] == NULL)
-			return i;
-	}
-
-	LOGD("No room left for another GPRS connection, trying to clean one up");
-
-	// When all the slots are taken, see if some are in a non-working state
-	for(i=0 ; i < ril_gprs_connections_count ; i++) {
-		if(ril_gprs_connections[i]->enabled == 0) {
-			ril_gprs_connection_del(ril_gprs_connections[i]);
-
-			return i;
+list_continue:
+			list = list->next;
 		}
+
+		if(cid > 0)
+			break;
 	}
 
-	return -1;
-}
-
-struct ril_gprs_connection *ril_gprs_connection_add(void)
-{
-	struct ril_gprs_connection *gprs_connection = NULL;
-	int id = ril_gprs_connection_reg_id();
-
-	if(id < 0) {
-		LOGE("Unable to add another GPRS connection!");
+	if(cid <= 0) {
+		LOGE("Unable to find an unused cid, aborting");
 		return NULL;
 	}
 
-	gprs_connection = malloc(sizeof(struct ril_gprs_connection));
-	memset(gprs_connection, 0, sizeof(struct ril_gprs_connection));
+	LOGD("Using GPRS connection cid: %d", cid);
+	rc = ril_gprs_connection_register(cid);
+	if(rc < 0)
+		return NULL;
 
-	gprs_connection->cid = id + 1;
-	gprs_connection->enabled = 0;
-	gprs_connection->interface = NULL;
-	gprs_connection->token = (RIL_Token) 0x00;
-
-	ril_gprs_connections[id] = gprs_connection;
-
+	gprs_connection = ril_gprs_connection_find_cid(cid);
 	return gprs_connection;
 }
 
-void ril_gprs_connection_del(struct ril_gprs_connection *gprs_connection)
+void ril_gprs_connection_stop(struct ril_gprs_connection *gprs_connection)
 {
-	int i;
-
 	if(gprs_connection == NULL)
 		return;
 
 	if(gprs_connection->interface != NULL)
 		free(gprs_connection->interface);
 
-	for(i=0 ; i < ril_gprs_connections_count ; i++)
-		if(ril_gprs_connections[i] == gprs_connection)
-				ril_gprs_connections[i] = NULL;
-
-	free(gprs_connection);
-}
-
-struct ril_gprs_connection *ril_gprs_connection_get_token(RIL_Token token)
-{
-	int i;
-
-	for(i=0 ; i < ril_gprs_connections_count ; i++)
-		if(ril_gprs_connections[i] != NULL)
-			if(ril_gprs_connections[i]->token == token)
-				return ril_gprs_connections[i];
-
-	return NULL;
-}
-
-struct ril_gprs_connection *ril_gprs_connection_get_cid(int cid)
-{
-	int i;
-
-	for(i=0 ; i < ril_gprs_connections_count ; i++)
-		if(ril_gprs_connections[i] != NULL)
-			if(ril_gprs_connections[i]->cid == cid)
-				return ril_gprs_connections[i];
-
-	return NULL;
+	ril_gprs_connection_unregister(gprs_connection);
 }
 
 void ipc_gprs_pdp_context_enable_complete(struct ipc_message_info *info)
@@ -195,7 +236,7 @@ void ipc_gprs_pdp_context_enable_complete(struct ipc_message_info *info)
 	struct ril_gprs_connection *gprs_connection;
 	int rc;
 
-	gprs_connection = ril_gprs_connection_get_token(ril_request_get_token(info->aseq));
+	gprs_connection = ril_gprs_connection_find_token(ril_request_get_token(info->aseq));
 
 	if(!gprs_connection) {
 		LOGE("Unable to find GPRS connection, aborting");
@@ -229,7 +270,7 @@ void ipc_gprs_define_pdp_context_complete(struct ipc_message_info *info)
 	int aseq;
 	int rc;
 
-	gprs_connection = ril_gprs_connection_get_token(ril_request_get_token(info->aseq));
+	gprs_connection = ril_gprs_connection_find_token(ril_request_get_token(info->aseq));
 
 	if(!gprs_connection) {
 		LOGE("Unable to find GPRS connection, aborting");
@@ -274,7 +315,7 @@ void ipc_gprs_port_list_complete(struct ipc_message_info *info)
 	int rc;
 	int aseq;
 
-	gprs_connection = ril_gprs_connection_get_token(ril_request_get_token(info->aseq));
+	gprs_connection = ril_gprs_connection_find_token(ril_request_get_token(info->aseq));
 
 	if(!gprs_connection) {
 		LOGE("Unable to find GPRS connection, aborting");
@@ -330,7 +371,7 @@ void ril_request_setup_data_call(RIL_Token t, void *data, int length)
 
 	LOGD("Requesting data connection to APN '%s'\n", apn);
 
-	gprs_connection = ril_gprs_connection_add();
+	gprs_connection = ril_gprs_connection_start();
 
 	if(!gprs_connection) {
 		LOGE("Unable to create GPRS connection, aborting");
@@ -376,7 +417,7 @@ void ipc_gprs_ip_configuration(struct ipc_message_info *info)
         struct ipc_gprs_ip_configuration *ip_configuration =
 		(struct ipc_gprs_ip_configuration *) info->data;
 
-	gprs_connection = ril_gprs_connection_get_cid(ip_configuration->cid);
+	gprs_connection = ril_gprs_connection_find_cid(ip_configuration->cid);
 
 	if(!gprs_connection) {
 		LOGE("Unable to find GPRS connection, aborting");
@@ -401,7 +442,7 @@ void ipc_gprs_pdp_context_disable_complete(struct ipc_message_info *info)
 	struct ril_gprs_connection *gprs_connection;
 	int rc;
 
-	gprs_connection = ril_gprs_connection_get_token(ril_request_get_token(info->aseq));
+	gprs_connection = ril_gprs_connection_find_token(ril_request_get_token(info->aseq));
 
 	if(!gprs_connection) {
 		LOGE("Unable to find GPRS connection, aborting");
@@ -416,7 +457,7 @@ void ipc_gprs_pdp_context_disable_complete(struct ipc_message_info *info)
 		LOGE("There was an error, aborting PDP context complete");
 
 		// RILJ is not going to ask for fail reason
-		ril_gprs_connection_del(gprs_connection);
+		ril_gprs_connection_stop(gprs_connection);
 
 		ril_request_complete(ril_request_get_token(info->aseq),
 			RIL_E_GENERIC_FAILURE, NULL, 0);
@@ -434,7 +475,7 @@ void ril_request_deactivate_data_call(RIL_Token t, void *data, int length)
 	char *cid = ((char **) data)[0];
 	int rc;
 
-	gprs_connection = ril_gprs_connection_get_cid(atoi(cid));
+	gprs_connection = ril_gprs_connection_find_cid(atoi(cid));
 
 	if(!gprs_connection) {
 		LOGE("Unable to find GPRS connection, aborting");
@@ -672,7 +713,7 @@ void ipc_gprs_call_status(struct ipc_message_info *info)
 
 	int rc;
 
-	gprs_connection = ril_gprs_connection_get_cid(call_status->cid);
+	gprs_connection = ril_gprs_connection_find_cid(call_status->cid);
 
 	if(!gprs_connection) {
 		LOGE("Unable to find GPRS connection, aborting");
@@ -732,7 +773,7 @@ void ipc_gprs_call_status(struct ipc_message_info *info)
 					RIL_E_GENERIC_FAILURE, NULL, 0);
 
 				// RILJ is not going to ask for fail reason
-				ril_gprs_connection_del(gprs_connection);
+				ril_gprs_connection_stop(gprs_connection);
 			} else {
 				LOGD("GPRS interface disabled");
 
@@ -741,7 +782,7 @@ void ipc_gprs_call_status(struct ipc_message_info *info)
 				ril_request_complete(gprs_connection->token,
 					RIL_E_SUCCESS, NULL, 0);
 
-				ril_gprs_connection_del(gprs_connection);
+				ril_gprs_connection_stop(gprs_connection);
 			}
 		} else {
 			LOGE("GPRS connection reported as changed though state is not OK:"
@@ -776,12 +817,12 @@ void ipc_gprs_call_status(struct ipc_message_info *info)
 				LOGE("Failed to disable GPRS interface");
 
 				// RILJ is not going to ask for fail reason
-				ril_gprs_connection_del(gprs_connection);
+				ril_gprs_connection_stop(gprs_connection);
 			} else {
 				LOGE("GPRS interface disabled");
 
 				gprs_connection->enabled = 0;
-				ril_gprs_connection_del(gprs_connection);
+				ril_gprs_connection_stop(gprs_connection);
 			}
 
 			ril_unsol_data_call_list_changed();
@@ -809,7 +850,7 @@ void ril_request_last_data_call_fail_cause(RIL_Token t)
 		goto fail_cause_unspecified;
 	}
 
-	gprs_connection = ril_gprs_connection_get_cid(last_failed_cid);
+	gprs_connection = ril_gprs_connection_find_cid(last_failed_cid);
 
 	if(!gprs_connection) {
 		LOGE("Unable to find GPRS connection");
@@ -820,7 +861,7 @@ void ril_request_last_data_call_fail_cause(RIL_Token t)
 	fail_cause = gprs_connection->fail_cause;
 
 	LOGD("Destroying GPRS connection with cid: %d", gprs_connection->cid);
-	ril_gprs_connection_del(gprs_connection);
+	ril_gprs_connection_stop(gprs_connection);
 
 	goto fail_cause_return;
 
@@ -885,7 +926,7 @@ void ipc_gprs_pdp_context(struct ipc_message_info *info)
 			ipc2ril_gprs_connection_active(context->desc[i].state);
 
 		if(context->desc[i].state == IPC_GPRS_STATE_ENABLED) {
-			gprs_connection = ril_gprs_connection_get_cid(context->desc[i].cid);
+			gprs_connection = ril_gprs_connection_find_cid(context->desc[i].cid);
 
 			if(gprs_connection == NULL) {
 				LOGE("CID %d reported as enabled but not listed here",

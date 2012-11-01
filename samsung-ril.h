@@ -173,6 +173,7 @@ struct ril_data {
 
 	struct ril_state state;
 	struct ril_tokens tokens;
+	struct list_head *gprs_connections;
 	struct list_head *generic_responses;
 	struct list_head *requests;
 	int request_id;
@@ -368,10 +369,13 @@ struct ril_gprs_connection {
 	struct ipc_gprs_ip_configuration ip_configuration;
 };
 
-void ril_gprs_connections_init(void);
-int ril_gprs_connection_reg_id(void);
-struct ril_gprs_connection *ril_gprs_connection_add(void);
-void ril_gprs_connection_del(struct ril_gprs_connection *gprs_connection);
+int ril_gprs_connection_register(int cid);
+void ril_gprs_connection_unregister(struct ril_gprs_connection *gprs_connection);
+struct ril_gprs_connection *ril_gprs_connection_find_cid(int cid);
+struct ril_gprs_connection *ril_gprs_connection_find_token(RIL_Token t);
+struct ril_gprs_connection *ril_gprs_connection_start(void);
+void ril_gprs_connection_stop(struct ril_gprs_connection *gprs_connection);
+
 void ril_request_setup_data_call(RIL_Token t, void *data, int length);
 void ril_request_deactivate_data_call(RIL_Token t, void *data, int length);
 void ipc_gprs_ip_configuration(struct ipc_message_info *info);
