@@ -160,6 +160,8 @@ struct ril_state {
 
 	unsigned char dtmf_tone;
 	unsigned char ussd_state;
+
+	unsigned char sms_incoming_msg_tpid;
 };
 
 void ril_state_lpm(void);
@@ -174,6 +176,8 @@ struct ril_data {
 	struct ril_state state;
 	struct ril_tokens tokens;
 	struct list_head *gprs_connections;
+	struct list_head *incoming_sms;
+	struct list_head *outgoing_sms;
 	struct list_head *generic_responses;
 	struct list_head *requests;
 	int request_id;
@@ -290,6 +294,14 @@ void ril_request_set_network_selection_manual(RIL_Token t, void *data, size_t da
 
 /* SMS */
 
+struct ipc_sms_incoming_msg_info {
+	char *pdu;
+	int length;
+
+	unsigned char type;
+	unsigned char tpid;
+};
+
 struct ril_request_sms {
 	char *pdu;
 	int pdu_len;
@@ -318,13 +330,13 @@ void ipc_sms_send_msg_complete(struct ipc_message_info *info);
 void ipc_sms_svc_center_addr(struct ipc_message_info *info);
 void ipc_sms_send_msg(struct ipc_message_info *info);
 
-void ipc_sms_tpid_queue_init(void);
-void ipc_sms_tpid_queue_del(int id);
-int ipc_sms_tpid_queue_add(unsigned char sms_tpid);
-int ipc_sms_tpid_queue_get_next(void);
+int ipc_sms_incoming_msg_register(char *pdu, int length, unsigned char type, unsigned char tpid);
+void ipc_sms_incoming_msg_unregister(struct ipc_sms_incoming_msg_info *incoming_msg);
+struct ipc_sms_incoming_msg_info *ipc_sms_incoming_msg_info_find(void);
 
+void ipc_sms_incoming_msg_complete(char *pdu, int length, unsigned char type, unsigned char tpid);
 void ipc_sms_incoming_msg(struct ipc_message_info *info);
-void ril_request_sms_acknowledge(RIL_Token t, void *data, size_t datalen);
+void ril_request_sms_acknowledge(RIL_Token t, void *data, size_t length);
 void ipc_sms_deliver_report(struct ipc_message_info *info);
 
 void ipc_sms_device_ready(struct ipc_message_info *info);

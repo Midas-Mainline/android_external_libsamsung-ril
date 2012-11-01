@@ -32,8 +32,6 @@
 struct ril_request_sms ril_request_sms[10];
 int ril_request_sms_lock = 0;
 
-unsigned char ipc_sms_tpid_queue[10];
-
 /**
  * Format conversion utils
  */
@@ -316,7 +314,7 @@ int ril_request_send_sms_next(void)
  */
 void ril_request_send_sms_complete(RIL_Token t, char *pdu, char *smsc)
 {
-	struct ipc_sms_send_msg send_msg;
+	struct ipc_sms_send_msg_request send_msg;
 	unsigned char send_msg_type = IPC_SMS_MSG_SINGLE;
 	int send_msg_len;
 
@@ -362,7 +360,7 @@ void ril_request_send_sms_complete(RIL_Token t, char *pdu, char *smsc)
 
 	pdu_dec_len = pdu_len / 2;
 	smsc_len = smsc[0];
-	send_msg_len = sizeof(struct ipc_sms_send_msg);
+	send_msg_len = sizeof(struct ipc_sms_send_msg_request);
 
 	/* Length of the final message */
 	data_len = pdu_dec_len + smsc_len + send_msg_len;
@@ -421,7 +419,7 @@ void ril_request_send_sms_complete(RIL_Token t, char *pdu, char *smsc)
 pdu_end:
 	/* Alloc and clean memory for the final message */
 	data = malloc(data_len);
-	memset(&send_msg, 0, sizeof(struct ipc_sms_send_msg));
+	memset(&send_msg, 0, sizeof(struct ipc_sms_send_msg_request));
 
 	/* Fill the IPC structure part of the message */
 	send_msg.type = IPC_SMS_TYPE_OUTGOING;
@@ -439,7 +437,7 @@ pdu_end:
 
 	ipc_gen_phone_res_expect_to_func(ril_request_get_id(t), IPC_SMS_SEND_MSG, ipc_sms_send_msg_complete);
 
-	ipc_fmt_send(IPC_SMS_SEND_MSG, IPC_TYPE_EXEC, data, data_len, ril_request_get_id(t));
+	ipc_fmt_send(IPC_SMS_SEND_MSG, IPC_TYPE_EXEC, (void *) data, data_len, ril_request_get_id(t));
 
 	free(pdu_dec);
 	free(data);
@@ -508,7 +506,7 @@ void ipc_sms_svc_center_addr(struct ipc_message_info *info)
  */
 void ipc_sms_send_msg(struct ipc_message_info *info)
 {
-	struct ipc_sms_deliv_report_msg *report_msg = (struct ipc_sms_deliv_report_msg *) info->data;
+	struct ipc_sms_send_msg_response *report_msg = (struct ipc_sms_send_msg_response *) info->data;
 	RIL_SMS_Response response;
 
 	RIL_Errno ril_ack_err;
@@ -528,89 +526,80 @@ void ipc_sms_send_msg(struct ipc_message_info *info)
 }
 
 /**
- * IPC incoming SMS queue functions
- */
-
-void ipc_sms_tpid_queue_init(void)
-{
-	memset(ipc_sms_tpid_queue, 0, sizeof(unsigned char) * 10);
-}
-
-void ipc_sms_tpid_queue_del(int id)
-{
-	if(id < 0 || id > 9) {
-		LOGD("Invalid id (%d) for the SMS tpid queue", id);
-		return;
-	}
-
-	ipc_sms_tpid_queue[id] = 0;
-}
-
-int ipc_sms_tpid_queue_new(void)
-{
-	int id = -1;
-	int i;
-
-	/* Find the highest place in the queue */
-	for(i=10 ; i > 0 ; i--) {
-		if(ipc_sms_tpid_queue[i-1]) {
-			break;
-		}
-
-		id = i-1;
-	}
-
-	if(id < 0) {
-		LOGE("The SMS tpid queue is full, removing the oldest tpid");
-
-		ipc_sms_tpid_queue_del(0);
-
-		for(i=1 ; i < 10 ; i++) {
-			LOGD("SMS tpid queue: moving %d -> %d", i, i-1);
-			ipc_sms_tpid_queue[i-1] = ipc_sms_tpid_queue[i];
-		}
-
-		ipc_sms_tpid_queue_del(9);
-
-		return 9;
-	}
-
-	return id;
-}
-
-int ipc_sms_tpid_queue_add(unsigned char sms_tpid)
-{
-	int id = ipc_sms_tpid_queue_new();
-
-	LOGD("Storing new SMS tpid in the queue at index %d\n", id);
-
-	ipc_sms_tpid_queue[id] = sms_tpid;
-
-	return id;
-}
-
-int ipc_sms_tpid_queue_get_next(void)
-{
-	int id = -1;
-	int i;
-
-	for(i=0 ; i < 10 ; i++) {
-		if(ipc_sms_tpid_queue[i]) {
-			id = i;
-		}
-	}
-
-	if(id < 0)
-		LOGD("Nothing left on the queue!");
-	else
-		LOGD("Next queued tpid is at id #%d\n", id);
-
-	return id;
-}
-
-/**
  * Incoming SMS functions
  */
+
+int ipc_sms_incoming_msg_register(char *pdu, int length, unsigned char type, unsigned char tpid)
+{
+	struct ipc_sms_incoming_msg_info *incoming_msg;
+	struct list_head *list_end;
+	struct list_head *list;
+
+	incoming_msg = calloc(1, sizeof(struct ipc_sms_incoming_msg_info));
+	if(incoming_msg == NULL)
+		return -1;
+
+	incoming_msg->pdu = pdu;
+	incoming_msg->length = length;
+	incoming_msg->type = type;
+	incoming_msg->tpid = tpid;
+
+	list_end = ril_data.incoming_sms;
+	while(list_end != NULL && list_end->next != NULL)
+		list_end = list_end->next;
+
+	list = list_head_alloc((void *) incoming_msg, list_end, NULL);
+
+	if(ril_data.incoming_sms == NULL)
+		ril_data.incoming_sms = list;
+
+	return 0;
+}
+
+void ipc_sms_incoming_msg_unregister(struct ipc_sms_incoming_msg_info *incoming_msg)
+{
+	struct list_head *list;
+
+	if(incoming_msg == NULL)
+		return;
+
+	list = ril_data.incoming_sms;
+	while(list != NULL) {
+		if(list->data == (void *) incoming_msg) {
+			memset(incoming_msg, 0, sizeof(struct ipc_sms_incoming_msg_info));
+			free(incoming_msg);
+
+			if(list == ril_data.incoming_sms)
+				ril_data.incoming_sms = list->next;
+
+			list_head_free(list);
+
+			break;
+		}
+list_continue:
+		list = list->next;
+	}
+}
+
+struct ipc_sms_incoming_msg_info *ipc_sms_incoming_msg_info_find(void)
+{
+	struct ipc_sms_incoming_msg_info *incoming_msg;
+	struct list_head *list;
+
+	list = ril_data.incoming_sms;
+	while(list != NULL) {
+		incoming_msg = (struct ipc_sms_incoming_msg_info *) list->data;
+		if(incoming_msg == NULL)
+			goto list_continue;
+
+		return incoming_msg;
+
+list_continue:
+		list = list->next;
+	}
+
+	return NULL;
+}
 
 /**
  * In: IPC_SMS_INCOMING_MSG
@@ -620,30 +609,53 @@ int ipc_sms_tpid_queue_get_next(void)
  *   Notify RILJ about the incoming message
  */
 
-void ipc_sms_incoming_msg(struct ipc_message_info *info)
+void ipc_sms_incoming_msg_complete(char *pdu, int length, unsigned char type, unsigned char tpid)
 {
-	struct ipc_sms_incoming_msg *msg = (struct ipc_sms_incoming_msg *) info->data;
-	char *pdu = ((char *) info->data + sizeof(struct ipc_sms_incoming_msg));
+	if(pdu == NULL || length <= 0)
+		return;
 
-	int resp_length = msg->length * 2 + 1;
-	char *resp = (char *) malloc(resp_length);
+	ril_data.state.sms_incoming_msg_tpid = tpid;
 
-	bin2hex(pdu, msg->length, resp);
-
-	ipc_sms_tpid_queue_add(msg->msg_tpid);
-
-	if(msg->type == IPC_SMS_TYPE_POINT_TO_POINT) {
-		ril_request_unsolicited(RIL_UNSOL_RESPONSE_NEW_SMS, resp, resp_length);
-	} else if(msg->type == IPC_SMS_TYPE_STATUS_REPORT) {
-		// FIXME: do we need to enqueue for this?
-
-		ril_request_unsolicited(RIL_UNSOL_RESPONSE_NEW_SMS_STATUS_REPORT, resp, resp_length);
+	if(type == IPC_SMS_TYPE_POINT_TO_POINT) {
+		ril_request_unsolicited(RIL_UNSOL_RESPONSE_NEW_SMS, pdu, length);
+	} else if(type == IPC_SMS_TYPE_STATUS_REPORT) {
+		ril_request_unsolicited(RIL_UNSOL_RESPONSE_NEW_SMS_STATUS_REPORT, pdu, length);
 	} else {
-		LOGE("%s: Unknown message type", __FUNCTION__);
+		LOGE("Unhandled message type: %x", type);
 	}
 
-exit:
-	free(resp);
+	free(pdu);
+}
+
+void ipc_sms_incoming_msg(struct ipc_message_info *info)
+{
+	struct ipc_sms_incoming_msg *msg;
+	unsigned char *pdu_hex;
+	char *pdu;
+	int length;
+	int rc;
+
+	if(info == NULL || info->data == NULL || info->length < sizeof(struct ipc_sms_incoming_msg))
+		return;
+
+	msg = (struct ipc_sms_incoming_msg *) info->data;
+	pdu_hex = ((unsigned char *) info->data + sizeof(struct ipc_sms_incoming_msg));
+
+	length = msg->length * 2 + 1;
+	pdu = (char *) calloc(1, length);
+
+	bin2hex(pdu_hex, msg->length, pdu);
+
+	if(ril_data.state.sms_incoming_msg_tpid != 0) {
+		LOGD("Another message is waiting ACK, queuing");
+		rc = ipc_sms_incoming_msg_register(pdu, length, msg->type, msg->msg_tpid);
+		if(rc < 0)
+			LOGE("Unable to register incoming msg");
+
+		return;
+	}
+
+	ipc_sms_incoming_msg_complete(pdu, length, msg->type, msg->msg_tpid);
 }
 
 /**
@@ -654,14 +666,19 @@ exit:
  * Out: IPC_SMS_DELIVER_REPORT
  *   Sends a SMS delivery report
  */
-void ril_request_sms_acknowledge(RIL_Token t, void *data, size_t datalen)
+void ril_request_sms_acknowledge(RIL_Token t, void *data, size_t length)
 {
-	struct ipc_sms_deliv_report_msg report_msg;
-	int success = ((int *)data)[0];
-	int failcause = ((int *)data)[1];
-	int id = ipc_sms_tpid_queue_get_next();
+	struct ipc_sms_incoming_msg_info *incoming_msg;
+	struct ipc_sms_deliver_report_request report_msg;
+	int success, fail_cause;
 
-	if(id < 0) {
+	if(data == NULL || length < 2 * sizeof(int))
+		return;
+
+	success = ((int *) data)[0];
+	fail_cause = ((int *) data)[1];
+
+	if(ril_data.state.sms_incoming_msg_tpid == 0) {
 		LOGE("There is no SMS message to ACK!");
 		ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 
@@ -669,15 +686,22 @@ void ril_request_sms_acknowledge(RIL_Token t, void *data, size_t datalen)
 	}
 
 	report_msg.type = IPC_SMS_TYPE_STATUS_REPORT;
-	report_msg.error = ril2ipc_sms_ack_error(success, failcause);
-	report_msg.msg_tpid = ipc_sms_tpid_queue[id];
+	report_msg.error = ril2ipc_sms_ack_error(success, fail_cause);
+	report_msg.msg_tpid = ril_data.state.sms_incoming_msg_tpid;
 	report_msg.unk = 0;
 
 	ipc_gen_phone_res_expect_to_abort(ril_request_get_id(t), IPC_SMS_DELIVER_REPORT);
 
-	ipc_fmt_send(IPC_SMS_DELIVER_REPORT, IPC_TYPE_EXEC, (void *) &report_msg, sizeof(struct ipc_sms_deliv_report_msg), ril_request_get_id(t));
+	ipc_fmt_send(IPC_SMS_DELIVER_REPORT, IPC_TYPE_EXEC, (void *) &report_msg, sizeof(report_msg), ril_request_get_id(t));
 
-	ipc_sms_tpid_queue_del(id);
+	ril_data.state.sms_incoming_msg_tpid = 0;
+
+	incoming_msg = ipc_sms_incoming_msg_info_find();
+	if(incoming_msg == NULL)
+		return;
+
+	ipc_sms_incoming_msg_complete(incoming_msg->pdu, incoming_msg->length, incoming_msg->type, incoming_msg->tpid);
+	ipc_sms_incoming_msg_unregister(incoming_msg);
 }
 
 /**
@@ -686,9 +710,17 @@ void ril_request_sms_acknowledge(RIL_Token t, void *data, size_t datalen)
  */
 void ipc_sms_deliver_report(struct ipc_message_info *info)
 {
-	// TODO: check error code to eventually resend ACK
+	struct ipc_sms_deliver_report_response *report_msg;
+	RIL_Errno e;
+	int error_code;
 
-	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_SUCCESS, NULL, 0);
+	if(info == NULL || info->data == NULL || info->length < sizeof(struct ipc_sms_deliver_report_response))
+		return;
+
+	report_msg = (struct ipc_sms_deliver_report_response *) info->data;
+	e = ipc2ril_sms_ack_error(report_msg->error, &error_code);
+
+	ril_request_complete(ril_request_get_token(info->aseq), e, NULL, 0);
 }
 
 /**

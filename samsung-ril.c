@@ -648,7 +648,6 @@ void ril_data_init(void)
 void ril_globals_init(void)
 {
 	ril_request_sms_init();
-	ipc_sms_tpid_queue_init();
 }
 
 /**
