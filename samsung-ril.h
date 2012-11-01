@@ -173,6 +173,7 @@ struct ril_data {
 
 	struct ril_state state;
 	struct ril_tokens tokens;
+	struct list_head *generic_responses;
 	struct list_head *requests;
 	int request_id;
 
@@ -195,19 +196,23 @@ void srs_dispatch(int fd, struct srs_message *message);
 
 /* GEN */
 
-struct ipc_gen_phone_res_expect {
+struct ipc_gen_phone_res_expect_info {
 	unsigned char aseq;
 	unsigned short command;
 	void (*func)(struct ipc_message_info *info);
-	int to_complete;
-	int to_abort;
+	int complete;
+	int abort;
 };
 
-void ipc_gen_phone_res_expects_init(void);
-void ipc_gen_phone_res_expect_to_func(unsigned char aseq, unsigned short command, 
-		void (*func)(struct ipc_message_info *info));
-void ipc_gen_phone_res_expect_to_complete(unsigned char aseq, unsigned short command);
-void ipc_gen_phone_res_expect_to_abort(unsigned char aseq, unsigned short command);
+int ipc_gen_phone_res_expect_register(unsigned char aseq, unsigned short command,
+	void (*func)(struct ipc_message_info *info), int complete, int abort);
+void ipc_gen_phone_res_expect_unregister(struct ipc_gen_phone_res_expect_info *expect);
+struct ipc_gen_phone_res_expect_info *ipc_gen_phone_res_expect_find_aseq(unsigned char aseq);
+int ipc_gen_phone_res_expect_to_func(unsigned char aseq, unsigned short command,
+	void (*func)(struct ipc_message_info *info));
+int ipc_gen_phone_res_expect_to_complete(unsigned char aseq, unsigned short command);
+int ipc_gen_phone_res_expect_to_abort(unsigned char aseq, unsigned short command);
+
 void ipc_gen_phone_res(struct ipc_message_info *info);
 
 /* PWR */

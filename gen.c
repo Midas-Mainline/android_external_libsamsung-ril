@@ -25,13 +25,6 @@
 #include "util.h"
 
 /**
- * GEN global vars
- */
-
-struct ipc_gen_phone_res_expect ipc_gen_phone_res_expects[0x20];
-int ipc_gen_phone_res_id = 0;
-
-/**
  * IPC_GEN_PHONE_RES has shared aseq (in the header), group, index and type (in the data)
  * with the original request it responds to. 
  * On this implementation, we just check aseq and command (group and index).
@@ -57,70 +50,95 @@ int ipc_gen_phone_res_id = 0;
  * GEN expects functions
  */
 
-void ipc_gen_phone_res_expects_init(void)
+int ipc_gen_phone_res_expect_register(unsigned char aseq, unsigned short command,
+	void (*func)(struct ipc_message_info *info), int complete, int abort)
 {
-	memset(ipc_gen_phone_res_expects, 0, sizeof(struct ipc_gen_phone_res_expect) * 0x20);
+	struct ipc_gen_phone_res_expect_info *expect;
+	struct list_head *list_end;
+	struct list_head *list;
+
+	expect = calloc(1, sizeof(struct ipc_gen_phone_res_expect_info));
+	if(expect == NULL)
+		return -1;
+
+	expect->aseq = aseq;
+	expect->command = command;
+	expect->func = func;
+	expect->complete = complete;
+	expect->abort = abort;
+
+	list_end = ril_data.generic_responses;
+	while(list_end != NULL && list_end->next != NULL)
+		list_end = list_end->next;
+
+	list = list_head_alloc((void *) expect, list_end, NULL);
+
+	if(ril_data.generic_responses == NULL)
+		ril_data.generic_responses = list;
+
+	return 0;
 }
 
-int ipc_gen_phone_res_id_new(void)
+void ipc_gen_phone_res_expect_unregister(struct ipc_gen_phone_res_expect_info *expect)
 {
-	ipc_gen_phone_res_id++;
-	ipc_gen_phone_res_id %= 0x20;
-	return ipc_gen_phone_res_id;
+	struct list_head *list;
+
+	if(expect == NULL)
+		return;
+
+	list = ril_data.generic_responses;
+	while(list != NULL) {
+		if(list->data == (void *) expect) {
+			memset(expect, 0, sizeof(struct ipc_gen_phone_res_expect_info));
+			free(expect);
+
+			if(list == ril_data.generic_responses)
+				ril_data.generic_responses = list->next;
+
+			list_head_free(list);
+
+			break;
+		}
+list_continue:
+		list = list->next;
+	}
 }
 
-int ipc_gen_phone_res_get_id(unsigned char aseq)
+struct ipc_gen_phone_res_expect_info *ipc_gen_phone_res_expect_find_aseq(unsigned char aseq)
 {
-	int i;
+	struct ipc_gen_phone_res_expect_info *expect;
+	struct list_head *list;
 
-	for(i=0 ; i < 0x20 ; i++)
-		if(ipc_gen_phone_res_expects[i].aseq == aseq)
-			return i;
+	list = ril_data.generic_responses;
+	while(list != NULL) {
+		expect = (struct ipc_gen_phone_res_expect_info *) list->data;
+		if(expect == NULL)
+			goto list_continue;
 
-	return -1;
+		if(expect->aseq == aseq)
+			return expect;
+
+list_continue:
+		list = list->next;
+	}
+
+	return NULL;
 }
 
-void ipc_gen_phone_res_clean_id(int id)
+int ipc_gen_phone_res_expect_to_func(unsigned char aseq, unsigned short command,
+	void (*func)(struct ipc_message_info *info))
 {
-	ipc_gen_phone_res_expects[id].aseq = 0;
-	ipc_gen_phone_res_expects[id].command = 0;
-	ipc_gen_phone_res_expects[id].func = NULL;
-	ipc_gen_phone_res_expects[id].to_complete = 0;
-	ipc_gen_phone_res_expects[id].to_abort = 0;
+	return ipc_gen_phone_res_expect_register(aseq, command, func, 0, 0);
 }
 
-void ipc_gen_phone_res_expect_to_func(unsigned char aseq, unsigned short command,
-		void (*func)(struct ipc_message_info *info))
+int ipc_gen_phone_res_expect_to_complete(unsigned char aseq, unsigned short command)
 {
-	int id = ipc_gen_phone_res_id_new();
-
-	ipc_gen_phone_res_expects[id].aseq = aseq;
-	ipc_gen_phone_res_expects[id].command = command;
-	ipc_gen_phone_res_expects[id].func = func;
-	ipc_gen_phone_res_expects[id].to_complete = 0;
-	ipc_gen_phone_res_expects[id].to_abort = 0;
+	return ipc_gen_phone_res_expect_register(aseq, command, NULL, 1, 0);
 }
 
-void ipc_gen_phone_res_expect_to_complete(unsigned char aseq, unsigned short command)
+int ipc_gen_phone_res_expect_to_abort(unsigned char aseq, unsigned short command)
 {
-	int id = ipc_gen_phone_res_id_new();
-
-	ipc_gen_phone_res_expects[id].aseq = aseq;
-	ipc_gen_phone_res_expects[id].command = command;
-	ipc_gen_phone_res_expects[id].func = NULL;
-	ipc_gen_phone_res_expects[id].to_complete = 1;
-	ipc_gen_phone_res_expects[id].to_abort = 0;
-}
-
-void ipc_gen_phone_res_expect_to_abort(unsigned char aseq, unsigned short command)
-{
-	int id = ipc_gen_phone_res_id_new();
-
-	ipc_gen_phone_res_expects[id].aseq = aseq;
-	ipc_gen_phone_res_expects[id].command = command;
-	ipc_gen_phone_res_expects[id].func = NULL;
-	ipc_gen_phone_res_expects[id].to_complete = 0;
-	ipc_gen_phone_res_expects[id].to_abort = 1;
+	return ipc_gen_phone_res_expect_register(aseq, command, NULL, 0, 1);
 }
 
 /**
@@ -133,33 +151,38 @@ void ipc_gen_phone_res_expect_to_abort(unsigned char aseq, unsigned short comman
  */
 void ipc_gen_phone_res(struct ipc_message_info *info)
 {
-	struct ipc_gen_phone_res *phone_res = (struct ipc_gen_phone_res *) info->data;
-	int id = ipc_gen_phone_res_get_id(info->aseq);
+	struct ipc_gen_phone_res_expect_info *expect;
+	struct ipc_gen_phone_res *phone_res;
 	RIL_Errno e;
 	int rc;
 
-	// In this case, it can be a real error or we just didn't queue
-	if(id < 0) {
+	if(info->data == NULL || info->length < sizeof(struct ipc_gen_phone_res))
+		return;
+
+	phone_res = (struct ipc_gen_phone_res *) info->data;
+	expect = ipc_gen_phone_res_expect_find_aseq(info->aseq);
+
+	if(expect == NULL) {
 		LOGD("aseq: 0x%x not found in the IPC_GEN_PHONE_RES queue", info->aseq);
 		return;
 	}
 
 	LOGD("aseq: 0x%x found in the IPC_GEN_PHONE_RES queue!", info->aseq);
 
-	if(ipc_gen_phone_res_expects[id].command != IPC_COMMAND(phone_res)) {
+	if(expect->command != IPC_COMMAND(phone_res)) {
 		LOGE("IPC_GEN_PHONE_RES aseq (0x%x) doesn't match the queued one with command (0x%x)", 
-				ipc_gen_phone_res_expects[id].aseq, ipc_gen_phone_res_expects[id].command);
+			expect->aseq, expect->command);
 
-		if(ipc_gen_phone_res_expects[id].func != NULL) {
+		if(expect->func != NULL) {
 			LOGE("Not safe to run the custom function, reporting generic failure");
-			ril_request_complete(ril_request_get_token(ipc_gen_phone_res_expects[id].aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
+			ril_request_complete(ril_request_get_token(expect->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
+			goto unregister;
 		}
 	}
 
-	if(ipc_gen_phone_res_expects[id].func != NULL) {
-		ipc_gen_phone_res_expects[id].func(info);
-		ipc_gen_phone_res_clean_id(id);
-		return;
+	if(expect->func != NULL) {
+		expect->func(info);
+		goto unregister;
 	}
 
 	rc = ipc_gen_phone_res_check(phone_res);
@@ -168,11 +191,9 @@ void ipc_gen_phone_res(struct ipc_message_info *info)
 	else
 		e = RIL_E_SUCCESS;
 
-	if(ipc_gen_phone_res_expects[id].to_complete || (ipc_gen_phone_res_expects[id].to_abort && rc < 0)) {
-		ril_request_complete(ril_request_get_token(ipc_gen_phone_res_expects[id].aseq), e, NULL, 0);
-		ipc_gen_phone_res_clean_id(id);
-		return;
-	}
+	if(expect->complete || (expect->abort && e == RIL_E_GENERIC_FAILURE))
+		ril_request_complete(ril_request_get_token(expect->aseq), e, NULL, 0);
 
-	ipc_gen_phone_res_clean_id(id);
+unregister:
+	ipc_gen_phone_res_expect_unregister(expect);
 }

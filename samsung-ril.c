@@ -647,7 +647,6 @@ void ril_data_init(void)
 
 void ril_globals_init(void)
 {
-	ipc_gen_phone_res_expects_init();
 	ril_gprs_connections_init();
 	ril_request_sms_init();
 	ipc_sms_tpid_queue_init();
