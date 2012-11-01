@@ -104,7 +104,7 @@ list_continue:
 	}
 }
 
-struct ipc_gen_phone_res_expect_info *ipc_gen_phone_res_expect_find_aseq(unsigned char aseq)
+struct ipc_gen_phone_res_expect_info *ipc_gen_phone_res_expect_info_find_aseq(unsigned char aseq)
 {
 	struct ipc_gen_phone_res_expect_info *expect;
 	struct list_head *list;
@@ -160,7 +160,7 @@ void ipc_gen_phone_res(struct ipc_message_info *info)
 		return;
 
 	phone_res = (struct ipc_gen_phone_res *) info->data;
-	expect = ipc_gen_phone_res_expect_find_aseq(info->aseq);
+	expect = ipc_gen_phone_res_expect_info_find_aseq(info->aseq);
 
 	if(expect == NULL) {
 		LOGD("aseq: 0x%x not found in the IPC_GEN_PHONE_RES queue", info->aseq);
