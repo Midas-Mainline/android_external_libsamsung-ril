@@ -67,10 +67,10 @@ RIL_LastCallFailCause ipc2ril_call_fail_cause(unsigned char end_cause)
  */
 void ipc_call_incoming(struct ipc_message_info *info)
 {
-	RIL_onUnsolicitedResponse(RIL_UNSOL_CALL_RING, NULL, 0);
+	ril_request_unsolicited(RIL_UNSOL_CALL_RING, NULL, 0);
 
 	/* FIXME: Do we really need to send this? */
-	RIL_onUnsolicitedResponse(RIL_UNSOL_RESPONSE_CALL_STATE_CHANGED, NULL, 0);
+	ril_request_unsolicited(RIL_UNSOL_RESPONSE_CALL_STATE_CHANGED, NULL, 0);
 }
 
 /**
@@ -85,11 +85,11 @@ void ipc_call_status(struct ipc_message_info *info)
 	struct ipc_call_status *call_status =
 		(struct ipc_call_status *) info->data;
 
-	memcpy(&(ril_state.call_status), call_status, sizeof(struct ipc_call_status));
+	memcpy(&(ril_data.state.call_status), call_status, sizeof(struct ipc_call_status));
 
 	LOGD("Updating Call Status data");
 
-	RIL_onUnsolicitedResponse(RIL_UNSOL_RESPONSE_CALL_STATE_CHANGED, NULL, 0);
+	ril_request_unsolicited(RIL_UNSOL_RESPONSE_CALL_STATE_CHANGED, NULL, 0);
 }
 
 /**
@@ -134,10 +134,10 @@ void ril_request_dial(RIL_Token t, void *data, size_t datalen)
 	call.length = strlen(dial->address);
 	memcpy(call.number, dial->address, strlen(dial->address));
 
-	ipc_fmt_send(IPC_CALL_OUTGOING, IPC_TYPE_EXEC, (unsigned char *) &call, sizeof(call), reqGetId(t));
+	ipc_fmt_send(IPC_CALL_OUTGOING, IPC_TYPE_EXEC, (unsigned char *) &call, sizeof(call), ril_request_get_id(t));
 
 	/* FIXME: This should actually be sent based on the response from baseband */
-	RIL_onRequestComplete(t, RIL_E_SUCCESS, NULL, 0);
+	ril_request_complete(t, RIL_E_SUCCESS, NULL, 0);
 }
 
 /**
@@ -149,7 +149,7 @@ void ril_request_dial(RIL_Token t, void *data, size_t datalen)
  */
 void ril_request_get_current_calls(RIL_Token t)
 {
-	ipc_fmt_send_get(IPC_CALL_LIST, reqGetId(t));
+	ipc_fmt_send_get(IPC_CALL_LIST, ril_request_get_id(t));
 }
 
 /**
@@ -171,7 +171,8 @@ void ipc_call_list(struct ipc_message_info *info)
 	if(num_entries == 0) {
 		// Don't bother with mem alloc
 
-		RIL_onRequestComplete(reqGetToken(info->aseq), RIL_E_SUCCESS, NULL, 0);
+		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_SUCCESS, NULL, 0);
+		return;
 	}
 
 	entry = (struct ipc_call_list_entry *) ((char *) info->data + 1);
@@ -208,7 +209,7 @@ void ipc_call_list(struct ipc_message_info *info)
 		entry = (struct ipc_call_list_entry *) (number + entry->number_len);
 	}
 
-	RIL_onRequestComplete(reqGetToken(info->aseq), RIL_E_SUCCESS, calls, (num_entries * sizeof(RIL_Call *)));
+	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_SUCCESS, calls, (num_entries * sizeof(RIL_Call *)));
 
 	for(i = 0; i < num_entries; i++) {
 		free(calls[i]);
@@ -225,13 +226,13 @@ void ipc_call_list(struct ipc_message_info *info)
  */
 void ril_request_hangup(RIL_Token t)
 {
-	ipc_fmt_send_exec(IPC_CALL_RELEASE, reqGetId(t));
+	ipc_fmt_send_exec(IPC_CALL_RELEASE, ril_request_get_id(t));
 
 	/* FIXME: This should actually be sent based on the response from baseband */
-	RIL_onRequestComplete(t, RIL_E_SUCCESS, NULL, 0);
+	ril_request_complete(t, RIL_E_SUCCESS, NULL, 0);
 
 	/* FIXME: Do we really need to send this? */
-	RIL_onUnsolicitedResponse(RIL_UNSOL_RESPONSE_CALL_STATE_CHANGED, NULL, 0);
+	ril_request_unsolicited(RIL_UNSOL_RESPONSE_CALL_STATE_CHANGED, NULL, 0);
 }
 
 /**
@@ -242,13 +243,13 @@ void ril_request_hangup(RIL_Token t)
  */
 void ril_request_answer(RIL_Token t)
 {
-	ipc_fmt_send_exec(IPC_CALL_ANSWER, reqGetId(t));
+	ipc_fmt_send_exec(IPC_CALL_ANSWER, ril_request_get_id(t));
 
 	/* FIXME: This should actually be sent based on the response from baseband */
-	RIL_onRequestComplete(t, RIL_E_SUCCESS, NULL, 0);
+	ril_request_complete(t, RIL_E_SUCCESS, NULL, 0);
 
 	/* FIXME: Do we really need to send this? */
-	RIL_onUnsolicitedResponse(RIL_UNSOL_RESPONSE_CALL_STATE_CHANGED, NULL, 0);
+	ril_request_unsolicited(RIL_UNSOL_RESPONSE_CALL_STATE_CHANGED, NULL, 0);
 }
 
 /**
@@ -259,14 +260,14 @@ void ril_request_last_call_fail_cause(RIL_Token t)
 {
 	RIL_LastCallFailCause fail_cause;
 	struct ipc_call_status *call_status =
-		&(ril_state.call_status);
+		&(ril_data.state.call_status);
 
 	fail_cause = ipc2ril_call_fail_cause(call_status->end_cause);
 
 	// Empty global call_status
 	memset(call_status, 0, sizeof(struct ipc_call_status));
 
-	RIL_onRequestComplete(t, RIL_E_SUCCESS, &fail_cause, sizeof(RIL_LastCallFailCause));
+	ril_request_complete(t, RIL_E_SUCCESS, &fail_cause, sizeof(RIL_LastCallFailCause));
 }
 
 /**
@@ -287,13 +288,13 @@ void ril_request_dtmf(RIL_Token t, void *data, int length)
 	unsigned char dtmf_count = 1;
 	int i;
 
-	if(ril_state.dtmf_tone != 0) {
+	if(ril_data.state.dtmf_tone != 0) {
 		LOGD("Another tone wasn't stopped, stopping that one before anything");
 
 		cont_dtmf.state = IPC_CALL_DTMF_STATE_STOP;
 		cont_dtmf.tone = 0;
 
-		ipc_fmt_send(IPC_CALL_CONT_DTMF, IPC_TYPE_SET, (void *) &cont_dtmf, sizeof(cont_dtmf), reqGetId(t));
+		ipc_fmt_send(IPC_CALL_CONT_DTMF, IPC_TYPE_SET, (void *) &cont_dtmf, sizeof(cont_dtmf), ril_request_get_id(t));
 
 		usleep(300);
 	}
@@ -313,9 +314,9 @@ void ril_request_dtmf(RIL_Token t, void *data, int length)
 		memcpy(burst + 1 + sizeof(struct ipc_call_cont_dtmf) * i, &cont_dtmf, sizeof(cont_dtmf));
 	}
 
-	ipc_gen_phone_res_expect_to_abort(reqGetId(t), IPC_CALL_BURST_DTMF);
+	ipc_gen_phone_res_expect_to_abort(ril_request_get_id(t), IPC_CALL_BURST_DTMF);
 
-	ipc_fmt_send(IPC_CALL_BURST_DTMF, IPC_TYPE_EXEC, (void *) burst, burst_len, reqGetId(t));
+	ipc_fmt_send(IPC_CALL_BURST_DTMF, IPC_TYPE_EXEC, (void *) burst, burst_len, ril_request_get_id(t));
 
 	free(burst);
 }
@@ -328,23 +329,23 @@ void ipc_call_burst_dtmf(struct ipc_message_info *info)
 	if(ret == 0) {
 		LOGD("Apparently, something went wrong with DTMF burst");
 
-		RIL_onRequestComplete(reqGetToken(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
+		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 	}
 
-	RIL_onRequestComplete(reqGetToken(info->aseq), RIL_E_SUCCESS, NULL, 0);
+	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_SUCCESS, NULL, 0);
 }
 
 void ril_request_dtmf_start(RIL_Token t, void *data, int length)
 {
 	struct ipc_call_cont_dtmf cont_dtmf;
 
-	if(ril_state.dtmf_tone != 0) {
+	if(ril_data.state.dtmf_tone != 0) {
 		LOGD("Another tone wasn't stopped, stopping that one before anything");
 
 		cont_dtmf.state = IPC_CALL_DTMF_STATE_STOP;
 		cont_dtmf.tone = 0;
 
-		ipc_fmt_send(IPC_CALL_CONT_DTMF, IPC_TYPE_SET, (void *) &cont_dtmf, sizeof(cont_dtmf), reqGetId(t));
+		ipc_fmt_send(IPC_CALL_CONT_DTMF, IPC_TYPE_SET, (void *) &cont_dtmf, sizeof(cont_dtmf), ril_request_get_id(t));
 
 		usleep(300);
 	}
@@ -352,11 +353,11 @@ void ril_request_dtmf_start(RIL_Token t, void *data, int length)
 	cont_dtmf.state = IPC_CALL_DTMF_STATE_START;
 	cont_dtmf.tone = ((unsigned char *)data)[0];
 
-	ril_state.dtmf_tone = cont_dtmf.tone;
+	ril_data.state.dtmf_tone = cont_dtmf.tone;
 
-	ipc_gen_phone_res_expect_to_complete(reqGetId(t), IPC_CALL_CONT_DTMF);
+	ipc_gen_phone_res_expect_to_complete(ril_request_get_id(t), IPC_CALL_CONT_DTMF);
 
-	ipc_fmt_send(IPC_CALL_CONT_DTMF, IPC_TYPE_SET, (void *) &cont_dtmf, sizeof(cont_dtmf), reqGetId(t));
+	ipc_fmt_send(IPC_CALL_CONT_DTMF, IPC_TYPE_SET, (void *) &cont_dtmf, sizeof(cont_dtmf), ril_request_get_id(t));
 }
 
 void ril_request_dtmf_stop(RIL_Token t)
@@ -365,9 +366,9 @@ void ril_request_dtmf_stop(RIL_Token t)
 	cont_dtmf.state = IPC_CALL_DTMF_STATE_STOP;
 	cont_dtmf.tone = 0;
 
-	ril_state.dtmf_tone = 0;
+	ril_data.state.dtmf_tone = 0;
 
-	ipc_gen_phone_res_expect_to_complete(reqGetId(t), IPC_CALL_CONT_DTMF);
+	ipc_gen_phone_res_expect_to_complete(ril_request_get_id(t), IPC_CALL_CONT_DTMF);
 
-	ipc_fmt_send(IPC_CALL_CONT_DTMF, IPC_TYPE_SET, (void *) &cont_dtmf, sizeof(cont_dtmf), reqGetId(t));
+	ipc_fmt_send(IPC_CALL_CONT_DTMF, IPC_TYPE_SET, (void *) &cont_dtmf, sizeof(cont_dtmf), ril_request_get_id(t));
 }

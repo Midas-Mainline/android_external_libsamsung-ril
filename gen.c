@@ -48,7 +48,7 @@ int ipc_gen_phone_res_id = 0;
  * 
  * On a custom function, don't forget to get a clean new aseq if you're going to 
  * send some data to the modem, just liek this:
- * aseq = ril_request_reg_id(reqGetToken(info->aseq));
+ * aseq = ril_request_reg_id(ril_request_get_token(info->aseq));
  *
  * Please use GEN_PHONE_RES engine as often as possible!
  */
@@ -152,7 +152,7 @@ void ipc_gen_phone_res(struct ipc_message_info *info)
 
 		if(ipc_gen_phone_res_expects[id].func != NULL) {
 			LOGE("Not safe to run the custom function, reporting generic failure");
-			RIL_onRequestComplete(reqGetToken(ipc_gen_phone_res_expects[id].aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
+			ril_request_complete(ril_request_get_token(ipc_gen_phone_res_expects[id].aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 		}
 	}
 
@@ -169,7 +169,7 @@ void ipc_gen_phone_res(struct ipc_message_info *info)
 		e = RIL_E_SUCCESS;
 
 	if(ipc_gen_phone_res_expects[id].to_complete || (ipc_gen_phone_res_expects[id].to_abort && rc < 0)) {
-		RIL_onRequestComplete(reqGetToken(ipc_gen_phone_res_expects[id].aseq), e, NULL, 0);
+		ril_request_complete(ril_request_get_token(ipc_gen_phone_res_expects[id].aseq), e, NULL, 0);
 		ipc_gen_phone_res_clean_id(id);
 		return;
 	}

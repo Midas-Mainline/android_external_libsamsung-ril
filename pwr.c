@@ -32,12 +32,10 @@
  */
 void ipc_pwr_phone_pwr_up(void)
 {
-	/* H1 baseband firmware bug workaround: sleep for 25ms to allow for nvram to initialize */
-	usleep(25000);
+	ril_data.state.radio_state = RADIO_STATE_OFF;
+	ril_data.state.power_state = IPC_PWR_PHONE_STATE_LPM;
 
-	ril_state.radio_state = RADIO_STATE_OFF;
-	ril_state.power_mode = POWER_MODE_LPM;
-	RIL_onUnsolicitedResponse(RIL_UNSOL_RESPONSE_RADIO_STATE_CHANGED, NULL, 0);
+	ril_request_unsolicited(RIL_UNSOL_RESPONSE_RADIO_STATE_CHANGED, NULL, 0);
 }
 
 /**
@@ -56,27 +54,28 @@ void ipc_pwr_phone_state(struct ipc_message_info *info)
 	{
 		/* This shouldn't append for LPM (no respond message) */
 		case IPC_PWR_R(IPC_PWR_PHONE_STATE_LPM):
-			ril_state.power_mode = POWER_MODE_LPM;
-			ril_state.radio_state = RADIO_STATE_OFF;
+			ril_data.state.radio_state = RADIO_STATE_OFF;
+			ril_data.state.power_state = IPC_PWR_PHONE_STATE_LPM;
+
 			LOGD("Got power to LPM");
-			RIL_onUnsolicitedResponse(RIL_UNSOL_RESPONSE_RADIO_STATE_CHANGED, NULL, 0);
+			ril_request_unsolicited(RIL_UNSOL_RESPONSE_RADIO_STATE_CHANGED, NULL, 0);
 		break;
 		case IPC_PWR_R(IPC_PWR_PHONE_STATE_NORMAL):
 			usleep(3000);
 
-			ril_state.power_mode = POWER_MODE_NORMAL;
-			ril_state.radio_state = RADIO_STATE_SIM_NOT_READY;
+			ril_data.state.radio_state = RADIO_STATE_SIM_NOT_READY;
+			ril_data.state.power_state = IPC_PWR_PHONE_STATE_NORMAL;
 			LOGD("Got power to NORMAL");
 
 			/* 
 			 * return RIL_E_SUCCESS is done at IPC_SEC_PIN_STATUS:
 			 * breaks return-from-airplane-mode if done here 
 			 */
-			RIL_onUnsolicitedResponse(RIL_UNSOL_RESPONSE_RADIO_STATE_CHANGED, NULL, 0);
+			ril_request_unsolicited(RIL_UNSOL_RESPONSE_RADIO_STATE_CHANGED, NULL, 0);
 		break;
 	}
 
-	ril_tokens_check();
+	ril_tokens_checks();
 }
 
 /**
@@ -96,21 +95,23 @@ void ril_request_radio_power(RIL_Token t, void *data, size_t datalen)
 	if(power_state > 0) {
 		LOGD("Request power to NORMAL");
 		power_data = IPC_PWR_PHONE_STATE_NORMAL;
-		ipc_fmt_send(IPC_PWR_PHONE_STATE, IPC_TYPE_EXEC, (void *) &power_data, sizeof(power_data), reqGetId(t));
+		ipc_fmt_send(IPC_PWR_PHONE_STATE, IPC_TYPE_EXEC, (void *) &power_data, sizeof(power_data), ril_request_get_id(t));
 
-		ril_state.tokens.radio_power = t;
+		ril_data.tokens.radio_power = t;
 
 		/* Don't tell the RIL we're not off anymore: wait for the message */
 	} else {
 		LOGD("Request power to LPM");
 		power_data = IPC_PWR_PHONE_STATE_LPM;
-		ipc_fmt_send(IPC_PWR_PHONE_STATE, IPC_TYPE_EXEC, (void *) &power_data, sizeof(power_data), reqGetId(t));
+		ipc_fmt_send(IPC_PWR_PHONE_STATE, IPC_TYPE_EXEC, (void *) &power_data, sizeof(power_data), ril_request_get_id(t));
 
-		RIL_onRequestComplete(t, RIL_E_SUCCESS, NULL, 0);
+		ril_request_complete(t, RIL_E_SUCCESS, NULL, 0);
 
 		/* We're not going to get any message to make sure we're in LPM so tell RILJ we're off anyway */
 		ril_globals_init();
-		ril_state_lpm();
-		RIL_onUnsolicitedResponse(RIL_UNSOL_RESPONSE_RADIO_STATE_CHANGED, NULL, 0);
+		ril_data.state.radio_state = RADIO_STATE_OFF;
+		ril_data.state.power_state = IPC_PWR_PHONE_STATE_LPM;
+
+		ril_request_unsolicited(RIL_UNSOL_RESPONSE_RADIO_STATE_CHANGED, NULL, 0);
 	}
 }

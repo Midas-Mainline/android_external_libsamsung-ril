@@ -33,13 +33,13 @@ void ipc_ss_ussd_complete(struct ipc_message_info *info)
 	if(rc < 0) {
 		LOGE("There was an error, aborting USSD request");
 
-		RIL_onRequestComplete(reqGetToken(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
-		ril_state.ussd_state = 0;
+		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
+		ril_data.state.ussd_state = 0;
 
 		return;
 	}
 
-	RIL_onRequestComplete(reqGetToken(info->aseq), RIL_E_SUCCESS, NULL, 0);
+	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_SUCCESS, NULL, 0);
 }
 
 void ril_request_send_ussd(RIL_Token t, void *data, size_t datalen)
@@ -52,7 +52,7 @@ void ril_request_send_ussd(RIL_Token t, void *data, size_t datalen)
 
 	int message_size = 0xc0;
 
-	switch(ril_state.ussd_state) {
+	switch(ril_data.state.ussd_state) {
 		case 0:
 		case IPC_SS_USSD_NO_ACTION_REQUIRE:
 		case IPC_SS_USSD_TERMINATED_BY_NET:
@@ -64,7 +64,7 @@ void ril_request_send_ussd(RIL_Token t, void *data, size_t datalen)
 			data_enc_len = ascii2gsm7(data, (unsigned char**)&data_enc, datalen);
 			if(data_enc_len > message_size) {
 				LOGE("USSD message size is too long, aborting");
-				RIL_onRequestComplete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
+				ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 
 				free(data_enc);
 
@@ -92,7 +92,7 @@ void ril_request_send_ussd(RIL_Token t, void *data, size_t datalen)
 
 			if(data_enc_len > message_size) {
 				LOGE("USSD message size is too long, aborting");
-				RIL_onRequestComplete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
+				ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 
 				free(data_enc);
 
@@ -117,14 +117,14 @@ void ril_request_send_ussd(RIL_Token t, void *data, size_t datalen)
 	if(message == NULL) {
 		LOGE("USSD message is empty, aborting");
 
-		RIL_onRequestComplete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
+		ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 		return;
 	}
 
-	ipc_gen_phone_res_expect_to_func(reqGetId(t), IPC_SS_USSD,
+	ipc_gen_phone_res_expect_to_func(ril_request_get_id(t), IPC_SS_USSD,
 		ipc_ss_ussd_complete);
 
-	ipc_fmt_send(IPC_SS_USSD, IPC_TYPE_EXEC, (void *) message, message_size, reqGetId(t));
+	ipc_fmt_send(IPC_SS_USSD, IPC_TYPE_EXEC, (void *) message, message_size, ril_request_get_id(t));
 }
 
 void ril_request_cancel_ussd(RIL_Token t, void *data, size_t datalen)
@@ -134,11 +134,11 @@ void ril_request_cancel_ussd(RIL_Token t, void *data, size_t datalen)
 	memset(&ussd, 0, sizeof(ussd));
 
 	ussd.state = IPC_SS_USSD_TERMINATED_BY_NET;
-	ril_state.ussd_state = IPC_SS_USSD_TERMINATED_BY_NET;
+	ril_data.state.ussd_state = IPC_SS_USSD_TERMINATED_BY_NET;
 
-	ipc_gen_phone_res_expect_to_complete(reqGetId(t), IPC_SS_USSD);
+	ipc_gen_phone_res_expect_to_complete(ril_request_get_id(t), IPC_SS_USSD);
 
-	ipc_fmt_send(IPC_SS_USSD, IPC_TYPE_EXEC, (void *) &ussd, sizeof(ussd), reqGetId(t));
+	ipc_fmt_send(IPC_SS_USSD, IPC_TYPE_EXEC, (void *) &ussd, sizeof(ussd), ril_request_get_id(t));
 }
 
 void ipc2ril_ussd_state(struct ipc_ss_ussd *ussd, char *message[2])
@@ -182,7 +182,7 @@ void ipc_ss_ussd(struct ipc_message_info *info)
 
 	ipc2ril_ussd_state(ussd, message);
 
-	ril_state.ussd_state = ussd->state;
+	ril_data.state.ussd_state = ussd->state;
 
 	if(ussd->length > 0 && info->length > 0 && info->data != NULL) {
 		codingScheme = sms_get_coding_scheme(ussd->dcs);
@@ -221,5 +221,5 @@ void ipc_ss_ussd(struct ipc_message_info *info)
 		}
 	}
 
-	RIL_onUnsolicitedResponse(RIL_UNSOL_ON_USSD, message, sizeof(message));
+	ril_request_unsolicited(RIL_UNSOL_ON_USSD, message, sizeof(message));
 }

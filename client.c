@@ -38,13 +38,13 @@ struct ril_client *ril_client_new(struct ril_client_funcs *client_funcs)
 	memset(ril_client, 0, sizeof(struct ril_client));
 
 	if(client_funcs->create)
-		ril_client->create = client_funcs->create;
+		ril_client->funcs.create = client_funcs->create;
 
 	if(client_funcs->destroy)
-		ril_client->destroy = client_funcs->destroy;
+		ril_client->funcs.destroy = client_funcs->destroy;
 
 	if(client_funcs->read_loop)
-		ril_client->read_loop = client_funcs->read_loop;
+		ril_client->funcs.read_loop = client_funcs->read_loop;
 
 	pthread_mutex_init(&(ril_client->mutex), NULL);
 
@@ -56,7 +56,6 @@ int ril_client_free(struct ril_client *client)
 	pthread_mutex_destroy(&(client->mutex));
 
 	free(client);
-	client = NULL;
 
 	return 0;
 }
@@ -69,7 +68,7 @@ int ril_client_create(struct ril_client *client)
 	for(c = 10 ; c > 0 ; c--) {
 		LOGD("Creating RIL client inners, try #%d", 11-c);
 
-		rc = client->create(client);
+		rc = client->funcs.create(client);
 
 		if(rc < 0)
 			LOGD("RIL client inners creation failed!");
@@ -97,7 +96,7 @@ int ril_client_destroy(struct ril_client *client)
 	for(c = 5 ; c > 0 ; c--) {
 		LOGD("Destroying RIL client inners, try #%d", 6-c);
 
-		rc = client->destroy(client);
+		rc = client->funcs.destroy(client);
 
 		if(rc < 0)
 			LOGD("RIL client inners destroying failed!");
@@ -134,7 +133,7 @@ void *ril_client_thread(void *data)
 	for(c = 5 ; c > 0 ; c--) {
 		client->state = RIL_CLIENT_READY;
 
-		rc = client->read_loop(client);
+		rc = client->funcs.read_loop(client);
 
 		if(rc < 0) {
 			client->state = RIL_CLIENT_ERROR;

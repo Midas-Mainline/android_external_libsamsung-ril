@@ -21,6 +21,15 @@
 #ifndef _SAMSUNG_RIL_UTIL_H_
 #define _SAMSUNG_RIL_UTIL_H_
 
+struct list_head {
+	struct list_head *prev;
+	struct list_head *next;
+	void *data;
+};
+
+struct list_head *list_head_alloc(void *data, struct list_head *prev, struct list_head *next);
+void list_head_free(struct list_head *list);
+
 void bin2hex(const unsigned char *data, int length, char *buf);
 void hex2bin(const char *data, int length, unsigned char *buf);
 int gsm72ascii(unsigned char *data, char **data_dec, int length);

@@ -19,17 +19,9 @@
  *
  */
 
-#include <time.h>
-#include <pthread.h>
-
 #define LOG_TAG "RIL"
-#include <utils/Log.h>
-#include <telephony/ril.h>
-
 #include "samsung-ril.h"
 #include "util.h"
-
-#define RIL_VERSION_STRING "Samsung RIL"
 
 /**
  * Samsung-RIL TODO:
@@ -47,99 +39,207 @@
  */
 
 /**
- * RIL global vars
+ * RIL data
  */
 
-struct ril_client *ipc_fmt_client;
-struct ril_client *ipc_rfs_client;
-struct ril_client *srs_client;
-
-const struct RIL_Env *ril_env;
-struct ril_state ril_state;
-
-static pthread_mutex_t ril_mutex = PTHREAD_MUTEX_INITIALIZER; 
-
-static void ril_lock(void) {
-	pthread_mutex_lock(&ril_mutex);
-}
-
-static void ril_unlock(void) {
-	pthread_mutex_unlock(&ril_mutex);
-}
+struct ril_data ril_data;
 
 /**
- * RIL request token
+ * RIL requests
  */
 
-struct ril_request_token ril_requests_tokens[0x100];
-int ril_request_id = 0;
-
-void ril_requests_tokens_init(void)
+int ril_request_id_get(void)
 {
-	memset(ril_requests_tokens, 0, sizeof(struct ril_request_token) * 0x100);
+	ril_data.request_id++;
+	ril_data.request_id %= 0xff;
+
+	return ril_data.request_id;
 }
 
-int ril_request_id_new(void)
+int ril_request_id_set(int id)
 {
-	ril_request_id++;
-	ril_request_id %= 0x100;
-	return ril_request_id;
+	id %= 0xff;
+
+	while(ril_data.request_id < id) {
+		ril_data.request_id++;
+		ril_data.request_id %= 0xff;
+	}
+
+	return ril_data.request_id;
 }
 
-int ril_request_reg_id(RIL_Token token)
+int ril_request_register(RIL_Token t, int id)
 {
-	int id = ril_request_id_new();
+	struct ril_request_info *request;
+	struct list_head *list_end;
+	struct list_head *list;
 
-	ril_requests_tokens[id].token = token;
-	ril_requests_tokens[id].canceled = 0;
+	request = calloc(1, sizeof(struct ril_request_info));
+	if(request == NULL)
+		return -1;
 
-	return id;
+	request->token = t;
+	request->id = id;
+	request->canceled = 0;
+
+	list_end = ril_data.requests;
+	while(list_end != NULL && list_end->next != NULL)
+		list_end = list_end->next;
+
+	list = list_head_alloc((void *) request, list_end, NULL);
+
+	if(ril_data.requests == NULL)
+		ril_data.requests = list;
+
+	return 0;
 }
 
-int ril_request_get_id(RIL_Token token)
+void ril_request_unregister(struct ril_request_info *request)
 {
-	int i;
+	struct list_head *list;
 
-	for(i=0 ; i < 0x100 ; i++)
-		if(ril_requests_tokens[i].token == token)
-			return i;
+	if(request == NULL)
+		return;
 
-	// If the token isn't registered yet, register it
-	return ril_request_reg_id(token);
+	list = ril_data.requests;
+	while(list != NULL) {
+		if(list->data == (void *) request) {
+			memset(request, 0, sizeof(struct ril_request_info));
+			free(request);
+
+			if(list == ril_data.requests)
+				ril_data.requests = list->next;
+
+			list_head_free(list);
+
+			break;
+		}
+list_continue:
+		list = list->next;
+	}
+}
+
+struct ril_request_info *ril_request_info_find_id(int id)
+{
+	struct ril_request_info *request;
+	struct list_head *list;
+
+	list = ril_data.requests;
+	while(list != NULL) {
+		request = (struct ril_request_info *) list->data;
+		if(request == NULL)
+			goto list_continue;
+
+		if(request->id == id)
+			return request;
+
+list_continue:
+		list = list->next;
+	}
+
+	return NULL;
+}
+
+struct ril_request_info *ril_request_info_find_token(RIL_Token t)
+{
+	struct ril_request_info *request;
+	struct list_head *list;
+
+	list = ril_data.requests;
+	while(list != NULL) {
+		request = list->data;
+		if(request == NULL)
+			goto list_continue;
+
+		if(request->token == t)
+			return request;
+
+list_continue:
+		list = list->next;
+	}
+
+	return NULL;
+}
+
+int ril_request_set_canceled(RIL_Token t, int canceled)
+{
+	struct ril_request_info *request;
+
+	request = ril_request_info_find_token(t);
+	if(request == NULL)
+		return -1;
+
+	request->canceled = canceled ? 1 : 0;
+
+	return 0;
+}
+
+int ril_request_get_canceled(RIL_Token t)
+{
+	struct ril_request_info *request;
+
+	request = ril_request_info_find_token(t);
+	if(request == NULL)
+		return -1;
+
+	return request->canceled;
 }
 
 RIL_Token ril_request_get_token(int id)
 {
-	return ril_requests_tokens[id].token;
+	struct ril_request_info *request;
+
+	request = ril_request_info_find_id(id);
+	if(request == NULL)
+		return (RIL_Token) 0x00;
+
+	return request->token;
 }
 
-int ril_request_get_canceled(RIL_Token token)
+int ril_request_get_id(RIL_Token t)
 {
-	int id;
+	struct ril_request_info *request;
+	int id, rc;
 
-	id = ril_request_get_id(token);
+	request = ril_request_info_find_token(t);
+	if(request != NULL)
+		return request->id;
 
-	if(ril_requests_tokens[id].canceled > 0)
-		return 1;
-	else
-		return 0;
+	id = ril_request_id_get();
+	rc = ril_request_register(t, id);
+	if(rc < 0)
+		return -1;
+
+	return id;	
 }
 
-void ril_request_set_canceled(RIL_Token token, int canceled)
+void ril_request_complete(RIL_Token t, RIL_Errno e, void *data, size_t length)
 {
-	int id;
+	struct ril_request_info *request;
+	int canceled = 0;
 
-	id = ril_request_get_id(token);
+	request = ril_request_info_find_token(t);
+	if(request == NULL)
+		goto complete;
 
-	ril_requests_tokens[id].canceled = canceled;
+	canceled = ril_request_get_canceled(t);
+	ril_request_unregister(request);
+
+	if(canceled)
+		return;
+
+complete:
+	ril_data.env->OnRequestComplete(t, e, data, length);
 }
 
-void RIL_onRequestComplete(RIL_Token t, RIL_Errno e, void *response, size_t responselen)
+void ril_request_unsolicited(int request, void *data, size_t length)
 {
-	if(!ril_request_get_canceled(t))
-		RIL_onRequestCompleteReal(t, e, response, responselen);
-	else
-		RIL_onRequestCompleteReal(t, RIL_E_CANCELLED, response, responselen);
+	ril_data.env->OnUnsolicitedResponse(request, data, length);
+}
+
+void ril_request_timed_callback(RIL_TimedCallback callback, void *data, const struct timeval *time)
+{
+	ril_data.env->RequestTimedCallback(callback, data, time);
 }
 
 /**
@@ -150,18 +250,18 @@ void ril_tokens_check(void)
 {
 	RIL_Token t;
 
-	if(ril_state.tokens.baseband_version != 0) {
-		if(ril_state.radio_state != RADIO_STATE_OFF) {
-			t = ril_state.tokens.baseband_version;
-			ril_state.tokens.baseband_version = 0;
+	if(ril_data.tokens.baseband_version != 0) {
+		if(ril_data.state.radio_state != RADIO_STATE_OFF) {
+			t = ril_data.tokens.baseband_version;
+			ril_data.tokens.baseband_version = 0;
 			ril_request_baseband_version(t);
 		}
 	}
 
-	if(ril_state.tokens.get_imei != 0 && ril_state.tokens.get_imeisv != 0) {
-		if(ril_state.radio_state != RADIO_STATE_OFF) {
-			t = ril_state.tokens.get_imei;
-			ril_state.tokens.get_imei = 0;
+	if(ril_data.tokens.get_imei != 0 && ril_data.tokens.get_imeisv != 0) {
+		if(ril_data.state.radio_state != RADIO_STATE_OFF) {
+			t = ril_data.tokens.get_imei;
+			ril_data.tokens.get_imei = 0;
 			ril_request_get_imei(t);
 		}
 	}
@@ -173,7 +273,13 @@ void ril_tokens_check(void)
 
 void ipc_fmt_dispatch(struct ipc_message_info *info)
 {
-	ril_lock();
+	if(info == NULL)
+		return;
+
+	RIL_LOCK();
+
+	ril_request_id_set(info->aseq);
+
 	switch(IPC_COMMAND(info)) {
 		/* GEN */
 		case IPC_GEN_PHONE_RES:
@@ -286,15 +392,20 @@ void ipc_fmt_dispatch(struct ipc_message_info *info)
 			ipc_gprs_pdp_context(info);
 			break;
 		default:
-			LOGD("Unhandled command: %s (%04x)", ipc_command_to_str(IPC_COMMAND(info)), IPC_COMMAND(info));
+			LOGE("%s: Unhandled request: %s (%04x)", __func__, ipc_command_to_str(IPC_COMMAND(info)), IPC_COMMAND(info));
 			break;
 	}
-	ril_unlock();
+
+	RIL_UNLOCK();
 }
 
 void ipc_rfs_dispatch(struct ipc_message_info *info)
 {
-	ril_lock();
+	if(info == NULL)
+		return;
+
+	RIL_LOCK();
+
 	switch(IPC_COMMAND(info)) {
 		case IPC_RFS_NV_READ_ITEM:
 			ipc_rfs_nv_read_item(info);
@@ -303,15 +414,20 @@ void ipc_rfs_dispatch(struct ipc_message_info *info)
 			ipc_rfs_nv_write_item(info);
 			break;
 		default:
-			LOGD("Unhandled command: %s (%04x)", ipc_command_to_str(IPC_COMMAND(info)), IPC_COMMAND(info));
+			LOGE("%s: Unhandled request: %s (%04x)", __func__, ipc_command_to_str(IPC_COMMAND(info)), IPC_COMMAND(info));
 			break;
 	}
-	ril_unlock();
+
+	RIL_UNLOCK();
 }
 
 void srs_dispatch(int fd, struct srs_message *message)
 {
-	ril_lock();
+	if(message == NULL)
+		return;
+
+	RIL_LOCK();
+
 	switch(message->command) {
 		case SRS_CONTROL_PING:
 			srs_control_ping(fd, message);
@@ -326,39 +442,25 @@ void srs_dispatch(int fd, struct srs_message *message)
 			srs_snd_set_call_audio_path(message);
 			break;
 		default:
-			LOGD("Unhandled command: (%04x)", message->command);
+			LOGE("%s: Unhandled request: (%04x)", __func__, message->command);
 			break;
 	}
-	ril_unlock();
+
+	RIL_UNLOCK();
 }
 
 /*
- * RIL main dispatch function
+ * RIL interface
  */
 
-int ril_modem_check(void)
+void ril_on_request(int request, void *data, size_t length, RIL_Token t)
 {
-	if(ipc_fmt_client == NULL)
-		return -1;
-
-	if(ipc_fmt_client->state != RIL_CLIENT_READY)
-		return -1;
-
-	return 0;
-}
-
-void onRequest(int request, void *data, size_t datalen, RIL_Token t)
-{
-	ril_lock();
-	if(ril_modem_check() < 0) {
-		RIL_onRequestComplete(t, RIL_E_RADIO_NOT_AVAILABLE, NULL, 0);
-		goto done;
-	}
+	RIL_LOCK();
 
 	switch(request) {
 		/* PWR */
 		case RIL_REQUEST_RADIO_POWER:
-			ril_request_radio_power(t, data, datalen);
+			ril_request_radio_power(t, data, length);
 			break;
 		case RIL_REQUEST_BASEBAND_VERSION:
 			ril_request_baseband_version(t);
@@ -379,41 +481,42 @@ void onRequest(int request, void *data, size_t datalen, RIL_Token t)
 			break;
 		/* SAT */
 		case RIL_REQUEST_STK_SEND_TERMINAL_RESPONSE:
-			requestSatSendTerminalResponse(t, data, datalen);
+			requestSatSendTerminalResponse(t, data, length);
 			break;
 		case RIL_REQUEST_STK_SEND_ENVELOPE_COMMAND:
-			requestSatSendEnvelopeCommand(t, data, datalen);
+			requestSatSendEnvelopeCommand(t, data, length);
 			break;
 		case RIL_REQUEST_STK_HANDLE_CALL_SETUP_REQUESTED_FROM_SIM:
-			RIL_onRequestComplete(t, RIL_E_SUCCESS, NULL, 0);
+			ril_request_complete(t, RIL_E_SUCCESS, NULL, 0);
 			break;
 		/* SS */
 		case RIL_REQUEST_SEND_USSD:
-			ril_request_send_ussd(t, data, datalen);
+			ril_request_send_ussd(t, data, length);
 			break;
 		case RIL_REQUEST_CANCEL_USSD:
-			ril_request_cancel_ussd(t, data, datalen);
+			ril_request_cancel_ussd(t, data, length);
+			break;
 		/* SEC */
 		case RIL_REQUEST_GET_SIM_STATUS:
 			ril_request_get_sim_status(t);
 			break;
 		case RIL_REQUEST_SIM_IO:
-			ril_request_sim_io(t, data, datalen);
+			ril_request_sim_io(t, data, length);
 			break;
 		case RIL_REQUEST_ENTER_SIM_PIN:
-			ril_request_enter_sim_pin(t, data, datalen);
+			ril_request_enter_sim_pin(t, data, length);
 			break;
 		case RIL_REQUEST_CHANGE_SIM_PIN:
-			ril_request_change_sim_pin(t, data, datalen);
+			ril_request_change_sim_pin(t, data, length);
 			break;
 		case RIL_REQUEST_ENTER_SIM_PUK:
-			ril_request_enter_sim_puk(t, data, datalen);
+			ril_request_enter_sim_puk(t, data, length);
 			break;
 		case RIL_REQUEST_QUERY_FACILITY_LOCK:
-			ril_request_query_facility_lock(t, data, datalen);
+			ril_request_query_facility_lock(t, data, length);
 			break;
 		case RIL_REQUEST_SET_FACILITY_LOCK:
-			ril_request_set_facility_lock(t, data, datalen);
+			ril_request_set_facility_lock(t, data, length);
 			break;
 		/* NET */
 		case RIL_REQUEST_OPERATOR:
@@ -432,7 +535,7 @@ void onRequest(int request, void *data, size_t datalen, RIL_Token t)
 			ril_request_get_preferred_network_type(t);
 			break;
 		case RIL_REQUEST_SET_PREFERRED_NETWORK_TYPE:
-			ril_request_set_preferred_network_type(t, data, datalen);
+			ril_request_set_preferred_network_type(t, data, length);
 			break;
 		case RIL_REQUEST_QUERY_NETWORK_SELECTION_MODE:
 			ril_request_query_network_selection_mode(t);
@@ -441,21 +544,21 @@ void onRequest(int request, void *data, size_t datalen, RIL_Token t)
 			ril_request_set_network_selection_automatic(t);
 			break;
 		case RIL_REQUEST_SET_NETWORK_SELECTION_MANUAL:
-			ril_request_set_network_selection_manual(t, data, datalen);
+			ril_request_set_network_selection_manual(t, data, length);
 			break;
 		/* SMS */
 		case RIL_REQUEST_SEND_SMS:
-			ril_request_send_sms(t, data, datalen);
+			ril_request_send_sms(t, data, length);
 			break;
 		case RIL_REQUEST_SEND_SMS_EXPECT_MORE:
-			ril_request_send_sms_expect_more(t, data, datalen);
+			ril_request_send_sms_expect_more(t, data, length);
 			break;
 		case RIL_REQUEST_SMS_ACKNOWLEDGE:
-			ril_request_sms_acknowledge(t, data, datalen);
+			ril_request_sms_acknowledge(t, data, length);
 			break;
 		/* CALL */
 		case RIL_REQUEST_DIAL:
-			ril_request_dial(t, data, datalen);
+			ril_request_dial(t, data, length);
 			break;
 		case RIL_REQUEST_GET_CURRENT_CALLS:
 			ril_request_get_current_calls(t);
@@ -472,20 +575,20 @@ void onRequest(int request, void *data, size_t datalen, RIL_Token t)
 			ril_request_last_call_fail_cause(t);
 			break;
 		case RIL_REQUEST_DTMF:
-			ril_request_dtmf(t, data, datalen);
-                       break;
+			ril_request_dtmf(t, data, length);
+			break;
 		case RIL_REQUEST_DTMF_START:
-			ril_request_dtmf_start(t, data, datalen);
-                       break;
+			ril_request_dtmf_start(t, data, length);
+			break;
 		case RIL_REQUEST_DTMF_STOP:
 			ril_request_dtmf_stop(t);
-                       break;
+			break;
 		/* GPRS */
 		case RIL_REQUEST_SETUP_DATA_CALL:
-			ril_request_setup_data_call(t, data, datalen);
+			ril_request_setup_data_call(t, data, length);
 			break;
 		case RIL_REQUEST_DEACTIVATE_DATA_CALL:
-			ril_request_deactivate_data_call(t, data, datalen);
+			ril_request_deactivate_data_call(t, data, length);
 			break;
 		case RIL_REQUEST_LAST_DATA_CALL_FAIL_CAUSE:
 			ril_request_last_data_call_fail_cause(t);
@@ -495,90 +598,91 @@ void onRequest(int request, void *data, size_t datalen, RIL_Token t)
 			break;
 		/* SND */
 		case RIL_REQUEST_SET_MUTE:
-			ril_request_set_mute(t, data, datalen);
+			ril_request_set_mute(t, data, length);
+			break;
 		/* OTHER */
 		case RIL_REQUEST_SCREEN_STATE:
 			/* This doesn't affect anything */
-			RIL_onRequestComplete(t, RIL_E_SUCCESS, NULL, 0);
+			ril_request_complete(t, RIL_E_SUCCESS, NULL, 0);
 			break;
 		default:
-			LOGE("Request not implemented: %d\n", request);
-			RIL_onRequestComplete(t, RIL_E_REQUEST_NOT_SUPPORTED, NULL, 0);
+			LOGE("%s: Unhandled request: %d", __func__, request);
+			ril_request_complete(t, RIL_E_REQUEST_NOT_SUPPORTED, NULL, 0);
 			break;
 	}
-done:
-	ril_unlock();
+
+	RIL_UNLOCK();
 }
 
-/**
- * RILJ related functions
- */
-
-RIL_RadioState currentState()
+RIL_RadioState ril_on_state_request(void)
 {
-	LOGD("currentState()");
-	return ril_state.radio_state;
+	return ril_data.state.radio_state;
 }
 
-int onSupports(int requestCode)
+int ril_on_supports(int request)
 {
-	switch(requestCode) {
-		default:
-			return 1;
-	}
+	return 1;
 }
 
-void onCancel(RIL_Token t)
+void ril_on_cancel(RIL_Token t)
 {
 	ril_request_set_canceled(t, 1);
 }
 
-const char *getVersion(void)
+const char *ril_get_version(void)
 {
 	return RIL_VERSION_STRING;
 }
 
 /**
- * RIL init function
+ * RIL init
  */
+
+void ril_data_init(void)
+{
+	memset(&ril_data, 0, sizeof(ril_data));
+
+	pthread_mutex_init(&ril_data.mutex, NULL);
+}
 
 void ril_globals_init(void)
 {
-	memset(&ril_state, 0, sizeof(ril_state));
-	memset(&(ril_state.tokens), 0, sizeof(struct ril_tokens));
-
-	ril_requests_tokens_init();
 	ipc_gen_phone_res_expects_init();
 	ril_gprs_connections_init();
 	ril_request_sms_init();
 	ipc_sms_tpid_queue_init();
 }
 
-void ril_state_lpm(void)
-{
-	ril_state.radio_state = RADIO_STATE_OFF;
-	ril_state.power_mode = POWER_MODE_LPM;
-}
-
+/**
+ * RIL interface
+ */
 
 static const RIL_RadioFunctions ril_ops = {
 	SAMSUNG_RIL_VERSION,
-	onRequest,
-	currentState,
-	onSupports,
-	onCancel,
-	getVersion
+	ril_on_request,
+	ril_on_state_request,
+	ril_on_supports,
+	ril_on_cancel,
+	ril_get_version
 };
 
 const RIL_RadioFunctions *RIL_Init(const struct RIL_Env *env, int argc, char **argv)
 {
+	struct ril_client *ipc_fmt_client;
+	struct ril_client *ipc_rfs_client;
+	struct ril_client *srs_client;
 	int rc;
 
-	ril_env = env;
+	if(env == NULL)
+		return NULL;
+
+	ril_data_init();
+	ril_data.env = (struct RIL_Env *) env;
+
+	RIL_LOCK();
 
 	LOGD("Creating IPC FMT client");
 
-	ril_lock();
 	ipc_fmt_client = ril_client_new(&ipc_fmt_client_funcs);
 	rc = ril_client_create(ipc_fmt_client);
 
@@ -594,6 +698,7 @@ const RIL_RadioFunctions *RIL_Init(const struct RIL_Env *env, int argc, char **a
 		goto ipc_rfs;
 	}
 
+	ril_data.ipc_fmt_client = ipc_fmt_client;
 	LOGD("IPC FMT client ready");
 
 ipc_rfs:
@@ -614,6 +719,7 @@ ipc_rfs:
 		goto srs;
 	}
 
+	ril_data.ipc_rfs_client = ipc_rfs_client;
 	LOGD("IPC RFS client ready");
 
 srs:
@@ -634,18 +740,14 @@ srs:
 		goto end;
 	}
 
+	ril_data.srs_client = srs_client;
 	LOGD("SRS client ready");
 
 end:
-	ril_globals_init();
-	ril_state_lpm();
-	ril_unlock();
+	ril_data.state.radio_state = RADIO_STATE_OFF;
+	ril_data.state.power_state = IPC_PWR_PHONE_STATE_LPM;
+
+	RIL_UNLOCK();
 
 	return &ril_ops;
 }
-
-int main(int argc, char *argv[])
-{
-	return 0;
-}
-

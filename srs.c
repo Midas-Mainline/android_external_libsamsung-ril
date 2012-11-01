@@ -199,12 +199,12 @@ static int srs_read_loop(struct ril_client *client)
 		return -1;
 	}
 
-	if(client->object == NULL) {
-		LOGE("client object is NULL, aborting!");
+	if(client->data == NULL) {
+		LOGE("client data is NULL, aborting!");
 		return -1;
 	}
 
-	int server_fd = ((int*)client->object)[0];
+	int server_fd = ((int*)client->data)[0];
 
 	while(1) {
 		if(server_fd < 0) {
@@ -252,7 +252,7 @@ static int srs_create(struct ril_client *client)
 		goto fail;
 	}
 
-	client->object = (void *) srs_server;
+	client->data = (void *) srs_server;
 	if((*srs_server = srs_server_open()) < 0) {
 		LOGE("%s: samsung-ril-socket server open failed", __FUNCTION__);
 		goto fail;
@@ -273,7 +273,7 @@ static int srs_destroy(struct ril_client *client)
 		return 0;
 	}
 
-	int *srs_server = (int*) client->object;
+	int *srs_server = (int*) client->data;
 	if (!srs_server) {
 		return 0;
 	}

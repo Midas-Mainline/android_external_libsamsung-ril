@@ -29,6 +29,44 @@
 #include "samsung-ril.h"
 
 /**
+ * List
+ */
+
+struct list_head *list_head_alloc(void *data, struct list_head *prev, struct list_head *next)
+{
+	struct list_head *list;
+
+	list = calloc(1, sizeof(struct list_head));
+	if(list == NULL)
+		return NULL;
+
+	list->data = data;
+	list->prev = prev;
+	list->next = next;
+
+	if(prev != NULL)
+		prev->next = list;
+	if(next != NULL)
+		next->prev = list;
+
+	return list;
+}
+
+void list_head_free(struct list_head *list)
+{
+	if(list == NULL)
+		return;
+
+	if(list->next != NULL)
+		list->next->prev = list->prev;
+	if(list->prev != NULL)
+		list->prev->next = list->next;
+
+	memset(list, 0, sizeof(struct list_head));
+	free(list);
+}
+
+/**
  * Converts a hexidecimal string to binary
  */
 void hex2bin(const char *data, int length, unsigned char *buf)
