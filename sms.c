@@ -609,6 +609,20 @@ list_continue:
  *   Notify RILJ about the incoming message
  */
 
+void ipc_sms_incoming_msg_next(void)
+{
+	struct ipc_sms_incoming_msg_info *incoming_msg;
+
+	ril_data.state.sms_incoming_msg_tpid = 0;
+
+	incoming_msg = ipc_sms_incoming_msg_info_find();
+	if(incoming_msg == NULL)
+		return;
+
+	ipc_sms_incoming_msg_complete(incoming_msg->pdu, incoming_msg->length, incoming_msg->type, incoming_msg->tpid);
+	ipc_sms_incoming_msg_unregister(incoming_msg);
+}
+
 void ipc_sms_incoming_msg_complete(char *pdu, int length, unsigned char type, unsigned char tpid)
 {
 	if(pdu == NULL || length <= 0)
@@ -668,7 +682,6 @@ void ipc_sms_incoming_msg(struct ipc_message_info *info)
  */
 void ril_request_sms_acknowledge(RIL_Token t, void *data, size_t length)
 {
-	struct ipc_sms_incoming_msg_info *incoming_msg;
 	struct ipc_sms_deliver_report_request report_msg;
 	int success, fail_cause;
 
@@ -681,7 +694,7 @@ void ril_request_sms_acknowledge(RIL_Token t, void *data, size_t length)
 	if(ril_data.state.sms_incoming_msg_tpid == 0) {
 		LOGE("There is no SMS message to ACK!");
 		ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
-
+		ipc_sms_incoming_msg_next();
 		return;
 	}
 
@@ -694,14 +707,7 @@ void ril_request_sms_acknowledge(RIL_Token t, void *data, size_t length)
 
 	ipc_fmt_send(IPC_SMS_DELIVER_REPORT, IPC_TYPE_EXEC, (void *) &report_msg, sizeof(report_msg), ril_request_get_id(t));
 
-	ril_data.state.sms_incoming_msg_tpid = 0;
-
-	incoming_msg = ipc_sms_incoming_msg_info_find();
-	if(incoming_msg == NULL)
-		return;
-
-	ipc_sms_incoming_msg_complete(incoming_msg->pdu, incoming_msg->length, incoming_msg->type, incoming_msg->tpid);
-	ipc_sms_incoming_msg_unregister(incoming_msg);
+	ipc_sms_incoming_msg_next();
 }
 
 /**

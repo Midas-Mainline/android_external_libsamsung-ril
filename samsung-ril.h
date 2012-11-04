@@ -334,6 +334,7 @@ int ipc_sms_incoming_msg_register(char *pdu, int length, unsigned char type, uns
 void ipc_sms_incoming_msg_unregister(struct ipc_sms_incoming_msg_info *incoming_msg);
 struct ipc_sms_incoming_msg_info *ipc_sms_incoming_msg_info_find(void);
 
+void ipc_sms_incoming_msg_next(void);
 void ipc_sms_incoming_msg_complete(char *pdu, int length, unsigned char type, unsigned char tpid);
 void ipc_sms_incoming_msg(struct ipc_message_info *info);
 void ril_request_sms_acknowledge(RIL_Token t, void *data, size_t length);
