@@ -26,13 +26,6 @@
 #include "util.h"
 
 /**
- * SMS global vars
- */
-
-struct ril_request_sms ril_request_sms[10];
-int ril_request_sms_lock = 0;
-
-/**
  * Format conversion utils
  */
 
@@ -66,158 +59,171 @@ RIL_Errno ipc2ril_sms_ack_error(unsigned short error, int *error_code)
 }
 
 /**
- * RIL request SMS (queue) functions
- */
-
-void ril_request_sms_init(void)
-{
-	memset(ril_request_sms, 0, sizeof(struct ril_request_sms) * 10);
-	ril_request_sms_lock = 0;
-}
-
-void ril_request_sms_del(int id)
-{
-	if(id < 0 || id > 9) {
-		LOGD("Invalid id (%d) for the SMS queue", id);
-		return;
-	}
-
-	ril_request_sms[id].aseq = 0;
-	ril_request_sms[id].pdu_len = 0;
-	ril_request_sms[id].smsc_len = 0;
-
-	if(ril_request_sms[id].pdu != NULL)
-		free(ril_request_sms[id].pdu);
-	if(ril_request_sms[id].smsc != NULL)
-		free(ril_request_sms[id].smsc);
-}
-
-void ril_request_sms_clear(int id)
-{
-	if(id < 0 || id > 9) {
-		LOGD("Invalid id (%d) for the SMS queue", id);
-		return;
-	}
-
-	ril_request_sms[id].aseq = 0;
-	ril_request_sms[id].pdu = NULL;
-	ril_request_sms[id].pdu_len = 0;
-	ril_request_sms[id].smsc = NULL;
-	ril_request_sms[id].smsc_len = 0;
-}
-
-int ril_request_sms_new(void)
-{
-	int id = -1;
-	int i;
-
-	/* Find the highest place in the queue */
-	for(i=10 ; i > 0 ; i--) {
-		if(ril_request_sms[i-1].aseq && ril_request_sms[i-1].pdu) {
-			break;
-		}
-
-		id = i-1;
-	}
-
-	if(id < 0) {
-		LOGE("The SMS queue is full, removing the oldest req");
-
-		/* Free the request at index 0 (oldest) */
-		ril_request_sms_del(0);
-
-		/* Increase all the requests id to have the last one free */
-		for(i=1 ; i < 10 ; i++) {
-			LOGD("SMS queue: moving %d -> %d", i, i-1);
-			memcpy(&ril_request_sms[i-1], &ril_request_sms[i], sizeof(struct ril_request_sms));
-		}
-
-		/* We must not free the pointers here as we copied these at index 8 */
-
-		ril_request_sms_clear(9);
-
-		return 9;
-	}
-
-	return id;
-}
-
-int ril_request_sms_add(unsigned char aseq,
-			char *pdu, int pdu_len, 
-			char *smsc, int smsc_len)
-{
-	int id = ril_request_sms_new();
-
-	LOGD("Storing new SMS request in the queue at index %d\n", id);
-
-	ril_request_sms[id].aseq = aseq;
-	ril_request_sms[id].smsc_len = smsc_len;
-	ril_request_sms[id].pdu_len = pdu_len;
-
-	if(pdu != NULL) {
-		ril_request_sms[id].pdu = malloc(pdu_len);
-		memcpy(ril_request_sms[id].pdu, pdu, pdu_len);
-	}
-
-	if(smsc != NULL) {
-		ril_request_sms[id].smsc = malloc(smsc_len);
-		memcpy(ril_request_sms[id].smsc, smsc, smsc_len);
-	}
-
-	return id;
-}
-
-int ril_request_sms_get_id(unsigned char aseq)
-{
-	int i;
-
-	for(i=0 ; i < 10 ; i++) {
-		if(ril_request_sms[i].aseq == aseq) {
-			return i;
-		}
-	}
-
-	return -1;
-}
-
-int ril_request_sms_get_next(void)
-{
-	int id = -1;
-	int i;
-
-	for(i=0 ; i < 10 ; i++) {
-		if(ril_request_sms[i].aseq && ril_request_sms[i].pdu) {
-			id = i;
-		}
-	}
-
-	if(id < 0)
-		LOGD("Nothing left on the queue!");
-	else
-		LOGD("Next queued request is at id #%d\n", id);
-
-	return id;
-}
-
-int ril_request_sms_lock_acquire(void)
-{
-	if(ril_request_sms_lock > 0) {
-		return 0;
-	} else
-	{
-		ril_request_sms_lock = 1;
-		return 1;
-	}
-}
-
-void ril_request_sms_lock_release(void)
-{
-	ril_request_sms_lock = 0;
-}
-
-/**
  * Outgoing SMS functions
  */
+
+int ril_request_send_sms_register(char *pdu, int pdu_length, unsigned char *smsc, int smsc_length, RIL_Token t)
+{
+	struct ril_request_send_sms_info *send_sms;
+	struct list_head *list_end;
+	struct list_head *list;
+
+	send_sms = calloc(1, sizeof(struct ril_request_send_sms_info));
+	if(send_sms == NULL)
+		return -1;
+
+	send_sms->pdu = pdu;
+	send_sms->pdu_length = pdu_length;
+	send_sms->smsc = smsc;
+	send_sms->smsc_length = smsc_length;
+	send_sms->token = t;
+
+	list_end = ril_data.outgoing_sms;
+	while(list_end != NULL && list_end->next != NULL)
+		list_end = list_end->next;
+
+	list = list_head_alloc((void *) send_sms, list_end, NULL);
+
+	if(ril_data.outgoing_sms == NULL)
+		ril_data.outgoing_sms = list;
+
+	return 0;
+}
+
+void ril_request_send_sms_unregister(struct ril_request_send_sms_info *send_sms)
+{
+	struct list_head *list;
+
+	if(send_sms == NULL)
+		return;
+
+	list = ril_data.outgoing_sms;
+	while(list != NULL) {
+		if(list->data == (void *) send_sms) {
+			memset(send_sms, 0, sizeof(struct ril_request_send_sms_info));
+			free(send_sms);
+
+			if(list == ril_data.outgoing_sms)
+				ril_data.outgoing_sms = list->next;
+
+			list_head_free(list);
+
+			break;
+		}
+list_continue:
+		list = list->next;
+	}
+}
+
+struct ril_request_send_sms_info *ril_request_send_sms_info_find(void)
+{
+	struct ril_request_send_sms_info *send_sms;
+	struct list_head *list;
+
+	list = ril_data.outgoing_sms;
+	while(list != NULL) {
+		send_sms = (struct ril_request_send_sms_info *) list->data;
+		if(send_sms == NULL)
+			goto list_continue;
+
+		return send_sms;
+
+list_continue:
+		list = list->next;
+	}
+
+	return NULL;
+}
+
+struct ril_request_send_sms_info *ril_request_send_sms_info_find_token(RIL_Token t)
+{
+	struct ril_request_send_sms_info *send_sms;
+	struct list_head *list;
+
+	list = ril_data.outgoing_sms;
+	while(list != NULL) {
+		send_sms = (struct ril_request_send_sms_info *) list->data;
+		if(send_sms == NULL)
+			goto list_continue;
+
+		if(send_sms->token == t)
+			return send_sms;
+
+list_continue:
+		list = list->next;
+	}
+
+	return NULL;
+}
+
+void ril_request_send_sms_info_clear(struct ril_request_send_sms_info *send_sms)
+{
+	if(send_sms == NULL)
+		return;
+
+	if(send_sms->pdu != NULL)
+		free(send_sms->pdu);
+
+	if(send_sms->smsc != NULL)
+		free(send_sms->smsc);
+}
+
+void ril_request_send_sms_next(void)
+{
+	struct ril_request_send_sms_info *send_sms;
+	RIL_Token t;
+	char *pdu;
+	int pdu_length;
+	unsigned char *smsc;
+	int smsc_length;
+	int rc;
+
+	ril_data.tokens.outgoing_sms = (RIL_Token) 0x00;
+
+	send_sms = ril_request_send_sms_info_find();
+	if(send_sms == NULL)
+		return;
+
+	t = send_sms->token;
+	pdu = send_sms->pdu;
+	pdu_length = send_sms->pdu_length;
+	smsc = send_sms->smsc;
+	smsc_length = send_sms->smsc_length;
+
+	ril_request_send_sms_unregister(send_sms);
+
+	if(pdu == NULL) {
+		LOGE("SMS send request has no valid PDU");
+		if(smsc != NULL)
+			free(smsc);
+		return;
+	}
+
+	ril_data.tokens.outgoing_sms = t;
+	if(smsc == NULL) {
+		// We first need to get SMS SVC before sending the message
+		LOGD("We have no SMSC, let's ask one");
+
+		rc = ril_request_send_sms_register(pdu, pdu_length, NULL, 0, t);
+		if(rc < 0) {
+			LOGE("Unable to add the request to the list");
+
+			ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
+			if(pdu != NULL)
+				free(pdu);
+			// Send the next SMS in the list
+			ril_request_send_sms_next();
+		}
+
+		ipc_fmt_send_get(IPC_SMS_SVC_CENTER_ADDR, ril_request_get_id(t));
+	} else {
+		ril_request_send_sms_complete(t, pdu, pdu_length, smsc, smsc_length);
+		if(pdu != NULL)
+			free(pdu);
+		if(smsc != NULL)
+			free(smsc);
+	}
+}
 
 /**
  * In: RIL_REQUEST_SEND_SMS
@@ -225,156 +231,53 @@ void ril_request_sms_lock_release(void)
  *
  * Out: IPC_SMS_SEND_MSG
  */
-void ril_request_send_sms(RIL_Token t, void *data, size_t datalen)
-{
-	char **request = (char **) data;
-	char *pdu = request[1];
-	int pdu_len = pdu != NULL ? strlen(pdu) : 0;
-	char *smsc = request[0];
-	int smsc_len = smsc != NULL ? strlen(smsc) : 0;
-
-	if(!ril_request_sms_lock_acquire()) {
-		LOGD("The SMS lock is already taken, adding req to the SMS queue");
-
-		ril_request_sms_add(ril_request_get_id(t), pdu, pdu_len, smsc, smsc_len);
-		return;
-	}
-
-	/* We first need to get SMS SVC before sending the message */
-	if(smsc == NULL) {
-		LOGD("We have no SMSC, let's ask one");
-
-		/* Enqueue the request */
-		ril_request_sms_add(ril_request_get_id(t), pdu, pdu_len, NULL, 0);
-
-		ipc_fmt_send_get(IPC_SMS_SVC_CENTER_ADDR, ril_request_get_id(t));
-
-	} else {
-		ril_request_send_sms_complete(t, pdu, smsc);
-	}
-}
-
-/**
- * In: RIL_REQUEST_SEND_SMS_EXPECT_MORE
- *   Send an SMS message. Identical to RIL_REQUEST_SEND_SMS,
- *   except that more messages are expected to be sent soon. If possible,
- *   keep SMS relay protocol link open (eg TS 27.005 AT+CMMS command)
- *
- * Out: IPC_SMS_SEND_MSG
- */
-void ril_request_send_sms_expect_more(RIL_Token t, void *data, size_t datalen)
-{
-	/* No particular treatment here, we already have a queue */
-	ril_request_send_sms(t, data, datalen);
-}
-
-/**
- * Send the next SMS in the queue
- */
-int ril_request_send_sms_next(void)
-{
-	int id = ril_request_sms_get_next();
-
-	char *request[2] = { NULL };
-	unsigned char aseq;
-	char *pdu;
-	char *smsc;
-
-	/* When calling this function, you assume you're done with the previous sms req */
-	ril_request_sms_lock_release();
-
-	if(id < 0) 
-		return -1;
-
-	LOGD("Sending queued SMS!");
-
-	aseq = ril_request_sms[id].aseq;
-	pdu = ril_request_sms[id].pdu;
-	smsc = ril_request_sms[id].smsc;
-
-	request[0] = smsc;
-	request[1] = pdu;
-
-	/* We need to clear here to prevent infinite loop, but we can't free mem yet */
-	ril_request_sms_clear(id);
-
-	ril_request_send_sms(ril_request_get_token(aseq), (void *) request, sizeof(request));
-
-	if(pdu != NULL)
-		free(pdu);
-
-	if(smsc != NULL)
-		free(smsc);
-
-	return id;
-}
-
-/**
- * Complete (continue) the send_sms request (do the real sending)
- */
-void ril_request_send_sms_complete(RIL_Token t, char *pdu, char *smsc)
+void ril_request_send_sms_complete(RIL_Token t, char *pdu, int pdu_length, unsigned char *smsc, int smsc_length)
 {
 	struct ipc_sms_send_msg_request send_msg;
-	unsigned char send_msg_type = IPC_SMS_MSG_SINGLE;
-	int send_msg_len;
+	unsigned char send_msg_type;
 
-	char *data;
-	int data_len;
+	unsigned char *pdu_hex;
+	int pdu_hex_length;
 
-	char *pdu_dec;
-	unsigned char pdu_dec_len;
+	void *data;
+	int length;
 
-	int pdu_len;
-	unsigned char smsc_len;
+	unsigned char *p;
 
-	char *p;
-
-	if(pdu == NULL || smsc == NULL) {
-		LOGE("Provided PDU or SMSC is NULL! Aborting");
+	if(pdu == NULL || pdu_length <= 0 || smsc == NULL || smsc_length <= 0) {
+		LOGE("Provided PDU or SMSC is invalid! Aborting");
 
 		ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
+		// Send the next SMS in the list
+		ril_request_send_sms_next();
 
-		/* Release the lock so we can accept new requests */
-		ril_request_sms_lock_release();
-		/* Now send the next message in the queue if any */
+		return;
+	}
+	if((pdu_length / 2 + smsc_length) > 0xfe) {
+		LOGE("PDU or SMSC too large, aborting");
+
+		ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
+		// Send the next SMS in the list
 		ril_request_send_sms_next();
 
 		return;
 	}
 
-	/* Setting various len vars */
-	pdu_len = strlen(pdu);
+	pdu_hex_length = pdu_length % 2 == 0 ? pdu_length / 2 :
+		(pdu_length ^ 1) / 2;
 
-	if(pdu_len / 2 > 0xff) {
-		LOGE("PDU is too large, aborting");
+	// Length of the final message
+	length = sizeof(send_msg) + pdu_hex_length + smsc_length;
 
-		ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
+	LOGD("Sending SMS message (length: 0x%x)!", length);
 
-		/* Release the lock so we can accept new requests */
-		ril_request_sms_lock_release();
-		/* Now send the next message in the queue if any */
-		ril_request_send_sms_next();
-
-		return;
-	}
-
-	pdu_dec_len = pdu_len / 2;
-	smsc_len = smsc[0];
-	send_msg_len = sizeof(struct ipc_sms_send_msg_request);
-
-	/* Length of the final message */
-	data_len = pdu_dec_len + smsc_len + send_msg_len;
-
-	LOGD("Sending SMS message!");
-
-	LOGD("data_len is 0x%x + 0x%x + 0x%x = 0x%x\n", pdu_dec_len, smsc_len, send_msg_len, data_len);
-
-	pdu_dec = malloc(pdu_dec_len);
-	hex2bin(pdu, pdu_len, (unsigned char*)pdu_dec);
+	pdu_hex = calloc(1, pdu_hex_length);
+	hex2bin(pdu, pdu_length, pdu_hex);
+	send_msg_type = IPC_SMS_MSG_SINGLE;
 
 	/* PDU operations */
 	int pdu_tp_da_index = 2;
-	unsigned char pdu_tp_da_len = pdu_dec[pdu_tp_da_index];
+	unsigned char pdu_tp_da_len = pdu_hex[pdu_tp_da_index];
 
 	if(pdu_tp_da_len > 0xff / 2) {
 		LOGE("PDU TP-DA Len failed (0x%x)\n", pdu_tp_da_len);
@@ -384,7 +287,7 @@ void ril_request_send_sms_complete(RIL_Token t, char *pdu, char *smsc)
 	LOGD("PDU TP-DA Len is 0x%x\n", pdu_tp_da_len);
 
 	int pdu_tp_udh_index = pdu_tp_da_index + pdu_tp_da_len;
-	unsigned char pdu_tp_udh_len = pdu_dec[pdu_tp_udh_index];
+	unsigned char pdu_tp_udh_len = pdu_hex[pdu_tp_udh_index];
 
 	if(pdu_tp_udh_len > 0xff / 2 || pdu_tp_udh_len < 5) {
 		LOGE("PDU TP-UDH Len failed (0x%x)\n", pdu_tp_udh_len);
@@ -394,7 +297,7 @@ void ril_request_send_sms_complete(RIL_Token t, char *pdu, char *smsc)
 	LOGD("PDU TP-UDH Len is 0x%x\n", pdu_tp_udh_len);
 
 	int pdu_tp_udh_num_index = pdu_tp_udh_index + 4;
-	unsigned char pdu_tp_udh_num = pdu_dec[pdu_tp_udh_num_index];
+	unsigned char pdu_tp_udh_num = pdu_hex[pdu_tp_udh_num_index];
 
 	if(pdu_tp_udh_num > 0xf) {
 		LOGE("PDU TP-UDH Num failed (0x%x)\n", pdu_tp_udh_num);
@@ -402,7 +305,7 @@ void ril_request_send_sms_complete(RIL_Token t, char *pdu, char *smsc)
 	}
 
 	int pdu_tp_udh_seq_index = pdu_tp_udh_index + 5;
-	unsigned char pdu_tp_udh_seq = pdu_dec[pdu_tp_udh_seq_index];
+	unsigned char pdu_tp_udh_seq = pdu_hex[pdu_tp_udh_seq_index];
 
 	if(pdu_tp_udh_seq > 0xf || pdu_tp_udh_seq > pdu_tp_udh_num) {
 		LOGE("PDU TP-UDH Seq failed (0x%x)\n", pdu_tp_udh_seq);
@@ -417,46 +320,114 @@ void ril_request_send_sms_complete(RIL_Token t, char *pdu, char *smsc)
 	}
 
 pdu_end:
-	/* Alloc and clean memory for the final message */
-	data = malloc(data_len);
-	memset(&send_msg, 0, sizeof(struct ipc_sms_send_msg_request));
+	// Alloc memory for the final message
+	data = calloc(1, length);
 
-	/* Fill the IPC structure part of the message */
+	// Clear and fill the IPC structure part of the message
+	memset(&send_msg, 0, sizeof(struct ipc_sms_send_msg_request));
 	send_msg.type = IPC_SMS_TYPE_OUTGOING;
 	send_msg.msg_type = send_msg_type;
-	send_msg.length = (unsigned char) (pdu_dec_len + smsc_len + 1);
-	send_msg.smsc_len = smsc_len;
+	send_msg.length = (unsigned char) (pdu_hex_length + smsc_length + 1);
+	send_msg.smsc_len = smsc_length;
 
-	/* Copy the other parts of the message */
+	// Copy the parts of the message
 	p = data;
-	memcpy(p, &send_msg, send_msg_len);
-	p +=  send_msg_len;
-	memcpy(p, (char *) (smsc + 1), smsc_len); // First SMSC bytes is length
-	p += smsc_len;
-	memcpy(p, pdu_dec, pdu_dec_len);
+	memcpy(p, &send_msg, sizeof(send_msg));
+	p += sizeof(send_msg);
+	memcpy(p, smsc, smsc_length);
+	p += smsc_length;
+	memcpy(p, pdu_hex, pdu_hex_length);
 
 	ipc_gen_phone_res_expect_to_func(ril_request_get_id(t), IPC_SMS_SEND_MSG, ipc_sms_send_msg_complete);
 
-	ipc_fmt_send(IPC_SMS_SEND_MSG, IPC_TYPE_EXEC, (void *) data, data_len, ril_request_get_id(t));
+	ipc_fmt_send(IPC_SMS_SEND_MSG, IPC_TYPE_EXEC, data, length, ril_request_get_id(t));
 
-	free(pdu_dec);
+	free(pdu_hex);
 	free(data);
 }
 
-void ipc_sms_send_msg_complete(struct ipc_message_info *info)
+void ril_request_send_sms(RIL_Token t, void *data, size_t length)
 {
-	struct ipc_gen_phone_res *phone_res = (struct ipc_gen_phone_res *) info->data;
+	char *pdu;
+	int pdu_length;
+	unsigned char *smsc;
+	int smsc_length;
+	int rc;
 
-	if(ipc_gen_phone_res_check(phone_res) < 0) {
-		LOGE("IPC_GEN_PHONE_RES indicates error, abort request to RILJ");
+	if(data == NULL || length < 2 * sizeof(char *))
+		return;
 
-		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
+	pdu = ((char **) data)[1];
+	smsc = ((unsigned char **) data)[0];
+	pdu_length = 0;
+	smsc_length = 0;
 
-		/* Release the lock so we can accept new requests */
-		ril_request_sms_lock_release();
-		/* Now send the next message in the queue if any */
-		ril_request_send_sms_next();
+	if(pdu != NULL) {
+		pdu_length = strlen(pdu) + 1;
+		pdu = strdup(pdu);
 	}
+	if(smsc != NULL) {
+		smsc_length = strlen((char *) smsc);
+		smsc = (unsigned char *) strdup((char *) smsc);
+	}
+
+	if(ril_data.tokens.outgoing_sms != (RIL_Token) 0x00) {
+		LOGD("Another outgoing SMS is being processed, adding to the list");
+
+		rc = ril_request_send_sms_register(pdu, pdu_length, smsc, smsc_length, t);
+		if(rc < 0) {
+			LOGE("Unable to add the request to the list");
+
+			ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
+			if(pdu != NULL)
+				free(pdu);
+			if(smsc != NULL)
+				free(smsc);
+			// Send the next SMS in the list
+			ril_request_send_sms_next();
+		}
+
+		return;
+	}
+
+	ril_data.tokens.outgoing_sms = t;
+	if(smsc == NULL) {
+		// We first need to get SMS SVC before sending the message
+		LOGD("We have no SMSC, let's ask one");
+
+		rc = ril_request_send_sms_register(pdu, pdu_length, NULL, 0, t);
+		if(rc < 0) {
+			LOGE("Unable to add the request to the list");
+
+			ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
+			if(pdu != NULL)
+				free(pdu);
+			// Send the next SMS in the list
+			ril_request_send_sms_next();
+		}
+
+		ipc_fmt_send_get(IPC_SMS_SVC_CENTER_ADDR, ril_request_get_id(t));
+	} else {
+		ril_request_send_sms_complete(t, pdu, pdu_length, smsc, smsc_length);
+		if(pdu != NULL)
+			free(pdu);
+		if(smsc != NULL)
+			free(smsc);
+	}
+}
+
+/**
+ * In: RIL_REQUEST_SEND_SMS_EXPECT_MORE
+ *   Send an SMS message. Identical to RIL_REQUEST_SEND_SMS,
+ *   except that more messages are expected to be sent soon. If possible,
+ *   keep SMS relay protocol link open (eg TS 27.005 AT+CMMS command)
+ *
+ * Out: IPC_SMS_SEND_MSG
+ */
+void ril_request_send_sms_expect_more(RIL_Token t, void *data, size_t length)
+{
+	/* No particular treatment here, we already have a queue */
+	ril_request_send_sms(t, data, length);
 }
 
 /**
@@ -467,37 +438,59 @@ void ipc_sms_send_msg_complete(struct ipc_message_info *info)
  */
 void ipc_sms_svc_center_addr(struct ipc_message_info *info)
 {
-	int id = ril_request_sms_get_id(info->aseq);
-
+	struct ril_request_send_sms_info *send_sms;
+	RIL_Token t;
 	char *pdu;
-	int pdu_len;
+	int pdu_length;
+	unsigned char *smsc;
+	int smsc_length;
+	int rc;
 
-	if(id < 0) {
+	if(info == NULL || info->data == NULL)
+		return;
+
+	send_sms = ril_request_send_sms_info_find_token(ril_request_get_token(info->aseq));
+	if(send_sms == NULL || send_sms->pdu == NULL || send_sms->pdu_length <= 0) {
 		LOGE("The request wasn't queued, reporting generic error!");
 
 		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
-
-		/* Release the lock so we can accept new requests */
-		ril_request_sms_lock_release();
-		/* Now send the next message in the queue if any */
+		ril_request_send_sms_info_clear(send_sms);
+		ril_request_send_sms_unregister(send_sms);
+		// Send the next SMS in the list
 		ril_request_send_sms_next();
 
 		return;
 	}
 
-	LOGD("Completing the request");
+	t = send_sms->token;
+	pdu = send_sms->pdu;
+	pdu_length = send_sms->pdu_length;
+	smsc = (unsigned char *) info->data + sizeof(unsigned char);
+	smsc_length = (int) ((unsigned char *) info->data)[0];
 
-	pdu = ril_request_sms[id].pdu;
-	pdu_len = ril_request_sms[id].pdu_len;
-
-	/* We need to clear here to prevent infinite loop, but we can't free mem yet */
-	ril_request_sms_clear(id);
-
-	ril_request_send_sms_complete(ril_request_get_token(info->aseq), pdu, (char *) info->data);
-
-	/* Now it is safe to free mem */
+	LOGD("Got SMSC, completing the request");
+	ril_request_send_sms_unregister(send_sms);
+	ril_request_send_sms_complete(t, pdu, pdu_length, smsc, smsc_length);
 	if(pdu != NULL)
 		free(pdu);
+}
+
+void ipc_sms_send_msg_complete(struct ipc_message_info *info)
+{
+	struct ril_request_send_sms_info *send_sms;
+	struct ipc_gen_phone_res *phone_res;
+
+	if(info->data == NULL || info->length < sizeof(struct ipc_gen_phone_res))
+		return;
+
+	phone_res = (struct ipc_gen_phone_res *) info->data;
+	if(ipc_gen_phone_res_check(phone_res) < 0) {
+		LOGE("IPC_GEN_PHONE_RES indicates error, abort request to RILJ");
+
+		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
+		// Send the next SMS in the list
+		ril_request_send_sms_next();
+	}
 }
 
 /**
@@ -506,22 +499,26 @@ void ipc_sms_svc_center_addr(struct ipc_message_info *info)
  */
 void ipc_sms_send_msg(struct ipc_message_info *info)
 {
-	struct ipc_sms_send_msg_response *report_msg = (struct ipc_sms_send_msg_response *) info->data;
+	struct ipc_sms_send_msg_response *report_msg;
 	RIL_SMS_Response response;
+	RIL_Errno e;
 
-	RIL_Errno ril_ack_err;
+	if(info == NULL || info->data == NULL || info->length < sizeof(struct ipc_sms_send_msg_response))
+		return;
+
+	report_msg = (struct ipc_sms_send_msg_response *) info->data;
 
 	LOGD("Got ACK for msg_tpid #%d\n", report_msg->msg_tpid);
 
+	memset(&response, 0, sizeof(response));
 	response.messageRef = report_msg->msg_tpid;
 	response.ackPDU = NULL;
-	ril_ack_err = ipc2ril_sms_ack_error(report_msg->error, &(response.errorCode));
 
-	ril_request_complete(ril_request_get_token(info->aseq), ril_ack_err, &response, sizeof(response));
+	e = ipc2ril_sms_ack_error(report_msg->error, &response.errorCode);
 
-	/* Release the lock so we can accept new requests */
-	ril_request_sms_lock_release();
-	/* Now send the next message in the queue if any */
+	ril_request_complete(ril_request_get_token(info->aseq), e, (void *) &response, sizeof(response));
+
+	// Send the next SMS in the list
 	ril_request_send_sms_next();
 }
 
@@ -601,14 +598,6 @@ list_continue:
 	return NULL;
 }
 
-/**
- * In: IPC_SMS_INCOMING_MSG
- *   Message to notify an incoming message, with PDU
- *
- * Out: RIL_UNSOL_RESPONSE_NEW_SMS or RIL_UNSOL_RESPONSE_NEW_SMS_STATUS_REPORT
- *   Notify RILJ about the incoming message
- */
-
 void ipc_sms_incoming_msg_next(void)
 {
 	struct ipc_sms_incoming_msg_info *incoming_msg;
@@ -623,6 +612,13 @@ void ipc_sms_incoming_msg_next(void)
 	ipc_sms_incoming_msg_unregister(incoming_msg);
 }
 
+/**
+ * In: IPC_SMS_INCOMING_MSG
+ *   Message to notify an incoming message, with PDU
+ *
+ * Out: RIL_UNSOL_RESPONSE_NEW_SMS or RIL_UNSOL_RESPONSE_NEW_SMS_STATUS_REPORT
+ *   Notify RILJ about the incoming message
+ */
 void ipc_sms_incoming_msg_complete(char *pdu, int length, unsigned char type, unsigned char tpid)
 {
 	if(pdu == NULL || length <= 0)

@@ -645,11 +645,6 @@ void ril_data_init(void)
 	pthread_mutex_init(&ril_data.mutex, NULL);
 }
 
-void ril_globals_init(void)
-{
-	ril_request_sms_init();
-}
-
 /**
  * RIL interface
  */
