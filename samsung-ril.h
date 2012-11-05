@@ -199,7 +199,7 @@ extern struct ril_data ril_data;
 
 void ipc_fmt_dispatch(struct ipc_message_info *info);
 void ipc_rfs_dispatch(struct ipc_message_info *info);
-void srs_dispatch(int fd, struct srs_message *message);
+void srs_dispatch(struct srs_message *message);
 
 /* GEN */
 

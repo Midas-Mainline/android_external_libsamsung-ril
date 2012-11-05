@@ -421,7 +421,7 @@ void ipc_rfs_dispatch(struct ipc_message_info *info)
 	RIL_UNLOCK();
 }
 
-void srs_dispatch(int fd, struct srs_message *message)
+void srs_dispatch(struct srs_message *message)
 {
 	if(message == NULL)
 		return;
@@ -430,7 +430,7 @@ void srs_dispatch(int fd, struct srs_message *message)
 
 	switch(message->command) {
 		case SRS_CONTROL_PING:
-			srs_control_ping(fd, message);
+			srs_control_ping(message);
 			break;
 		case SRS_SND_SET_CALL_CLOCK_SYNC:
 			srs_snd_set_call_clock_sync(message);

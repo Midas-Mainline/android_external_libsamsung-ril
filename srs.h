@@ -23,6 +23,7 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/select.h>
 #include <sys/un.h>
 
 #include <arpa/inet.h>
@@ -30,7 +31,29 @@
 
 #include <samsung-ril-socket.h>
 
+#define SRS_CLIENT_LOCK() pthread_mutex_lock(&client_data->mutex)
+#define SRS_CLIENT_UNLOCK() pthread_mutex_unlock(&client_data->mutex)
+
+struct srs_client_info {
+	int fd;
+};
+
+struct srs_client_data {
+	struct ril_client *client;
+
+	int server_fd;
+	int client_fd;
+
+	struct list_head *clients;
+
+	pthread_t thread;
+	pthread_mutex_t mutex;
+	int running;
+};
+
 extern struct ril_client_funcs srs_client_funcs;
-extern void srs_control_ping(int fd, struct srs_message *message);
+
+int srs_send(unsigned short command, void *data, int length);
+void srs_control_ping(struct srs_message *message);
 
 #endif
