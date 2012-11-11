@@ -550,7 +550,7 @@ int ipc_gprs_connection_enable(struct ril_gprs_connection *gprs_connection,
 		(ip_configuration->dns2)[3]);	
 
 	if(ipc_client_gprs_handlers_available(ipc_client)) {
-		rc = ipc_client_gprs_activate(ipc_client);
+		rc = ipc_client_gprs_activate(ipc_client, gprs_connection->cid);
 		if(rc < 0) {
 			// This is not a critical issue
 			LOGE("Failed to activate interface!");
@@ -659,7 +659,7 @@ int ipc_gprs_connection_disable(struct ril_gprs_connection *gprs_connection)
 	}
 
 	if(ipc_client_gprs_handlers_available(ipc_client)) {
-		rc = ipc_client_gprs_deactivate(ipc_client);
+		rc = ipc_client_gprs_deactivate(ipc_client, gprs_connection->cid);
 		if(rc < 0) {
 			// This is not a critical issue
 			LOGE("Failed to deactivate interface!");
