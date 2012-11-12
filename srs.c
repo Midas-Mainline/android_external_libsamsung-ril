@@ -457,6 +457,7 @@ int srs_read_loop(struct ril_client *client)
 	struct sockaddr_un client_addr;
 	int client_addr_len;
 	pthread_attr_t attr;
+	int flags;
 	int fd;
 	int rc;
 
@@ -484,7 +485,9 @@ int srs_read_loop(struct ril_client *client)
 			break;
 		}
 
-		fcntl(fd, F_SETFL, O_NONBLOCK);
+		flags = fcntl(fd, F_GETFL);
+		flags |= O_NONBLOCK;
+		fcntl(fd, F_SETFL, flags);
 
 		LOGD("Accepted new SRS client from fd %d", fd);
 
