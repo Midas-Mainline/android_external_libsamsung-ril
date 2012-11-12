@@ -29,13 +29,6 @@
  * General:
  * - SIM SMS I/O
  * - Review code with requests that produce GEN_PHONE_RES messages to use the GEN_PHONE_RES engine
- *
- * Data-related:
- * - find a reliable way to configure data iface
- * - GPRS: IPC_GPRS_CALL_STATUS, LAST_DATA_CALL_FAIL_CAUSE
- * - check data with orange non-free ril: no gprs_ip_config
- * - data: use IPC_GPRS_CALL_STATUS with global token for possible fail or return anyway and store ip config global?
- * - update global fail cause in global after gprs_call_status, generic error on stored token
  */
 
 /**
