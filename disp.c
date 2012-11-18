@@ -28,11 +28,13 @@
 /**
  * Converts IPC RSSI to Android RIL format
  */
+#if RIL_VERSION >= 6
+void ipc2ril_rssi(unsigned char rssi, RIL_SignalStrength_v6 *ss)
+#else
 void ipc2ril_rssi(unsigned char rssi, RIL_SignalStrength *ss)
+#endif
 {
-	int ril_rssi;
-
-	memset(ss, 0, sizeof(ss));
+	int ril_rssi = 0;
 
 	if(rssi > 0x6f) {
 		ril_rssi = 0;
@@ -44,15 +46,15 @@ void ipc2ril_rssi(unsigned char rssi, RIL_SignalStrength *ss)
 
 	LOGD("Signal Strength is %d\n", ril_rssi);
 
+#if RIL_VERSION >= 6
+	memset(ss, 0, sizeof(RIL_SignalStrength_v6));
+	memset(&ss->LTE_SignalStrength, -1, sizeof(ss->LTE_SignalStrength));
+#else
+	memset(ss, 0, sizeof(RIL_SignalStrength));
+#endif
+
 	ss->GW_SignalStrength.signalStrength = ril_rssi;
 	ss->GW_SignalStrength.bitErrorRate = 99;
-
-	/* Send CDMA and EVDO levels even in GSM mode */
-	ss->CDMA_SignalStrength.dbm = ril_rssi;
-	ss->CDMA_SignalStrength.ecio = 200;
-
-	ss->EVDO_SignalStrength.dbm = ril_rssi;
-	ss->EVDO_SignalStrength.ecio = 200;
 }
 
 void ril_request_signal_strength(RIL_Token t)
@@ -65,7 +67,11 @@ void ril_request_signal_strength(RIL_Token t)
 void ipc_disp_icon_info(struct ipc_message_info *info)
 {
 	struct ipc_disp_icon_info *icon_info = (struct ipc_disp_icon_info *) info->data;
+#if RIL_VERSION >= 6
+	RIL_SignalStrength_v6 ss;
+#else
 	RIL_SignalStrength ss;
+#endif
 
 	/* Don't consider this if modem isn't in normal power mode. */
 	if(ril_data.state.power_state != IPC_PWR_PHONE_STATE_NORMAL)
@@ -88,7 +94,11 @@ void ipc_disp_icon_info(struct ipc_message_info *info)
 void ipc_disp_rssi_info(struct ipc_message_info *info)
 {
 	struct ipc_disp_rssi_info *rssi_info = (struct ipc_disp_rssi_info *) info->data;
+#if RIL_VERSION >= 6
+	RIL_SignalStrength_v6 ss;
+#else
 	RIL_SignalStrength ss;
+#endif
 	int rssi;
 
 	/* Don't consider this if modem isn't in normal power mode. */
