@@ -1,7 +1,7 @@
 /**
  * This file is part of samsung-ril.
  *
- * Copyright (C) 2012 Paul Kocialkowski <contact@oaulk.fr>
+ * Copyright (C) 2012 Paul Kocialkowski <contact@paulk.fr>
  *
  * samsung-ril is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
