@@ -246,10 +246,11 @@ void ipc_misc_me_imsi(struct ipc_message_info *info);
 void ipc_misc_time_info(struct ipc_message_info *info);
 
 /* SAT */
-void respondSatProactiveCmd(struct ipc_message_info *request);
-void requestSatSendTerminalResponse(RIL_Token t, void *data, size_t datalen);
-void requestSatSendEnvelopeCommand(RIL_Token t, void *data, size_t datalen);
-void respondSatEnvelopeCmd(struct ipc_message_info *request);
+void ril_request_report_stk_service_is_running(RIL_Token t);
+void ipc_sat_proactive_cmd(struct ipc_message_info *info);
+void ril_request_stk_send_terminal_response(RIL_Token t, void *data, size_t datalen);
+void ril_request_stk_send_envelope_command(RIL_Token t, void *data, size_t datalen);
+void ipc_sat_envelope_cmd(struct ipc_message_info *info);
 
 /* SS */
 
@@ -312,7 +313,6 @@ struct ril_request_send_sms_info {
 
 	RIL_Token token;
 };
-
 
 int ril_request_send_sms_register(char *pdu, int pdu_length, unsigned char *smsc, int smsc_length, RIL_Token t);
 void ril_request_send_sms_unregister(struct ril_request_send_sms_info *send_sms);

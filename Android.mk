@@ -48,6 +48,9 @@ LOCAL_STATIC_LIBRARIES := libsamsung-ipc
 # for asprinf
 LOCAL_CFLAGS := -D_GNU_SOURCE
 
+# Disable STK
+LOCAL_CFLAGS += -DDISABLE_STK
+
 ifeq ($(TARGET_DEVICE),crespo)
 	LOCAL_CFLAGS += -DDEVICE_IPC_V4
 	samsung-ipc_device := crespo

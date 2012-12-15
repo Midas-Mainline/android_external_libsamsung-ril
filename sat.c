@@ -25,13 +25,22 @@
 #include "samsung-ril.h"
 #include "util.h"
 
+void ril_request_report_stk_service_is_running(RIL_Token t)
+{
+#ifndef DISABLE_STK
+	ril_request_complete(t, RIL_E_SUCCESS, NULL, 0);
+#else
+	ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
+#endif
+}
+
 /**
  * In: IPC_SAT_PROACTIVE_CMD
  *   STK proactive command
  *
  * Out: RIL_UNSOL_STK_PROACTIVE_COMMAND
  */
-void respondSatProactiveCmdIndi(struct ipc_message_info *info)
+void ipc_sat_proactive_cmd_unsol(struct ipc_message_info *info)
 {
 	int data_len = (info->length-2);
 	char *hexdata;
@@ -51,7 +60,7 @@ void respondSatProactiveCmdIndi(struct ipc_message_info *info)
  *
  * Out: RIL_UNSOL_STK_SESSION_END
  */
-void respondSatProactiveCmdResp(struct ipc_message_info *info)
+void ipc_sat_proactive_cmd_sol(struct ipc_message_info *info)
 {
 	unsigned char sw1, sw2;
 
@@ -68,14 +77,14 @@ void respondSatProactiveCmdResp(struct ipc_message_info *info)
 /**
  * Proactive command indi/resp helper function
  */
-void respondSatProactiveCmd(struct ipc_message_info *info)
+void ipc_sat_proactive_cmd(struct ipc_message_info *info)
 {
 	if(info->type == IPC_TYPE_INDI) {
-		respondSatProactiveCmdIndi(info);
+		ipc_sat_proactive_cmd_unsol(info);
 	} else if(info->type == IPC_TYPE_RESP) {
-		respondSatProactiveCmdResp(info);
+		ipc_sat_proactive_cmd_sol(info);
 	} else {
-		LOGE("%s: unhandled proactive command response type %d", __FUNCTION__, info->type);
+		LOGE("%s: unhandled proactive command response type %d",__func__, info->type);
 	}
 }
 
@@ -86,7 +95,7 @@ void respondSatProactiveCmd(struct ipc_message_info *info)
  *
  * Out: IPC_SAT_PROACTIVE_CMD GET
  */
-void requestSatSendTerminalResponse(RIL_Token t, void *data, size_t datalen)
+void ril_request_stk_send_terminal_response(RIL_Token t, void *data, size_t datalen)
 {
 	unsigned char buf[264];
 	int len = (strlen(data) / 2);
@@ -113,7 +122,7 @@ void requestSatSendTerminalResponse(RIL_Token t, void *data, size_t datalen)
  *
  * Out: IPC_SAT_ENVELOPE_CMD EXEC
  */
-void requestSatSendEnvelopeCommand(RIL_Token t, void *data, size_t datalen)
+void ril_request_stk_send_envelope_command(RIL_Token t, void *data, size_t datalen)
 {
 	unsigned char buf[264];
 	int len = (strlen(data) / 2);
@@ -138,7 +147,7 @@ void requestSatSendEnvelopeCommand(RIL_Token t, void *data, size_t datalen)
  *   Requests to send a SAT/USAT envelope command to SIM.
  *   The SAT/USAT envelope command refers to 3GPP TS 11.14 and 3GPP TS 31.111
  */
-void respondSatEnvelopeCmd(struct ipc_message_info *info)
+void ipc_sat_envelope_cmd(struct ipc_message_info *info)
 {
 	int data_len = (info->length-2);
 	char *hexdata;

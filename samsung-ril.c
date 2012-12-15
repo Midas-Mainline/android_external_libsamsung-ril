@@ -306,12 +306,14 @@ void ipc_fmt_dispatch(struct ipc_message_info *info)
 			ipc_misc_time_info(info);
 			break;
 		/* SAT */
+#ifndef DISABLE_STK
 		case IPC_SAT_PROACTIVE_CMD:
-			respondSatProactiveCmd(info);
+			ipc_sat_proactive_cmd(info);
 			break;
 		case IPC_SAT_ENVELOPE_CMD:
-			respondSatEnvelopeCmd(info);
+			ipc_sat_envelope_cmd(info);
 			break;
+#endif
 		/* SS */
 		case IPC_SS_USSD:
 			ipc_ss_ussd(info);
@@ -473,15 +475,20 @@ void ril_on_request(int request, void *data, size_t length, RIL_Token t)
 			ril_request_get_imsi(t);
 			break;
 		/* SAT */
+#ifndef DISABLE_STK
+		case RIL_REQUEST_REPORT_STK_SERVICE_IS_RUNNING:
+			ril_request_report_stk_service_is_running(t);
+			break;
 		case RIL_REQUEST_STK_SEND_TERMINAL_RESPONSE:
-			requestSatSendTerminalResponse(t, data, length);
+			ril_request_stk_send_terminal_response(t, data, length);
 			break;
 		case RIL_REQUEST_STK_SEND_ENVELOPE_COMMAND:
-			requestSatSendEnvelopeCommand(t, data, length);
+			ril_request_stk_send_envelope_command(t, data, length);
 			break;
 		case RIL_REQUEST_STK_HANDLE_CALL_SETUP_REQUESTED_FROM_SIM:
 			ril_request_complete(t, RIL_E_SUCCESS, NULL, 0);
 			break;
+#endif
 		/* SS */
 		case RIL_REQUEST_SEND_USSD:
 			ril_request_send_ussd(t, data, length);
