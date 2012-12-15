@@ -57,7 +57,7 @@ void ipc_rfs_nv_read_item(struct ipc_message_info *info)
 	rfs_io_conf->offset = rfs_io->offset;
 	rfs_io_conf->length = rfs_io->length;
 
-	ipc_rfs_send(IPC_RFS_NV_READ_ITEM, rfs_io_conf, rfs_io->length + sizeof(struct ipc_rfs_io_confirm), info->aseq);
+	ipc_rfs_send(IPC_RFS_NV_READ_ITEM, (unsigned char *) rfs_io_conf, rfs_io->length + sizeof(struct ipc_rfs_io_confirm), info->aseq);
 
 	free(rfs_io_conf);
 }
@@ -93,5 +93,5 @@ void ipc_rfs_nv_write_item(struct ipc_message_info *info)
 	rfs_io_conf.offset = rfs_io->offset;
 	rfs_io_conf.length = rfs_io->length;
 
-	ipc_rfs_send(IPC_RFS_NV_WRITE_ITEM, &rfs_io_conf, sizeof(struct ipc_rfs_io_confirm), info->aseq);
+	ipc_rfs_send(IPC_RFS_NV_WRITE_ITEM, (unsigned char *) &rfs_io_conf, sizeof(struct ipc_rfs_io_confirm), info->aseq);
 }

@@ -42,5 +42,6 @@ extern struct ril_client_funcs ipc_fmt_client_funcs;
 extern struct ril_client_funcs ipc_rfs_client_funcs;
 
 void ipc_fmt_send(const unsigned short command, const char type, unsigned char *data, const int length, unsigned char mseq);
+void ipc_rfs_send(const unsigned short command, unsigned char *data, const int length, unsigned char mseq);
 
 #endif
