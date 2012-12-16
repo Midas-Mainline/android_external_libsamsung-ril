@@ -219,11 +219,6 @@ void ipc_sec_sim_status(struct ipc_message_info *info)
 	RIL_CardStatus card_status;
 	ril_sim_state sim_state;
 
-	if(ril_data.state.power_state == IPC_PWR_PHONE_STATE_NORMAL && ril_data.tokens.radio_power != (RIL_Token) 0x00) {
-		ril_request_complete(ril_data.tokens.radio_power, RIL_E_SUCCESS, NULL, 0);
-		ril_data.tokens.radio_power = (RIL_Token) 0x00;
-	}
-
 	switch(info->type) {
 		case IPC_TYPE_NOTI:
 			// Don't consider this if modem isn't in normal power mode
