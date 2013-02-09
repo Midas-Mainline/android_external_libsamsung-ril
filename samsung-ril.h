@@ -162,7 +162,7 @@ struct ril_state {
 	int power_state;
 
 	struct ipc_sec_sim_status_response sim_pin_status;
-	struct ipc_sec_sim_icc_type sim_type;
+	struct ipc_sec_sim_icc_type sim_icc_type;
 
 	struct ipc_net_regist_response netinfo;
 	struct ipc_net_regist_response gprs_netinfo;
@@ -280,12 +280,14 @@ struct ril_request_sim_io_info {
 	void *data;
 	int length;
 
+	int waiting;
 	RIL_Token token;
 };
 
 void ril_state_update(ril_sim_state status);
 void ipc_sec_sim_status(struct ipc_message_info *info);
 void ril_request_get_sim_status(RIL_Token t);
+void ipc_sec_sim_icc_type(struct ipc_message_info *info);
 void ril_request_sim_io_next(void);
 void ril_request_sim_io_complete(RIL_Token t, unsigned char command, unsigned short fileid,
 	unsigned char p1, unsigned char p2, unsigned char p3, void *data, int length);

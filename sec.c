@@ -25,6 +25,8 @@
 #include "samsung-ril.h"
 #include "util.h"
 
+#include <sim.h>
+
 ril_sim_state ipc2ril_sim_state(struct ipc_sec_sim_status_response *pin_status)
 {
 	switch(pin_status->status) {
@@ -315,12 +317,25 @@ void ril_request_get_sim_status(RIL_Token t)
 	ril_tokens_pin_status_dump();
 }
 
+void ipc_sec_sim_icc_type(struct ipc_message_info *info)
+{
+	struct ipc_sec_sim_icc_type *sim_icc_type;
+
+	if (info == NULL || info->length < sizeof(struct ipc_sec_sim_icc_type))
+		return;
+
+	sim_icc_type = (struct ipc_sec_sim_icc_type *) info->data;
+
+	memcpy(&ril_data.state.sim_icc_type, sim_icc_type, sizeof(struct ipc_sec_sim_icc_type));
+}
+
 /*
  * SIM I/O
  */
 
 int ril_request_sim_io_register(RIL_Token t, unsigned char command, unsigned short fileid,
-	unsigned char p1, unsigned char p2, unsigned char p3, void *data, int length)
+	unsigned char p1, unsigned char p2, unsigned char p3, void *data, int length,
+	struct ril_request_sim_io_info **sim_io_p)
 {
 	struct ril_request_sim_io_info *sim_io;
 	struct list_head *list_end;
@@ -337,6 +352,7 @@ int ril_request_sim_io_register(RIL_Token t, unsigned char command, unsigned sho
 	sim_io->p3 = p3;
 	sim_io->data = data;
 	sim_io->length = length;
+	sim_io->waiting = 1;
 	sim_io->token = t;
 
 	list_end = ril_data.sim_io;
@@ -347,6 +363,9 @@ int ril_request_sim_io_register(RIL_Token t, unsigned char command, unsigned sho
 
 	if (ril_data.sim_io == NULL)
 		ril_data.sim_io = list;
+
+	if (sim_io_p != NULL)
+		*sim_io_p = sim_io;
 
 	return 0;
 }
@@ -396,6 +415,27 @@ list_continue:
 	return NULL;
 }
 
+struct ril_request_sim_io_info *ril_request_sim_io_info_find_token(RIL_Token t)
+{
+	struct ril_request_sim_io_info *sim_io;
+	struct list_head *list;
+
+	list = ril_data.sim_io;
+	while (list != NULL) {
+		sim_io = (struct ril_request_sim_io_info *) list->data;
+		if (sim_io == NULL)
+			goto list_continue;
+
+		if (sim_io->token == t)
+			return sim_io;
+
+list_continue:
+		list = list->next;
+	}
+
+	return NULL;
+}
+
 void ril_request_sim_io_info_clear(struct ril_request_sim_io_info *sim_io)
 {
 	if (sim_io == NULL)
@@ -408,14 +448,6 @@ void ril_request_sim_io_info_clear(struct ril_request_sim_io_info *sim_io)
 void ril_request_sim_io_next(void)
 {
 	struct ril_request_sim_io_info *sim_io;
-	unsigned char command;
-	unsigned short fileid;
-	unsigned char p1;
-	unsigned char p2;
-	unsigned char p3;
-	void *data;
-	int length;
-	RIL_Token t;
 	int rc;
 
 	ril_data.tokens.sim_io = (RIL_Token) 0x00;
@@ -424,22 +456,16 @@ void ril_request_sim_io_next(void)
 	if (sim_io == NULL)
 		return;
 
-	command = sim_io->command;
-	fileid = sim_io->fileid;
-	p1 = sim_io->p1;
-	p2 = sim_io->p2;
-	p3 = sim_io->p3;
-	data = sim_io->data;
-	length = sim_io->length;
-	t = sim_io->token;
+	sim_io->waiting = 0;
+	ril_data.tokens.sim_io = sim_io->token;
 
-	ril_request_sim_io_unregister(sim_io);
+	ril_request_sim_io_complete(sim_io->token, sim_io->command, sim_io->fileid,
+		sim_io->p1, sim_io->p2, sim_io->p3, sim_io->data, sim_io->length);
 
-	ril_data.tokens.sim_io = t;
-
-	ril_request_sim_io_complete(t, command, fileid, p1, p2, p3, data, length);
-	if (data != NULL)
-		free(data);
+	if (sim_io->data != NULL)
+		free(sim_io->data);
+	sim_io->data = NULL;
+	sim_io->length = 0;
 }
 
 void ril_request_sim_io_complete(RIL_Token t, unsigned char command, unsigned short fileid,
@@ -483,6 +509,7 @@ void ril_request_sim_io_complete(RIL_Token t, unsigned char command, unsigned sh
  */
 void ril_request_sim_io(RIL_Token t, void *data, int length)
 {
+	struct ril_request_sim_io_info *sim_io_info = NULL;
 #if RIL_VERSION >= 6
 	RIL_SIM_IO_v6 *sim_io = NULL;
 #else
@@ -510,30 +537,35 @@ void ril_request_sim_io(RIL_Token t, void *data, int length)
 		}
 	}
 
+	rc = ril_request_sim_io_register(t, sim_io->command, sim_io->fileid,
+		sim_io->p1, sim_io->p2, sim_io->p3, sim_io_data, sim_io_data_length,
+		&sim_io_info);
+	if (rc < 0 || sim_io_info == NULL) {
+		LOGE("Unable to add the request to the list");
+
+		ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
+		if (sim_io_data != NULL)
+			free(sim_io_data);
+
+		// Send the next SIM I/O in the list
+		ril_request_sim_io_next();
+	}
+
 	if (ril_data.tokens.sim_io != (RIL_Token) 0x00) {
 		LOGD("Another SIM I/O is being processed, adding to the list");
-
-		rc = ril_request_sim_io_register(t, sim_io->command, sim_io->fileid,
-			sim_io->p1, sim_io->p2, sim_io->p3, sim_io_data, sim_io_data_length);
-		if (rc < 0) {
-			LOGE("Unable to add the request to the list");
-
-			ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
-			if (sim_io_data != NULL)
-				free(sim_io_data);
-			// Send the next SIM I/O in the list
-			ril_request_sim_io_next();
-		}
-
 		return;
 	}
 
+	sim_io_info->waiting = 0;
 	ril_data.tokens.sim_io = t;
 
 	ril_request_sim_io_complete(t, sim_io->command, sim_io->fileid,
 		sim_io->p1, sim_io->p2, sim_io->p3, sim_io_data, sim_io_data_length);
+
 	if (sim_io_data != NULL)
 		free(sim_io_data);
+	sim_io_info->data = NULL;
+	sim_io_info->length = 0;
 }
 
 /**
@@ -548,33 +580,138 @@ void ril_request_sim_io(RIL_Token t, void *data, int length)
  */
 void ipc_sec_rsim_access(struct ipc_message_info *info)
 {
+	struct ril_request_sim_io_info *sim_io_info;
+	struct sim_file_response sim_file_response;
 	RIL_SIM_IO_Response sim_io_response;
 	struct ipc_sec_rsim_access_response *rsim_access = NULL;
+	struct ipc_sec_rsim_access_response_data *rsim_data = NULL;
 	void *rsim_access_data = NULL;
 	char *sim_response = NULL;
+	unsigned char *buf = NULL;
+	int offset;
+	int i;
 
 	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_sec_rsim_access_response))
 		return;
 
-	memset(&sim_io_response, 0, sizeof(sim_io_response));
+	sim_io_info = ril_request_sim_io_info_find_token(ril_request_get_token(info->aseq));
+	if (sim_io_info == NULL) {
+		LOGE("Unable to find SIM I/O in the list!");
+
+		// Send the next SIM I/O in the list
+		ril_request_sim_io_next();
+
+		return;
+	}
 
 	rsim_access = (struct ipc_sec_rsim_access_response *) info->data;
 	rsim_access_data = (void *) ((int) info->data + sizeof(struct ipc_sec_rsim_access_response));
 
+	memset(&sim_io_response, 0, sizeof(sim_io_response));
 	sim_io_response.sw1 = rsim_access->sw1;
 	sim_io_response.sw2 = rsim_access->sw2;
 
-	if (rsim_access->len > 0) {
-		sim_response = (char *) malloc(rsim_access->len * 2 + 1);
-		bin2hex(rsim_access_data, rsim_access->len, sim_response);
-		sim_io_response.simResponse = sim_response;
-	} else {
-		sim_io_response.simResponse = strdup("");
+	switch (sim_io_info->command) {
+		case SIM_COMMAND_READ_BINARY:
+		case SIM_COMMAND_READ_RECORD:
+			if (rsim_access->len <= 0)
+				break;
+
+			// Copy the data as-is
+			sim_response = (char *) malloc(rsim_access->len * 2 + 1);
+			bin2hex(rsim_access_data, rsim_access->len, sim_response);
+			sim_io_response.simResponse = sim_response;
+			break;
+		case SIM_COMMAND_GET_RESPONSE:
+			if (rsim_access->len < sizeof(struct ipc_sec_rsim_access_response_data))
+				break;
+
+			// SIM ICC type 1 requires direct copy
+			if (ril_data.state.sim_icc_type.type == 1) {
+				sim_response = (char *) malloc(rsim_access->len * 2 + 1);
+				bin2hex(rsim_access_data, rsim_access->len, sim_response);
+				sim_io_response.simResponse = sim_response;
+				break;
+			}
+
+			rsim_data = (struct ipc_sec_rsim_access_response_data *)
+				rsim_access_data;
+
+			memset(&sim_file_response, 0, sizeof(sim_file_response));
+
+			buf = (unsigned char *) rsim_data;
+			buf += sizeof(struct ipc_sec_rsim_access_response_data);
+			buf += rsim_data->offset - 2;
+			if (((int) buf + 1 - (int) rsim_access_data) > rsim_access->len)
+				break;
+
+			sim_file_response.file_id[0] = buf[0];
+			sim_file_response.file_id[1] = buf[1];
+
+			buf = (unsigned char *) rsim_data;
+			buf += rsim_access->len - 2;
+			while ((int) buf > (int) rsim_data + 2) {
+				if (buf[0] == 0x88) {
+					buf -= 2;
+					break;
+				}
+				buf--;
+			}
+
+			if ((int) buf <= (int) rsim_data + 2)
+				break;
+
+			sim_file_response.file_size[0] = buf[0];
+			sim_file_response.file_size[1] = buf[1];
+
+			// Fallback to EF
+			sim_file_response.file_type = SIM_FILE_TYPE_EF;
+			for (i=0 ; i < sim_file_ids_count ; i++) {
+				if (sim_io_info->fileid == sim_file_ids[i].file_id) {
+					sim_file_response.file_type = sim_file_ids[i].type;
+					break;
+				}
+			}
+
+			sim_file_response.access_condition[0] = 0x00;
+			sim_file_response.access_condition[1] = 0xff;
+			sim_file_response.access_condition[2] = 0xff;
+
+			sim_file_response.file_status = 0x01;
+			sim_file_response.file_length = 0x02;
+
+			switch (rsim_data->file_structure) {
+				case IPC_SEC_RSIM_FILE_STRUCTURE_TRANSPARENT:
+					sim_file_response.file_structure = SIM_FILE_STRUCTURE_TRANSPARENT;
+					break;
+				case IPC_SEC_RSIM_FILE_STRUCTURE_LINEAR_FIXED:
+				default:
+					sim_file_response.file_structure = SIM_FILE_STRUCTURE_LINEAR_FIXED;
+					break;
+			}
+
+			sim_file_response.record_length = rsim_data->record_length;
+
+			sim_response = (char *) malloc(sizeof(struct sim_file_response) * 2 + 1);
+			bin2hex((void *) &sim_file_response, sizeof(struct sim_file_response), sim_response);
+			sim_io_response.simResponse = sim_response;
+			break;
+		case SIM_COMMAND_UPDATE_BINARY:
+		case SIM_COMMAND_UPDATE_RECORD:
+		case SIM_COMMAND_SEEK:
+		default:
+			sim_io_response.simResponse = NULL;
+			break;
 	}
 
 	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_SUCCESS, &sim_io_response, sizeof(sim_io_response));
 
-	free(sim_io_response.simResponse);
+	if (sim_io_response.simResponse != NULL) {
+		LOGD("SIM response: %s", sim_io_response.simResponse);
+		free(sim_io_response.simResponse);
+	}
+
+	ril_request_sim_io_unregister(sim_io_info);
 
 	// Send the next SIM I/O in the list
 	ril_request_sim_io_next();

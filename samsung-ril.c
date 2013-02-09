@@ -199,6 +199,12 @@ int ril_request_get_id(RIL_Token t)
 		return request->id;
 
 	id = ril_request_id_get();
+
+	// Unregister a previous request with the same id
+	request = ril_request_info_find_id(id);
+	if (request != NULL)
+		ril_request_unregister(request);
+
 	rc = ril_request_register(t, id);
 	if (rc < 0)
 		return -1;
@@ -321,6 +327,9 @@ void ipc_fmt_dispatch(struct ipc_message_info *info)
 		/* SEC */
 		case IPC_SEC_SIM_STATUS:
 			ipc_sec_sim_status(info);
+			break;
+		case IPC_SEC_SIM_ICC_TYPE:
+			ipc_sec_sim_icc_type(info);
 			break;
 		case IPC_SEC_LOCK_INFO:
 			ipc_sec_lock_info(info);
