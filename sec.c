@@ -82,7 +82,7 @@ void ril_state_update(ril_sim_state sim_state)
 	RIL_RadioState radio_state;
 
 	/* If power mode isn't at least normal, don't update RIL state */
-	if(ril_data.state.power_state != IPC_PWR_PHONE_STATE_NORMAL)
+	if (ril_data.state.power_state != IPC_PWR_PHONE_STATE_NORMAL)
 		return;
 
 	ril_data.state.sim_state = sim_state;
@@ -167,13 +167,13 @@ void ipc2ril_card_status(struct ipc_sec_sim_status_response *pin_status, RIL_Car
 
 	app_status_array_length = sizeof(app_status_array) / sizeof(RIL_AppStatus);
 
-	if(app_status_array_length > RIL_CARD_MAX_APPS)
+	if (app_status_array_length > RIL_CARD_MAX_APPS)
 		app_status_array_length = RIL_CARD_MAX_APPS;
 
 	sim_state = ipc2ril_sim_state(pin_status);
 
 	/* Card is assumed to be present if not explicitly absent */
-	if(sim_state == SIM_STATE_ABSENT) {
+	if (sim_state == SIM_STATE_ABSENT) {
 		card_status->card_state = RIL_CARDSTATE_ABSENT;
 	} else {
 		card_status->card_state = RIL_CARDSTATE_PRESENT;
@@ -186,7 +186,7 @@ void ipc2ril_card_status(struct ipc_sec_sim_status_response *pin_status, RIL_Car
 	for (i = 0 ; i < app_status_array_length ; i++) {
 		memcpy((void *) &(card_status->applications[i]), (void *) &(app_status_array[i]), sizeof(RIL_AppStatus));
 	}
-	for(i = app_status_array_length ; i < RIL_CARD_MAX_APPS ; i++) {
+	for (i = app_status_array_length ; i < RIL_CARD_MAX_APPS ; i++) {
 		memset((void *) &(card_status->applications[i]), 0, sizeof(RIL_AppStatus));
 	}
 
@@ -230,12 +230,12 @@ void ipc_sec_sim_status(struct ipc_message_info *info)
 	switch(info->type) {
 		case IPC_TYPE_NOTI:
 			// Don't consider this if modem isn't in normal power mode
-			if(ril_data.state.power_state != IPC_PWR_PHONE_STATE_NORMAL)
+			if (ril_data.state.power_state != IPC_PWR_PHONE_STATE_NORMAL)
 				return;
 
 			LOGD("Got UNSOL PIN status message");
 
-			if(ril_data.tokens.pin_status != (RIL_Token) 0x00 && ril_data.tokens.pin_status != RIL_TOKEN_DATA_WAITING) {
+			if (ril_data.tokens.pin_status != (RIL_Token) 0x00 && ril_data.tokens.pin_status != RIL_TOKEN_DATA_WAITING) {
 				LOGE("Another PIN status Req is in progress, skipping");
 				return;
 			}
@@ -251,7 +251,7 @@ void ipc_sec_sim_status(struct ipc_message_info *info)
 		case IPC_TYPE_RESP:
 			LOGD("Got SOL PIN status message");
 
-			if(ril_data.tokens.pin_status != t)
+			if (ril_data.tokens.pin_status != t)
 				LOGE("PIN status tokens mismatch");
 
 			sim_state = ipc2ril_sim_state(pin_status);
@@ -263,7 +263,7 @@ void ipc_sec_sim_status(struct ipc_message_info *info)
 			ipc2ril_card_status(pin_status, &card_status);
 			ril_request_complete(t, RIL_E_SUCCESS, &card_status, sizeof(card_status));
 
-			if(ril_data.tokens.pin_status != RIL_TOKEN_DATA_WAITING)
+			if (ril_data.tokens.pin_status != RIL_TOKEN_DATA_WAITING)
 				ril_data.tokens.pin_status = (RIL_Token) 0x00;
 			break;
 		default:
@@ -287,7 +287,7 @@ void ril_request_get_sim_status(RIL_Token t)
 	RIL_CardStatus card_status;
 #endif
 
-	if(ril_data.tokens.pin_status == RIL_TOKEN_DATA_WAITING) {
+	if (ril_data.tokens.pin_status == RIL_TOKEN_DATA_WAITING) {
 		LOGD("Got RILJ request for UNSOL data");
 		hex_dump(&(ril_data.state.sim_pin_status), sizeof(struct ipc_sec_sim_status_response));
 		pin_status = &(ril_data.state.sim_pin_status);
@@ -297,7 +297,7 @@ void ril_request_get_sim_status(RIL_Token t)
 		ril_request_complete(t, RIL_E_SUCCESS, &card_status, sizeof(card_status));
 
 		ril_data.tokens.pin_status = (RIL_Token) 0x00;
-	} else if(ril_data.tokens.pin_status == (RIL_Token) 0x00) {
+	} else if (ril_data.tokens.pin_status == (RIL_Token) 0x00) {
 		LOGD("Got RILJ request for SOL data");
 
 		/* Request data to the modem */
@@ -338,7 +338,7 @@ void ril_request_sim_io(RIL_Token t, void *data, int length)
 	void *rsim_access_data = NULL;
 	int rsim_access_length = 0;
 
-	if(data == NULL || length < sizeof(*sim_io))
+	if (data == NULL || length < sizeof(*sim_io))
 		return;
 
 #if RIL_VERSION >= 6
@@ -349,7 +349,7 @@ void ril_request_sim_io(RIL_Token t, void *data, int length)
 
 	rsim_access_length += sizeof(struct ipc_sec_rsim_access_get);
 
-	if(sim_io->data != NULL) {
+	if (sim_io->data != NULL) {
 		sim_io_data_length = (2 * strlen(sim_io->data));
 		rsim_access_length += sim_io_data_length;
 	}
@@ -363,7 +363,7 @@ void ril_request_sim_io(RIL_Token t, void *data, int length)
 	rsim_access->p2 = sim_io->p2;
 	rsim_access->p3 = sim_io->p3;
 
-	if(sim_io->data != NULL && sim_io_data_length > 0)
+	if (sim_io->data != NULL && sim_io_data_length > 0)
 		hex2bin(sim_io->data, sim_io_data_length, (void *) ((int) rsim_access_data + sizeof(struct ipc_sec_rsim_access_get)));
 
 	ipc_fmt_send(IPC_SEC_RSIM_ACCESS, IPC_TYPE_GET, rsim_access_data, rsim_access_length, ril_request_get_id(t));
@@ -388,7 +388,7 @@ void ipc_sec_rsim_access(struct ipc_message_info *info)
 	void *rsim_access_data = NULL;
 	char *sim_response = NULL;
 
-	if(info == NULL || info->data == NULL || info->length < sizeof(struct ipc_sec_rsim_access_response))
+	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_sec_rsim_access_response))
 		return;
 
 	memset(&sim_io_response, 0, sizeof(sim_io_response));
@@ -399,7 +399,7 @@ void ipc_sec_rsim_access(struct ipc_message_info *info)
 	sim_io_response.sw1 = rsim_access->sw1;
 	sim_io_response.sw2 = rsim_access->sw2;
 
-	if(rsim_access->len > 0) {
+	if (rsim_access->len > 0) {
 		sim_response = (char *) malloc(rsim_access->len * 2 + 1);
 		bin2hex(rsim_access_data, rsim_access->len, sim_response);
 		sim_io_response.simResponse = sim_response;
@@ -427,11 +427,11 @@ void ipc_sec_sim_status_complete(struct ipc_message_info *info)
 	int attempts = -1;
 
 	rc = ipc_gen_phone_res_check(phone_res);
-	if(rc < 0) {
-		if((phone_res->code & 0x00ff) == 0x10) {
+	if (rc < 0) {
+		if ((phone_res->code & 0x00ff) == 0x10) {
 			LOGE("Wrong password!");
 			ril_request_complete(ril_request_get_token(info->aseq), RIL_E_PASSWORD_INCORRECT, &attempts, sizeof(attempts));
-		} else if((phone_res->code & 0x00ff) == 0x0c) {
+		} else if ((phone_res->code & 0x00ff) == 0x0c) {
 			LOGE("Wrong password and no attempts left!");
 
 			attempts = 0;
@@ -461,7 +461,7 @@ void ipc_sec_lock_info(struct ipc_message_info *info)
 	int attempts;
 	struct ipc_sec_lock_info_response *lock_info = (struct ipc_sec_lock_info_response *) info->data;
 
-	if(lock_info->type == IPC_SEC_PIN_TYPE_PIN1) {
+	if (lock_info->type == IPC_SEC_PIN_TYPE_PIN1) {
 		attempts = lock_info->attempts;
 		LOGD("%s: PIN1 %d attempts left", __FUNCTION__, attempts);
 	} else {
@@ -486,7 +486,7 @@ void ril_request_enter_sim_pin(RIL_Token t, void *data, size_t datalen)
 	unsigned char buf[9];
 
 	/* 1. Send PIN */
-	if(strlen(data) > 16) {
+	if (strlen(data) > 16) {
 		LOGE("%s: pin exceeds maximum length", __FUNCTION__);
 		ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 	}
@@ -577,17 +577,17 @@ void ril_request_query_facility_lock(RIL_Token t, void *data, size_t datalen)
 
 	char *facility = ((char **) data)[0];
 
-	if(!strcmp(facility, "SC")) {
+	if (!strcmp(facility, "SC")) {
 		lock_request.facility = IPC_SEC_FACILITY_TYPE_SC;
-	} else if(!strcmp(facility, "FD")) {
+	} else if (!strcmp(facility, "FD")) {
 		lock_request.facility = IPC_SEC_FACILITY_TYPE_FD;
-	} else if(!strcmp(facility, "PN")) {
+	} else if (!strcmp(facility, "PN")) {
 		lock_request.facility = IPC_SEC_FACILITY_TYPE_PN;
-	} else if(!strcmp(facility, "PU")) {
+	} else if (!strcmp(facility, "PU")) {
 		lock_request.facility = IPC_SEC_FACILITY_TYPE_PU;
-	} else if(!strcmp(facility, "PP")) {
+	} else if (!strcmp(facility, "PP")) {
 		lock_request.facility = IPC_SEC_FACILITY_TYPE_PP;
-	} else if(!strcmp(facility, "PC")) {
+	} else if (!strcmp(facility, "PC")) {
 		lock_request.facility = IPC_SEC_FACILITY_TYPE_PC;
 	} else {
 		LOGE("%s: unsupported facility: %s", __FUNCTION__, facility);
@@ -618,17 +618,17 @@ void ril_request_set_facility_lock(RIL_Token t, void *data, size_t datalen)
 
 	memset(&lock_request, 0, sizeof(lock_request));
 
-	if(!strcmp(facility, "SC")) {
+	if (!strcmp(facility, "SC")) {
 		lock_request.type = IPC_SEC_SIM_STATUS_LOCK_SC;
-	} else if(!strcmp(facility, "FD")) {
+	} else if (!strcmp(facility, "FD")) {
 		lock_request.type = IPC_SEC_SIM_STATUS_LOCK_FD;
-	} else if(!strcmp(facility, "PN")) {
+	} else if (!strcmp(facility, "PN")) {
 		lock_request.type = IPC_SEC_SIM_STATUS_LOCK_PN;
-	} else if(!strcmp(facility, "PU")) {
+	} else if (!strcmp(facility, "PU")) {
 		lock_request.type = IPC_SEC_SIM_STATUS_LOCK_PU;
-	} else if(!strcmp(facility, "PP")) {
+	} else if (!strcmp(facility, "PP")) {
 		lock_request.type = IPC_SEC_SIM_STATUS_LOCK_PP;
-	} else if(!strcmp(facility, "PC")) {
+	} else if (!strcmp(facility, "PC")) {
 		lock_request.type = IPC_SEC_SIM_STATUS_LOCK_PC;
 	} else {
 		LOGE("%s: unsupported facility: %s", __FUNCTION__, facility);

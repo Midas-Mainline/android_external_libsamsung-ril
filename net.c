@@ -230,15 +230,15 @@ void ril_plmn_split(char *plmn_data, char **plmn, unsigned int *mcc, unsigned in
 	memset(plmn_t, 0, sizeof(plmn_t));
 	memcpy(plmn_t, plmn_data, 6);
 
-	if(plmn_t[5] == '#')
+	if (plmn_t[5] == '#')
 		plmn_t[5] = '\0';
 
-	if(plmn != NULL) {
+	if (plmn != NULL) {
 		*plmn = malloc(sizeof(plmn_t));
 		memcpy(*plmn, plmn_t, sizeof(plmn_t));
 	}
 
-	if(mcc == NULL || mnc == NULL)
+	if (mcc == NULL || mnc == NULL)
 		return;
 
 	sscanf(plmn_t, "%3u%2u", mcc, mnc);
@@ -261,8 +261,8 @@ void ril_plmn_string(char *plmn_data, char *response[3])
 
 	LOGD("Found %d plmn records", plmn_entries);
 
-	for(i=0 ; i < plmn_entries ; i++) {
-		if(plmn_list[i].mcc == mcc && plmn_list[i].mnc == mnc) {
+	for (i=0 ; i < plmn_entries ; i++) {
+		if (plmn_list[i].mcc == mcc && plmn_list[i].mnc == mnc) {
 			asprintf(&response[0], "%s", plmn_list[i].operator_short);
 			asprintf(&response[1], "%s", plmn_list[i].operator_long);
 			return;	
@@ -326,7 +326,7 @@ void ril_request_operator(RIL_Token t)
 	size_t i;
 
 	// IPC_NET_REGISTRATION_STATE_ROAMING is the biggest valid value
-	if(ril_data.state.netinfo.reg_state == IPC_NET_REGISTRATION_STATE_NONE ||
+	if (ril_data.state.netinfo.reg_state == IPC_NET_REGISTRATION_STATE_NONE ||
 	ril_data.state.netinfo.reg_state == IPC_NET_REGISTRATION_STATE_SEARCHING ||
 	ril_data.state.netinfo.reg_state == IPC_NET_REGISTRATION_STATE_UNKNOWN ||
 	ril_data.state.netinfo.reg_state > IPC_NET_REGISTRATION_STATE_ROAMING) {
@@ -336,7 +336,7 @@ void ril_request_operator(RIL_Token t)
 		return;
 	}
 
-	if(ril_data.tokens.operator == RIL_TOKEN_DATA_WAITING) {
+	if (ril_data.tokens.operator == RIL_TOKEN_DATA_WAITING) {
 		LOGD("Got RILJ request for UNSOL data");
 
 		/* Send back the data we got UNSOL */
@@ -344,13 +344,13 @@ void ril_request_operator(RIL_Token t)
 
 		ril_request_complete(t, RIL_E_SUCCESS, response, sizeof(response));
 
-		for(i = 0; i < sizeof(response) / sizeof(char *) ; i++) {
-			if(response[i] != NULL)
+		for (i = 0; i < sizeof(response) / sizeof(char *) ; i++) {
+			if (response[i] != NULL)
 				free(response[i]);
 		}
 
 		ril_data.tokens.operator = (RIL_Token) 0x00;
-	} else if(ril_data.tokens.operator == (RIL_Token) 0x00) {
+	} else if (ril_data.tokens.operator == (RIL_Token) 0x00) {
 		LOGD("Got RILJ request for SOL data");
 		/* Request data to the modem */
 		ril_data.tokens.operator = t;
@@ -364,8 +364,8 @@ void ril_request_operator(RIL_Token t)
 
 		ril_request_complete(t, RIL_E_SUCCESS, response, sizeof(response));
 
-		for(i = 0; i < sizeof(response) / sizeof(char *) ; i++) {
-			if(response[i] != NULL)
+		for (i = 0; i < sizeof(response) / sizeof(char *) ; i++) {
+			if (response[i] != NULL)
 				free(response[i]);
 		}
 	}
@@ -395,7 +395,7 @@ void ipc_net_current_plmn(struct ipc_message_info *message)
 			LOGD("Got UNSOL Operator message");
 
 			// IPC_NET_REGISTRATION_STATE_ROAMING is the biggest valid value
-			if(ril_data.state.netinfo.reg_state == IPC_NET_REGISTRATION_STATE_NONE ||
+			if (ril_data.state.netinfo.reg_state == IPC_NET_REGISTRATION_STATE_NONE ||
 			ril_data.state.netinfo.reg_state == IPC_NET_REGISTRATION_STATE_SEARCHING ||
 			ril_data.state.netinfo.reg_state == IPC_NET_REGISTRATION_STATE_UNKNOWN ||
 			ril_data.state.netinfo.reg_state > IPC_NET_REGISTRATION_STATE_ROAMING) {
@@ -404,7 +404,7 @@ void ipc_net_current_plmn(struct ipc_message_info *message)
 
 				return;
 			} else {
-				if(ril_data.tokens.operator != (RIL_Token) 0x00 && ril_data.tokens.operator != RIL_TOKEN_DATA_WAITING) {
+				if (ril_data.tokens.operator != (RIL_Token) 0x00 && ril_data.tokens.operator != RIL_TOKEN_DATA_WAITING) {
 					LOGE("Another Operator Req is in progress, skipping");
 					return;
 				}
@@ -412,7 +412,7 @@ void ipc_net_current_plmn(struct ipc_message_info *message)
 				memcpy(&(ril_data.state.plmndata), plmndata, sizeof(struct ipc_net_current_plmn_response));
 
 				/* we already told RILJ to get the new data but it wasn't done yet */
-				if(ril_tokens_net_get_data_waiting() && ril_data.tokens.operator == RIL_TOKEN_DATA_WAITING) {
+				if (ril_tokens_net_get_data_waiting() && ril_data.tokens.operator == RIL_TOKEN_DATA_WAITING) {
 					LOGD("Updating Operator data in background");
 				} else {
 					ril_tokens_net_set_data_waiting();
@@ -428,7 +428,7 @@ void ipc_net_current_plmn(struct ipc_message_info *message)
 			LOGD("Got SOL Operator message");
 
 			// IPC_NET_REGISTRATION_STATE_ROAMING is the biggest valid value
-			if(ril_data.state.netinfo.reg_state == IPC_NET_REGISTRATION_STATE_NONE ||
+			if (ril_data.state.netinfo.reg_state == IPC_NET_REGISTRATION_STATE_NONE ||
 			ril_data.state.netinfo.reg_state == IPC_NET_REGISTRATION_STATE_SEARCHING ||
 			ril_data.state.netinfo.reg_state == IPC_NET_REGISTRATION_STATE_UNKNOWN ||
 			ril_data.state.netinfo.reg_state > IPC_NET_REGISTRATION_STATE_ROAMING) {
@@ -437,11 +437,11 @@ void ipc_net_current_plmn(struct ipc_message_info *message)
 
 				ril_request_complete(t, RIL_E_OP_NOT_ALLOWED_BEFORE_REG_TO_NW, NULL, 0);
 
-				if(ril_data.tokens.operator != RIL_TOKEN_DATA_WAITING)
+				if (ril_data.tokens.operator != RIL_TOKEN_DATA_WAITING)
 					ril_data.tokens.operator = (RIL_Token) 0x00;
 				return;
 			} else {
-				if(ril_data.tokens.operator != t)
+				if (ril_data.tokens.operator != t)
 					LOGE("Operator tokens mismatch");
 
 				/* Better keeping it up to date */
@@ -451,12 +451,12 @@ void ipc_net_current_plmn(struct ipc_message_info *message)
 
 				ril_request_complete(t, RIL_E_SUCCESS, response, sizeof(response));
 
-				for(i = 0; i < sizeof(response) / sizeof(char *) ; i++) {
-					if(response[i] != NULL)
+				for (i = 0; i < sizeof(response) / sizeof(char *) ; i++) {
+					if (response[i] != NULL)
 						free(response[i]);
 				}
 
-				if(ril_data.tokens.operator != RIL_TOKEN_DATA_WAITING)
+				if (ril_data.tokens.operator != RIL_TOKEN_DATA_WAITING)
 					ril_data.tokens.operator = (RIL_Token) 0x00;
 			}
 			break;
@@ -486,7 +486,7 @@ void ril_request_registration_state(RIL_Token t)
 	char *response[4];
 	int i;
 
-	if(ril_data.tokens.registration_state == RIL_TOKEN_DATA_WAITING) {
+	if (ril_data.tokens.registration_state == RIL_TOKEN_DATA_WAITING) {
 		LOGD("Got RILJ request for UNSOL data");
 
 		/* Send back the data we got UNSOL */
@@ -494,13 +494,13 @@ void ril_request_registration_state(RIL_Token t)
 
 		ril_request_complete(t, RIL_E_SUCCESS, response, sizeof(response));
 
-		for(i = 0; i < (int) (sizeof(response) / sizeof(char *)) ; i++) {
-			if(response[i] != NULL)
+		for (i = 0; i < (int) (sizeof(response) / sizeof(char *)) ; i++) {
+			if (response[i] != NULL)
 				free(response[i]);
 		}
 
 		ril_data.tokens.registration_state = (RIL_Token) 0x00;
-	} else if(ril_data.tokens.registration_state == (RIL_Token) 0x00) {
+	} else if (ril_data.tokens.registration_state == (RIL_Token) 0x00) {
 		LOGD("Got RILJ request for SOL data");
 		/* Request data to the modem */
 		ril_data.tokens.registration_state = t;
@@ -515,8 +515,8 @@ void ril_request_registration_state(RIL_Token t)
 
 		ril_request_complete(t, RIL_E_SUCCESS, response, sizeof(response));
 
-		for(i = 0; i < (int) (sizeof(response) / sizeof(char *)) ; i++) {
-			if(response[i] != NULL)
+		for (i = 0; i < (int) (sizeof(response) / sizeof(char *)) ; i++) {
+			if (response[i] != NULL)
 				free(response[i]);
 		}
 	}
@@ -542,7 +542,7 @@ void ril_request_gprs_registration_state(RIL_Token t)
 	char *response[4];
 	size_t i;
 
-	if(ril_data.tokens.gprs_registration_state == RIL_TOKEN_DATA_WAITING) {
+	if (ril_data.tokens.gprs_registration_state == RIL_TOKEN_DATA_WAITING) {
 		LOGD("Got RILJ request for UNSOL data");
 
 		/* Send back the data we got UNSOL */
@@ -550,13 +550,13 @@ void ril_request_gprs_registration_state(RIL_Token t)
 
 		ril_request_complete(t, RIL_E_SUCCESS, response, sizeof(response));
 
-		for(i = 0; i < sizeof(response) / sizeof(char *) ; i++) {
-			if(response[i] != NULL)
+		for (i = 0; i < sizeof(response) / sizeof(char *) ; i++) {
+			if (response[i] != NULL)
 				free(response[i]);
 		}
 
 		ril_data.tokens.gprs_registration_state = (RIL_Token) 0x00;
-	} else if(ril_data.tokens.gprs_registration_state == (RIL_Token) 0x00) {
+	} else if (ril_data.tokens.gprs_registration_state == (RIL_Token) 0x00) {
 		LOGD("Got RILJ request for SOL data");
 
 		/* Request data to the modem */
@@ -572,8 +572,8 @@ void ril_request_gprs_registration_state(RIL_Token t)
 
 		ril_request_complete(t, RIL_E_SUCCESS, response, sizeof(response));
 
-		for(i = 0; i < sizeof(response) / sizeof(char *) ; i++) {
-			if(response[i] != NULL)
+		for (i = 0; i < sizeof(response) / sizeof(char *) ; i++) {
+			if (response[i] != NULL)
 				free(response[i]);
 		}
 	}
@@ -590,7 +590,7 @@ void ipc_net_regist_unsol(struct ipc_message_info *message)
 
 	switch(netinfo->domain) {
 		case IPC_NET_SERVICE_DOMAIN_GSM:
-			if(ril_data.tokens.registration_state != (RIL_Token) 0 && ril_data.tokens.registration_state != RIL_TOKEN_DATA_WAITING) {
+			if (ril_data.tokens.registration_state != (RIL_Token) 0 && ril_data.tokens.registration_state != RIL_TOKEN_DATA_WAITING) {
 				LOGE("Another NetRegist Req is in progress, skipping");
 				return;
 			}
@@ -598,7 +598,7 @@ void ipc_net_regist_unsol(struct ipc_message_info *message)
 			memcpy(&(ril_data.state.netinfo), netinfo, sizeof(struct ipc_net_regist_response));
 
 			/* we already told RILJ to get the new data but it wasn't done yet */
-			if(ril_tokens_net_get_data_waiting() && ril_data.tokens.registration_state == RIL_TOKEN_DATA_WAITING) {
+			if (ril_tokens_net_get_data_waiting() && ril_data.tokens.registration_state == RIL_TOKEN_DATA_WAITING) {
 				LOGD("Updating NetRegist data in background");
 			} else {
 				ril_tokens_net_set_data_waiting();
@@ -611,7 +611,7 @@ void ipc_net_regist_unsol(struct ipc_message_info *message)
 			break;
 
 		case IPC_NET_SERVICE_DOMAIN_GPRS:
-			if(ril_data.tokens.gprs_registration_state != (RIL_Token) 0 && ril_data.tokens.gprs_registration_state != RIL_TOKEN_DATA_WAITING) {
+			if (ril_data.tokens.gprs_registration_state != (RIL_Token) 0 && ril_data.tokens.gprs_registration_state != RIL_TOKEN_DATA_WAITING) {
 				LOGE("Another GPRS NetRegist Req is in progress, skipping");
 				return;
 			}
@@ -619,7 +619,7 @@ void ipc_net_regist_unsol(struct ipc_message_info *message)
 			memcpy(&(ril_data.state.gprs_netinfo), netinfo, sizeof(struct ipc_net_regist_response));
 
 			/* we already told RILJ to get the new data but it wasn't done yet */
-			if(ril_tokens_net_get_data_waiting() && ril_data.tokens.gprs_registration_state == RIL_TOKEN_DATA_WAITING) {
+			if (ril_tokens_net_get_data_waiting() && ril_data.tokens.gprs_registration_state == RIL_TOKEN_DATA_WAITING) {
 				LOGD("Updating GPRSNetRegist data in background");
 			} else {
 				ril_tokens_net_set_data_waiting();
@@ -650,7 +650,7 @@ void ipc_net_regist_sol(struct ipc_message_info *message)
 
 	switch(netinfo->domain) {
 		case IPC_NET_SERVICE_DOMAIN_GSM:
-			if(ril_data.tokens.registration_state != t)
+			if (ril_data.tokens.registration_state != t)
 				LOGE("Registration state tokens mismatch");
 
 			/* Better keeping it up to date */
@@ -660,16 +660,16 @@ void ipc_net_regist_sol(struct ipc_message_info *message)
 
 			ril_request_complete(t, RIL_E_SUCCESS, response, sizeof(response));
 
-			for(i = 0; i < sizeof(response) / sizeof(char *) ; i++) {
-				if(response[i] != NULL)
+			for (i = 0; i < sizeof(response) / sizeof(char *) ; i++) {
+				if (response[i] != NULL)
 					free(response[i]);
 			}
 
-			if(ril_data.tokens.registration_state != RIL_TOKEN_DATA_WAITING)
+			if (ril_data.tokens.registration_state != RIL_TOKEN_DATA_WAITING)
 				ril_data.tokens.registration_state = (RIL_Token) 0x00;
 			break;
 		case IPC_NET_SERVICE_DOMAIN_GPRS:
-			if(ril_data.tokens.gprs_registration_state != t)
+			if (ril_data.tokens.gprs_registration_state != t)
 				LOGE("GPRS registration state tokens mismatch");
 
 			/* Better keeping it up to date */
@@ -679,11 +679,11 @@ void ipc_net_regist_sol(struct ipc_message_info *message)
 
 			ril_request_complete(t, RIL_E_SUCCESS, response, sizeof(response));
 
-			for(i = 0; i < sizeof(response) / sizeof(char *) ; i++) {
-				if(response[i] != NULL)
+			for (i = 0; i < sizeof(response) / sizeof(char *) ; i++) {
+				if (response[i] != NULL)
 					free(response[i]);
 			}
-			if(ril_data.tokens.registration_state != RIL_TOKEN_DATA_WAITING)
+			if (ril_data.tokens.registration_state != RIL_TOKEN_DATA_WAITING)
 				ril_data.tokens.gprs_registration_state = (RIL_Token) 0x00;
 			break;
 		default:
@@ -701,7 +701,7 @@ void ipc_net_regist_sol(struct ipc_message_info *message)
 void ipc_net_regist(struct ipc_message_info *message)
 {
 	/* Don't consider this if modem isn't in normal power mode. */
-	if(ril_data.state.power_state != IPC_PWR_PHONE_STATE_NORMAL)
+	if (ril_data.state.power_state != IPC_PWR_PHONE_STATE_NORMAL)
 		return;
 
 	switch(message->type) {
@@ -749,9 +749,9 @@ void ipc_net_plmn_list(struct ipc_message_info *info)
 
 	LOGD("Listed %d PLMNs\n", entries_info->num);
 
-	for(i = 0; i < entries_info->num; i++) {
+	for (i = 0; i < entries_info->num; i++) {
 		/* Assumed type for 'emergency only' PLMNs */
-		if(entries[i].type == 0x01)
+		if (entries[i].type == 0x01)
 			continue;
 
 		ril_plmn_string(entries[i].plmn, resp_ptr);
@@ -836,8 +836,8 @@ void ipc_net_plmn_sel_complete(struct ipc_message_info *info)
 	int rc;
 
 	rc = ipc_gen_phone_res_check(phone_res);
-	if(rc < 0) {
-		if((phone_res->code & 0x00ff) == 0x6f) {
+	if (rc < 0) {
+		if ((phone_res->code & 0x00ff) == 0x6f) {
 			LOGE("Not authorized to register to this network!");
 			ril_request_complete(ril_request_get_token(info->aseq), RIL_E_ILLEGAL_SIM_OR_ME, NULL, 0);
 		} else {

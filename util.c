@@ -38,16 +38,16 @@ struct list_head *list_head_alloc(void *data, struct list_head *prev, struct lis
 	struct list_head *list;
 
 	list = calloc(1, sizeof(struct list_head));
-	if(list == NULL)
+	if (list == NULL)
 		return NULL;
 
 	list->data = data;
 	list->prev = prev;
 	list->next = next;
 
-	if(prev != NULL)
+	if (prev != NULL)
 		prev->next = list;
-	if(next != NULL)
+	if (next != NULL)
 		next->prev = list;
 
 	return list;
@@ -55,12 +55,12 @@ struct list_head *list_head_alloc(void *data, struct list_head *prev, struct lis
 
 void list_head_free(struct list_head *list)
 {
-	if(list == NULL)
+	if (list == NULL)
 		return;
 
-	if(list->next != NULL)
+	if (list->next != NULL)
 		list->next->prev = list->prev;
-	if(list->prev != NULL)
+	if (list->prev != NULL)
 		list->prev->next = list->next;
 
 	memset(list, 0, sizeof(struct list_head));
@@ -78,24 +78,24 @@ void hex2bin(const char *data, int length, unsigned char *buf)
 
 	length ^= 0x01;
 
-	while(i < length) {
+	while (i < length) {
 		b = 0;
 
-		if(data[i] - '0' < 10)
+		if (data[i] - '0' < 10)
 			b = data[i] - '0';
-		else if(data[i] - 'a' < 7)
+		else if (data[i] - 'a' < 7)
 			b = data[i] - 'a' + 10;
-		else if(data[i] - 'A' < 7)
+		else if (data[i] - 'A' < 7)
 			b = data[i] - 'A' + 10;
 		i++;
 
 		b = (b << 4);
 
-		if(data[i] - '0' < 10)
+		if (data[i] - '0' < 10)
 			b |= data[i] - '0';
-		else if(data[i] - 'a' < 7)
+		else if (data[i] - 'a' < 7)
 			b |= data[i] - 'a' + 10;
-		else if(data[i] - 'A' < 7)
+		else if (data[i] - 'A' < 7)
 			b |= data[i] - 'A' + 10;
 		i++;
 
@@ -112,7 +112,7 @@ void bin2hex(const unsigned char *data, int length, char *buf)
 	char b;
 	char *p = buf;
 
-	for(i = 0; i < length; i++) {
+	for (i = 0; i < length; i++) {
 		b = 0;
 
 		b = (data[i] >> 4 & 0x0f);
@@ -143,10 +143,10 @@ int gsm72ascii(unsigned char *data, char **data_dec, int length)
 
 	memset(dec, 0, dec_length);
 
-	for(i=0 ; i < length ; i++)
+	for (i=0 ; i < length ; i++)
 	{
 		d = 7 - i % 7;
-		if(d == 7 && i != 0)
+		if (d == 7 && i != 0)
 			o++;
 
 		t = (data[i] - (((data[i] >> d) & 0xff) << d));
@@ -154,7 +154,7 @@ int gsm72ascii(unsigned char *data, char **data_dec, int length)
 
 		dec[i+o]+=t << (i + o) % 8;
 
-		if(u)
+		if (u)
 			dec[i+1+o]+=u;
 	}
 
@@ -183,7 +183,7 @@ int ascii2gsm7(char *data, unsigned char **data_enc, int length)
 	enc = malloc(enc_length);
 	memset(enc, 0, enc_length);
 
-	for(i=0 ; i < length ; i++)
+	for (i=0 ; i < length ; i++)
 	{
 		// offset from the right of data to keep
 		d_off = i % 8;
@@ -228,7 +228,7 @@ void hex_dump(void *data, int size)
 	char addrstr[10] = {0};
 	char hexstr[ 16*3 + 5] = {0};
 	char charstr[16*1 + 5] = {0};
-	for(n=1;n<=size;n++) {
+	for (n=1;n<=size;n++) {
 		if (n%16 == 1) {
 			/* store address for this line */
 			snprintf(addrstr, sizeof(addrstr), "%.4x",
@@ -248,12 +248,12 @@ void hex_dump(void *data, int size)
 		snprintf(bytestr, sizeof(bytestr), "%c", c);
 		strncat(charstr, bytestr, sizeof(charstr)-strlen(charstr)-1);
 
-		if(n%16 == 0) {
+		if (n%16 == 0) {
 			/* line completed */
 			LOGD("[%4.4s]   %-50.50s  %s", addrstr, hexstr, charstr);
 			hexstr[0] = 0;
 			charstr[0] = 0;
-		} else if(n%8 == 0) {
+		} else if (n%8 == 0) {
 			/* half line: add whitespaces */
 			strncat(hexstr, "  ", sizeof(hexstr)-strlen(hexstr)-1);
 			strncat(charstr, " ", sizeof(charstr)-strlen(charstr)-1);

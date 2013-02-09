@@ -32,12 +32,12 @@ void ipc_rfs_nv_read_item(struct ipc_message_info *info)
 	void *rfs_data;
 	int rc;
 
-	if(ril_data.ipc_rfs_client == NULL)
+	if (ril_data.ipc_rfs_client == NULL)
 		return;
 
 	ipc_client = ((struct ipc_client_data *) ril_data.ipc_rfs_client->data)->ipc_client;
 
-	if(rfs_io == NULL) {
+	if (rfs_io == NULL) {
 		LOGE("Error: NULL rfs_io");
 		return;
 	}
@@ -70,12 +70,12 @@ void ipc_rfs_nv_write_item(struct ipc_message_info *info)
 	void *rfs_data;
 	int rc;
 
-	if(ril_data.ipc_rfs_client == NULL)
+	if (ril_data.ipc_rfs_client == NULL)
 		return;
 
 	ipc_client = ((struct ipc_client_data *) ril_data.ipc_rfs_client->data)->ipc_client;
 
-	if(rfs_io == NULL) {
+	if (rfs_io == NULL) {
 		LOGE("Error: NULL rfs_io");
 		return;
 	}

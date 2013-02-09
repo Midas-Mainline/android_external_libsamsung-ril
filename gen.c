@@ -58,7 +58,7 @@ int ipc_gen_phone_res_expect_register(unsigned char aseq, unsigned short command
 	struct list_head *list;
 
 	expect = calloc(1, sizeof(struct ipc_gen_phone_res_expect_info));
-	if(expect == NULL)
+	if (expect == NULL)
 		return -1;
 
 	expect->aseq = aseq;
@@ -68,12 +68,12 @@ int ipc_gen_phone_res_expect_register(unsigned char aseq, unsigned short command
 	expect->abort = abort;
 
 	list_end = ril_data.generic_responses;
-	while(list_end != NULL && list_end->next != NULL)
+	while (list_end != NULL && list_end->next != NULL)
 		list_end = list_end->next;
 
 	list = list_head_alloc((void *) expect, list_end, NULL);
 
-	if(ril_data.generic_responses == NULL)
+	if (ril_data.generic_responses == NULL)
 		ril_data.generic_responses = list;
 
 	return 0;
@@ -83,16 +83,16 @@ void ipc_gen_phone_res_expect_unregister(struct ipc_gen_phone_res_expect_info *e
 {
 	struct list_head *list;
 
-	if(expect == NULL)
+	if (expect == NULL)
 		return;
 
 	list = ril_data.generic_responses;
-	while(list != NULL) {
-		if(list->data == (void *) expect) {
+	while (list != NULL) {
+		if (list->data == (void *) expect) {
 			memset(expect, 0, sizeof(struct ipc_gen_phone_res_expect_info));
 			free(expect);
 
-			if(list == ril_data.generic_responses)
+			if (list == ril_data.generic_responses)
 				ril_data.generic_responses = list->next;
 
 			list_head_free(list);
@@ -110,12 +110,12 @@ struct ipc_gen_phone_res_expect_info *ipc_gen_phone_res_expect_info_find_aseq(un
 	struct list_head *list;
 
 	list = ril_data.generic_responses;
-	while(list != NULL) {
+	while (list != NULL) {
 		expect = (struct ipc_gen_phone_res_expect_info *) list->data;
-		if(expect == NULL)
+		if (expect == NULL)
 			goto list_continue;
 
-		if(expect->aseq == aseq)
+		if (expect->aseq == aseq)
 			return expect;
 
 list_continue:
@@ -156,42 +156,42 @@ void ipc_gen_phone_res(struct ipc_message_info *info)
 	RIL_Errno e;
 	int rc;
 
-	if(info->data == NULL || info->length < sizeof(struct ipc_gen_phone_res))
+	if (info->data == NULL || info->length < sizeof(struct ipc_gen_phone_res))
 		return;
 
 	phone_res = (struct ipc_gen_phone_res *) info->data;
 	expect = ipc_gen_phone_res_expect_info_find_aseq(info->aseq);
 
-	if(expect == NULL) {
+	if (expect == NULL) {
 		LOGD("aseq: 0x%x not found in the IPC_GEN_PHONE_RES queue", info->aseq);
 		return;
 	}
 
 	LOGD("aseq: 0x%x found in the IPC_GEN_PHONE_RES queue!", info->aseq);
 
-	if(expect->command != IPC_COMMAND(phone_res)) {
+	if (expect->command != IPC_COMMAND(phone_res)) {
 		LOGE("IPC_GEN_PHONE_RES aseq (0x%x) doesn't match the queued one with command (0x%x)", 
 			expect->aseq, expect->command);
 
-		if(expect->func != NULL) {
+		if (expect->func != NULL) {
 			LOGE("Not safe to run the custom function, reporting generic failure");
 			ril_request_complete(ril_request_get_token(expect->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 			goto unregister;
 		}
 	}
 
-	if(expect->func != NULL) {
+	if (expect->func != NULL) {
 		expect->func(info);
 		goto unregister;
 	}
 
 	rc = ipc_gen_phone_res_check(phone_res);
-	if(rc < 0)
+	if (rc < 0)
 		e = RIL_E_GENERIC_FAILURE;
 	else
 		e = RIL_E_SUCCESS;
 
-	if(expect->complete || (expect->abort && e == RIL_E_GENERIC_FAILURE))
+	if (expect->complete || (expect->abort && e == RIL_E_GENERIC_FAILURE))
 		ril_request_complete(ril_request_get_token(expect->aseq), e, NULL, 0);
 
 unregister:

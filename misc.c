@@ -36,7 +36,7 @@ void ril_request_get_imei_send(RIL_Token t)
 
 void ril_request_get_imei(RIL_Token t)
 {
-	if(ril_data.tokens.get_imei) {
+	if (ril_data.tokens.get_imei) {
 		LOGD("Another IMEI request is waiting, aborting");
 		ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 		return;
@@ -44,10 +44,10 @@ void ril_request_get_imei(RIL_Token t)
 
 	ril_data.tokens.get_imei = t;
 
-	if(ril_data.tokens.get_imeisv) {
+	if (ril_data.tokens.get_imeisv) {
 		LOGD("IMEISV token found: %p", ril_data.tokens.get_imeisv);
 
-		if(ril_data.state.radio_state != RADIO_STATE_OFF) {
+		if (ril_data.state.radio_state != RADIO_STATE_OFF) {
 			ril_request_get_imei_send(ril_data.tokens.get_imei);
 		} else {
 			LOGD("Radio is off, waiting");
@@ -59,7 +59,7 @@ void ril_request_get_imei(RIL_Token t)
 
 void ril_request_get_imeisv(RIL_Token t)
 {
-	if(ril_data.tokens.get_imeisv) {
+	if (ril_data.tokens.get_imeisv) {
 		LOGD("Another IMEISV request is waiting, aborting");
 		ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 		return;
@@ -67,10 +67,10 @@ void ril_request_get_imeisv(RIL_Token t)
 
 	ril_data.tokens.get_imeisv = t;
 
-	if(ril_data.tokens.get_imei) {
+	if (ril_data.tokens.get_imei) {
 		LOGD("IMEI token found: %p", ril_data.tokens.get_imei);
 
-		if(ril_data.state.radio_state != RADIO_STATE_OFF) {
+		if (ril_data.state.radio_state != RADIO_STATE_OFF) {
 			ril_request_get_imei_send(ril_data.tokens.get_imei);
 		} else {
 			LOGD("Radio is off, waiting");
@@ -88,11 +88,11 @@ void ipc_misc_me_sn_imei(RIL_Token t, void *data, int length)
 
 	imei_info = (struct ipc_misc_me_sn *) data;
 
-	if(ril_data.tokens.get_imei != t) 
+	if (ril_data.tokens.get_imei != t) 
 		LOGE("IMEI tokens mismatch (%p and %p)",
 			ril_data.tokens.get_imei, t);
 
-	if(imei_info->length > 32)
+	if (imei_info->length > 32)
 		return;
 
 	memset(imei, 0, sizeof(imei));
@@ -104,19 +104,19 @@ void ipc_misc_me_sn_imei(RIL_Token t, void *data, int length)
 	memcpy(imeisv, (imei_info->data + imei_info->length - 2), 2);
 
 	// In case of token mismatch, complete both requests
-	if(t && ril_data.tokens.get_imei != t) {
+	if (t && ril_data.tokens.get_imei != t) {
 		ril_request_complete(t, RIL_E_SUCCESS, imei, sizeof(char *));
 	}
 
 	// IMEI
-	if(ril_data.tokens.get_imei) {
+	if (ril_data.tokens.get_imei) {
 		ril_request_complete(ril_data.tokens.get_imei,
 			RIL_E_SUCCESS, imei, sizeof(char *));
 		ril_data.tokens.get_imei = 0;
 	}
 
 	// IMEI SV
-	if(ril_data.tokens.get_imeisv) {
+	if (ril_data.tokens.get_imeisv) {
 		ril_request_complete(ril_data.tokens.get_imeisv,
 			RIL_E_SUCCESS, imeisv, sizeof(char *));
 		ril_data.tokens.get_imeisv = 0;
@@ -141,7 +141,7 @@ void ipc_misc_me_sn(struct ipc_message_info *info)
 void ril_request_baseband_version(RIL_Token t)
 {
 	unsigned char data;
-	if(ril_data.tokens.baseband_version) {
+	if (ril_data.tokens.baseband_version) {
 		LOGD("Another Baseband version request is waiting, aborting");
 		ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 		return;
@@ -149,7 +149,7 @@ void ril_request_baseband_version(RIL_Token t)
 
 	ril_data.tokens.baseband_version = t;
 
-	if(ril_data.state.radio_state != RADIO_STATE_OFF) {
+	if (ril_data.state.radio_state != RADIO_STATE_OFF) {
 		data = 0xff;
 
 		ipc_fmt_send(IPC_MISC_ME_VERSION, IPC_TYPE_GET,
@@ -164,7 +164,7 @@ void ipc_misc_me_version(struct ipc_message_info *info)
 		(struct ipc_misc_me_version *) info->data;
 	RIL_Token t = ril_request_get_token(info->aseq);
 
-	if(ril_data.tokens.baseband_version != t) 
+	if (ril_data.tokens.baseband_version != t) 
 		LOGE("Baseband tokens mismatch (%p and %p)",
 			ril_data.tokens.baseband_version, t);
 
@@ -203,10 +203,10 @@ void ipc_misc_me_imsi(struct ipc_message_info *info)
 	char *imsi;
 
 	/* Don't consider this if modem isn't in normal power mode. */
-	if(ril_data.state.power_state != IPC_PWR_PHONE_STATE_NORMAL)
+	if (ril_data.state.power_state != IPC_PWR_PHONE_STATE_NORMAL)
 		return;
 
-	if(info->length < 1) {
+	if (info->length < 1) {
 		LOGE("%s: zero data length", __FUNCTION__);
 		ril_request_complete(ril_request_get_token(info->aseq),
 			RIL_E_GENERIC_FAILURE, NULL, 0);
@@ -215,7 +215,7 @@ void ipc_misc_me_imsi(struct ipc_message_info *info)
 
 	imsi_length = (unsigned char*) info->data;
 
-	if(((int) info->length) < *imsi_length + 1) {
+	if (((int) info->length) < *imsi_length + 1) {
 		LOGE("%s: missing IMSI data", __FUNCTION__);
 		ril_request_complete(ril_request_get_token(info->aseq),
 			RIL_E_GENERIC_FAILURE, NULL, 0);

@@ -104,7 +104,7 @@ void ril_request_dial(RIL_Token t, void *data, size_t datalen)
 	struct ipc_call_outgoing call;
 	int clir;
 
-	if(strlen(dial->address) > sizeof(call.number)) {
+	if (strlen(dial->address) > sizeof(call.number)) {
 		printf("Outgoing call number too long\n");
 		return;
 	}
@@ -168,7 +168,7 @@ void ipc_call_list(struct ipc_message_info *info)
 
 	num_entries = *((unsigned char *) info->data);
 
-	if(num_entries == 0) {
+	if (num_entries == 0) {
 		// Don't bother with mem alloc
 
 		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_SUCCESS, NULL, 0);
@@ -179,7 +179,7 @@ void ipc_call_list(struct ipc_message_info *info)
 
 	RIL_Call **calls = (RIL_Call **) malloc(num_entries * sizeof(RIL_Call *));
 
-	for(i = 0; i < num_entries; i++) {
+	for (i = 0; i < num_entries; i++) {
 		RIL_Call *call = (RIL_Call *) malloc(sizeof(RIL_Call));
 
 		/* Number is located after call list entry */
@@ -211,7 +211,7 @@ void ipc_call_list(struct ipc_message_info *info)
 
 	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_SUCCESS, calls, (num_entries * sizeof(RIL_Call *)));
 
-	for(i = 0; i < num_entries; i++) {
+	for (i = 0; i < num_entries; i++) {
 		free(calls[i]);
 	}
 
@@ -288,7 +288,7 @@ void ril_request_dtmf(RIL_Token t, void *data, int length)
 	unsigned char dtmf_count = 1;
 	int i;
 
-	if(ril_data.state.dtmf_tone != 0) {
+	if (ril_data.state.dtmf_tone != 0) {
 		LOGD("Another tone wasn't stopped, stopping that one before anything");
 
 		cont_dtmf.state = IPC_CALL_DTMF_STATE_STOP;
@@ -305,7 +305,7 @@ void ril_request_dtmf(RIL_Token t, void *data, int length)
 
 	burst[0] = dtmf_count;
 
-	for(i=0 ; i < dtmf_count ; i++) {
+	for (i=0 ; i < dtmf_count ; i++) {
 		// Apparently, it's possible to set multiple DTMF tones on this message
 
 		cont_dtmf.state = IPC_CALL_DTMF_STATE_START;
@@ -326,7 +326,7 @@ void ipc_call_burst_dtmf(struct ipc_message_info *info)
 	unsigned char ret = *((unsigned char *) info->data);
 
 	// This apparently should return 1, or perhaps that is the DTMF tones count
-	if(ret == 0) {
+	if (ret == 0) {
 		LOGD("Apparently, something went wrong with DTMF burst");
 
 		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
@@ -339,7 +339,7 @@ void ril_request_dtmf_start(RIL_Token t, void *data, int length)
 {
 	struct ipc_call_cont_dtmf cont_dtmf;
 
-	if(ril_data.state.dtmf_tone != 0) {
+	if (ril_data.state.dtmf_tone != 0) {
 		LOGD("Another tone wasn't stopped, stopping that one before anything");
 
 		cont_dtmf.state = IPC_CALL_DTMF_STATE_STOP;

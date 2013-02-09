@@ -37,13 +37,13 @@ struct ril_client *ril_client_new(struct ril_client_funcs *client_funcs)
 	ril_client = malloc(sizeof(struct ril_client));
 	memset(ril_client, 0, sizeof(struct ril_client));
 
-	if(client_funcs->create)
+	if (client_funcs->create)
 		ril_client->funcs.create = client_funcs->create;
 
-	if(client_funcs->destroy)
+	if (client_funcs->destroy)
 		ril_client->funcs.destroy = client_funcs->destroy;
 
-	if(client_funcs->read_loop)
+	if (client_funcs->read_loop)
 		ril_client->funcs.read_loop = client_funcs->read_loop;
 
 	pthread_mutex_init(&(ril_client->mutex), NULL);
@@ -65,12 +65,12 @@ int ril_client_create(struct ril_client *client)
 	int rc;
 	int c;
 
-	for(c = 10 ; c > 0 ; c--) {
+	for (c = 10 ; c > 0 ; c--) {
 		LOGD("Creating RIL client inners, try #%d", 11-c);
 
 		rc = client->funcs.create(client);
 
-		if(rc < 0)
+		if (rc < 0)
 			LOGD("RIL client inners creation failed!");
 		else
 			break;
@@ -78,7 +78,7 @@ int ril_client_create(struct ril_client *client)
 		usleep(500000);
 	}
 
-	if(c == 0) {
+	if (c == 0) {
 		client->state = RIL_CLIENT_ERROR;
 		return -1;
 	}
@@ -93,12 +93,12 @@ int ril_client_destroy(struct ril_client *client)
 	int rc;
 	int c;
 
-	for(c = 5 ; c > 0 ; c--) {
+	for (c = 5 ; c > 0 ; c--) {
 		LOGD("Destroying RIL client inners, try #%d", 6-c);
 
 		rc = client->funcs.destroy(client);
 
-		if(rc < 0)
+		if (rc < 0)
 			LOGD("RIL client inners destroying failed!");
 		else
 			break;
@@ -106,7 +106,7 @@ int ril_client_destroy(struct ril_client *client)
 		usleep(500000);
 	}
 
-	if(c == 0) {
+	if (c == 0) {
 		client->state = RIL_CLIENT_ERROR;
 		return -1;
 	}
@@ -122,7 +122,7 @@ void *ril_client_thread(void *data)
 	int rc;
 	int c;
 
-	if(data == NULL) {
+	if (data == NULL) {
 		LOGE("Data passed to thread is NULL!");
 
 		return 0;
@@ -130,12 +130,12 @@ void *ril_client_thread(void *data)
 
 	client = (struct ril_client *) data;
 
-	for(c = 5 ; c > 0 ; c--) {
+	for (c = 5 ; c > 0 ; c--) {
 		client->state = RIL_CLIENT_READY;
 
 		rc = client->funcs.read_loop(client);
 
-		if(rc < 0) {
+		if (rc < 0) {
 			client->state = RIL_CLIENT_ERROR;
 
 			LOGE("There was an error with the read loop! Trying to destroy and recreate client object");
@@ -152,19 +152,19 @@ void *ril_client_thread(void *data)
 		}
 	}
 
-	if(c == 0) {
+	if (c == 0) {
 		LOGE("FATAL: Main loop failed too many times.");
 	}
 
 	// We are destroying everything here
 
 	rc = ril_client_destroy(client);
-	if(rc < 0) {
+	if (rc < 0) {
 		LOGE("RIL client destroy failed!");
 	}
 
 	rc = ril_client_free(client);
-	if(rc < 0) {
+	if (rc < 0) {
 		LOGE("RIL client free failed!");
 	}
 
@@ -181,7 +181,7 @@ int ril_client_thread_start(struct ril_client *client)
 
 	rc = pthread_create(&(client->thread), &attr, ril_client_thread, (void *) client);
 
-	if(rc != 0) {
+	if (rc != 0) {
 		LOGE("pthread creation failed");
 		return -1;
 	}

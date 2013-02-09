@@ -36,11 +36,11 @@ void ipc2ril_rssi(unsigned char rssi, RIL_SignalStrength *ss)
 {
 	int ril_rssi = 0;
 
-	if(rssi > 0x6f) {
+	if (rssi > 0x6f) {
 		ril_rssi = 0;
 	} else {
 		ril_rssi = (((rssi - 0x71) * -1) - ((rssi - 0x71) * -1) % 2) / 2;
-		if(ril_rssi > 31)
+		if (ril_rssi > 31)
 			ril_rssi = 31;
 	}
 
@@ -74,18 +74,18 @@ void ipc_disp_icon_info(struct ipc_message_info *info)
 #endif
 
 	/* Don't consider this if modem isn't in normal power mode. */
-	if(ril_data.state.power_state != IPC_PWR_PHONE_STATE_NORMAL)
+	if (ril_data.state.power_state != IPC_PWR_PHONE_STATE_NORMAL)
 		return;
 
-	if(info->type == IPC_TYPE_NOTI && icon_info->rssi == 0xff)
+	if (info->type == IPC_TYPE_NOTI && icon_info->rssi == 0xff)
 		return;
 
 	ipc2ril_rssi(icon_info->rssi, &ss);
 
-	if(info->type == IPC_TYPE_NOTI) {
+	if (info->type == IPC_TYPE_NOTI) {
 		LOGD("Unsol request!");
 		ril_request_unsolicited(RIL_UNSOL_SIGNAL_STRENGTH, &ss, sizeof(ss));
-	} else if(info->type == IPC_TYPE_RESP) {
+	} else if (info->type == IPC_TYPE_RESP) {
 		LOGD("Sol request!");
 		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_SUCCESS, &ss, sizeof(ss));
 	}
@@ -102,7 +102,7 @@ void ipc_disp_rssi_info(struct ipc_message_info *info)
 	int rssi;
 
 	/* Don't consider this if modem isn't in normal power mode. */
-	if(ril_data.state.power_state != IPC_PWR_PHONE_STATE_NORMAL)
+	if (ril_data.state.power_state != IPC_PWR_PHONE_STATE_NORMAL)
 		return;
 
 	ipc2ril_rssi(rssi_info->rssi, &ss);

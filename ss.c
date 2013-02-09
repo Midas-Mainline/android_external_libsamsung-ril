@@ -30,7 +30,7 @@ void ipc_ss_ussd_complete(struct ipc_message_info *info)
 	int rc;
 
 	rc = ipc_gen_phone_res_check(phone_res);
-	if(rc < 0) {
+	if (rc < 0) {
 		LOGE("There was an error, aborting USSD request");
 
 		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
@@ -62,7 +62,7 @@ void ril_request_send_ussd(RIL_Token t, void *data, size_t datalen)
 			LOGD("USSD Tx encoding is GSM7");
 
 			data_enc_len = ascii2gsm7(data, (unsigned char**)&data_enc, datalen);
-			if(data_enc_len > message_size) {
+			if (data_enc_len > message_size) {
 				LOGE("USSD message size is too long, aborting");
 				ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 
@@ -90,7 +90,7 @@ void ril_request_send_ussd(RIL_Token t, void *data, size_t datalen)
 
 			data_enc_len = asprintf(&data_enc, "%s", (char*)data);
 
-			if(data_enc_len > message_size) {
+			if (data_enc_len > message_size) {
 				LOGE("USSD message size is too long, aborting");
 				ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 
@@ -114,7 +114,7 @@ void ril_request_send_ussd(RIL_Token t, void *data, size_t datalen)
 			break;
 	}
 
-	if(message == NULL) {
+	if (message == NULL) {
 		LOGE("USSD message is empty, aborting");
 
 		ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
@@ -184,7 +184,7 @@ void ipc_ss_ussd(struct ipc_message_info *info)
 
 	ril_data.state.ussd_state = ussd->state;
 
-	if(ussd->length > 0 && info->length > 0 && info->data != NULL) {
+	if (ussd->length > 0 && info->length > 0 && info->data != NULL) {
 		codingScheme = sms_get_coding_scheme(ussd->dcs);
 		switch(codingScheme) {
 			case SMS_CODING_SCHEME_GSM7:

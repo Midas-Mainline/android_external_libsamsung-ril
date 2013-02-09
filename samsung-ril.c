@@ -53,7 +53,7 @@ int ril_request_id_set(int id)
 {
 	id %= 0xff;
 
-	while(ril_data.request_id < id) {
+	while (ril_data.request_id < id) {
 		ril_data.request_id++;
 		ril_data.request_id %= 0xff;
 	}
@@ -68,7 +68,7 @@ int ril_request_register(RIL_Token t, int id)
 	struct list_head *list;
 
 	request = calloc(1, sizeof(struct ril_request_info));
-	if(request == NULL)
+	if (request == NULL)
 		return -1;
 
 	request->token = t;
@@ -76,12 +76,12 @@ int ril_request_register(RIL_Token t, int id)
 	request->canceled = 0;
 
 	list_end = ril_data.requests;
-	while(list_end != NULL && list_end->next != NULL)
+	while (list_end != NULL && list_end->next != NULL)
 		list_end = list_end->next;
 
 	list = list_head_alloc((void *) request, list_end, NULL);
 
-	if(ril_data.requests == NULL)
+	if (ril_data.requests == NULL)
 		ril_data.requests = list;
 
 	return 0;
@@ -91,16 +91,16 @@ void ril_request_unregister(struct ril_request_info *request)
 {
 	struct list_head *list;
 
-	if(request == NULL)
+	if (request == NULL)
 		return;
 
 	list = ril_data.requests;
-	while(list != NULL) {
-		if(list->data == (void *) request) {
+	while (list != NULL) {
+		if (list->data == (void *) request) {
 			memset(request, 0, sizeof(struct ril_request_info));
 			free(request);
 
-			if(list == ril_data.requests)
+			if (list == ril_data.requests)
 				ril_data.requests = list->next;
 
 			list_head_free(list);
@@ -118,12 +118,12 @@ struct ril_request_info *ril_request_info_find_id(int id)
 	struct list_head *list;
 
 	list = ril_data.requests;
-	while(list != NULL) {
+	while (list != NULL) {
 		request = (struct ril_request_info *) list->data;
-		if(request == NULL)
+		if (request == NULL)
 			goto list_continue;
 
-		if(request->id == id)
+		if (request->id == id)
 			return request;
 
 list_continue:
@@ -139,12 +139,12 @@ struct ril_request_info *ril_request_info_find_token(RIL_Token t)
 	struct list_head *list;
 
 	list = ril_data.requests;
-	while(list != NULL) {
+	while (list != NULL) {
 		request = (struct ril_request_info *) list->data;
-		if(request == NULL)
+		if (request == NULL)
 			goto list_continue;
 
-		if(request->token == t)
+		if (request->token == t)
 			return request;
 
 list_continue:
@@ -159,7 +159,7 @@ int ril_request_set_canceled(RIL_Token t, int canceled)
 	struct ril_request_info *request;
 
 	request = ril_request_info_find_token(t);
-	if(request == NULL)
+	if (request == NULL)
 		return -1;
 
 	request->canceled = canceled ? 1 : 0;
@@ -172,7 +172,7 @@ int ril_request_get_canceled(RIL_Token t)
 	struct ril_request_info *request;
 
 	request = ril_request_info_find_token(t);
-	if(request == NULL)
+	if (request == NULL)
 		return -1;
 
 	return request->canceled;
@@ -183,7 +183,7 @@ RIL_Token ril_request_get_token(int id)
 	struct ril_request_info *request;
 
 	request = ril_request_info_find_id(id);
-	if(request == NULL)
+	if (request == NULL)
 		return (RIL_Token) 0x00;
 
 	return request->token;
@@ -195,12 +195,12 @@ int ril_request_get_id(RIL_Token t)
 	int id, rc;
 
 	request = ril_request_info_find_token(t);
-	if(request != NULL)
+	if (request != NULL)
 		return request->id;
 
 	id = ril_request_id_get();
 	rc = ril_request_register(t, id);
-	if(rc < 0)
+	if (rc < 0)
 		return -1;
 
 	return id;	
@@ -212,13 +212,13 @@ void ril_request_complete(RIL_Token t, RIL_Errno e, void *data, size_t length)
 	int canceled = 0;
 
 	request = ril_request_info_find_token(t);
-	if(request == NULL)
+	if (request == NULL)
 		goto complete;
 
 	canceled = ril_request_get_canceled(t);
 	ril_request_unregister(request);
 
-	if(canceled)
+	if (canceled)
 		return;
 
 complete:
@@ -243,16 +243,16 @@ void ril_tokens_check(void)
 {
 	RIL_Token t;
 
-	if(ril_data.tokens.baseband_version != 0) {
-		if(ril_data.state.radio_state != RADIO_STATE_OFF) {
+	if (ril_data.tokens.baseband_version != 0) {
+		if (ril_data.state.radio_state != RADIO_STATE_OFF) {
 			t = ril_data.tokens.baseband_version;
 			ril_data.tokens.baseband_version = 0;
 			ril_request_baseband_version(t);
 		}
 	}
 
-	if(ril_data.tokens.get_imei != 0 && ril_data.tokens.get_imeisv != 0) {
-		if(ril_data.state.radio_state != RADIO_STATE_OFF) {
+	if (ril_data.tokens.get_imei != 0 && ril_data.tokens.get_imeisv != 0) {
+		if (ril_data.state.radio_state != RADIO_STATE_OFF) {
 			t = ril_data.tokens.get_imei;
 			ril_data.tokens.get_imei = 0;
 			ril_request_get_imei(t);
@@ -266,7 +266,7 @@ void ril_tokens_check(void)
 
 void ipc_fmt_dispatch(struct ipc_message_info *info)
 {
-	if(info == NULL)
+	if (info == NULL)
 		return;
 
 	RIL_LOCK();
@@ -396,7 +396,7 @@ void ipc_fmt_dispatch(struct ipc_message_info *info)
 
 void ipc_rfs_dispatch(struct ipc_message_info *info)
 {
-	if(info == NULL)
+	if (info == NULL)
 		return;
 
 	RIL_LOCK();
@@ -418,7 +418,7 @@ void ipc_rfs_dispatch(struct ipc_message_info *info)
 
 void srs_dispatch(struct srs_message *message)
 {
-	if(message == NULL)
+	if (message == NULL)
 		return;
 
 	RIL_LOCK();
@@ -674,7 +674,7 @@ const RIL_RadioFunctions *RIL_Init(const struct RIL_Env *env, int argc, char **a
 	struct ril_client *srs_client;
 	int rc;
 
-	if(env == NULL)
+	if (env == NULL)
 		return NULL;
 
 	ril_data_init();
@@ -687,14 +687,14 @@ const RIL_RadioFunctions *RIL_Init(const struct RIL_Env *env, int argc, char **a
 	ipc_fmt_client = ril_client_new(&ipc_fmt_client_funcs);
 	rc = ril_client_create(ipc_fmt_client);
 
-	if(rc < 0) {
+	if (rc < 0) {
 		LOGE("IPC FMT client creation failed.");
 		goto ipc_rfs;
 	}
 
 	rc = ril_client_thread_start(ipc_fmt_client);
 
-	if(rc < 0) {
+	if (rc < 0) {
 		LOGE("IPC FMT thread creation failed.");
 		goto ipc_rfs;
 	}
@@ -708,14 +708,14 @@ ipc_rfs:
 	ipc_rfs_client = ril_client_new(&ipc_rfs_client_funcs);
 	rc = ril_client_create(ipc_rfs_client);
 
-	if(rc < 0) {
+	if (rc < 0) {
 		LOGE("IPC RFS client creation failed.");
 		goto srs;
 	}
 
 	rc = ril_client_thread_start(ipc_rfs_client);
 
-	if(rc < 0) {
+	if (rc < 0) {
 		LOGE("IPC RFS thread creation failed.");
 		goto srs;
 	}
@@ -729,14 +729,14 @@ srs:
 	srs_client = ril_client_new(&srs_client_funcs);
 	rc = ril_client_create(srs_client);
 
-	if(rc < 0) {
+	if (rc < 0) {
 		LOGE("SRS client creation failed.");
 		goto end;
 	}
 
 	rc = ril_client_thread_start(srs_client);
 
-	if(rc < 0) {
+	if (rc < 0) {
 		LOGE("SRS thread creation failed.");
 		goto end;
 	}

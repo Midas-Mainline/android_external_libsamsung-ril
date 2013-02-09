@@ -67,7 +67,7 @@ void ipc_sat_proactive_cmd_sol(struct ipc_message_info *info)
 	sw1 = ((unsigned char*)info->data)[0];
 	sw2 = ((unsigned char*)info->data)[1];
 
-	if(sw1 == 0x90 && sw2 == 0x00) {
+	if (sw1 == 0x90 && sw2 == 0x00) {
 		ril_request_unsolicited(RIL_UNSOL_STK_SESSION_END, NULL, 0);
 	} else {
 		LOGE("%s: unhandled response sw1=%02x sw2=%02x", __FUNCTION__, sw1, sw2);
@@ -79,9 +79,9 @@ void ipc_sat_proactive_cmd_sol(struct ipc_message_info *info)
  */
 void ipc_sat_proactive_cmd(struct ipc_message_info *info)
 {
-	if(info->type == IPC_TYPE_INDI) {
+	if (info->type == IPC_TYPE_INDI) {
 		ipc_sat_proactive_cmd_unsol(info);
-	} else if(info->type == IPC_TYPE_RESP) {
+	} else if (info->type == IPC_TYPE_RESP) {
 		ipc_sat_proactive_cmd_sol(info);
 	} else {
 		LOGE("%s: unhandled proactive command response type %d",__func__, info->type);
@@ -100,7 +100,7 @@ void ril_request_stk_send_terminal_response(RIL_Token t, void *data, size_t data
 	unsigned char buf[264];
 	int len = (strlen(data) / 2);
 
-	if(len > 255) {
+	if (len > 255) {
 		LOGE("%s: data exceeds maximum length", __FUNCTION__);
 		ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 	}
@@ -127,7 +127,7 @@ void ril_request_stk_send_envelope_command(RIL_Token t, void *data, size_t datal
 	unsigned char buf[264];
 	int len = (strlen(data) / 2);
 
-	if(len > 255) {
+	if (len > 255) {
 		LOGE("%s: data exceeds maximum length", __FUNCTION__);
 		ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 	}
