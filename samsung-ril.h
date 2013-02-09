@@ -134,6 +134,7 @@ struct ril_tokens {
 	RIL_Token operator;
 
 	RIL_Token outgoing_sms;
+	RIL_Token sim_io;
 };
 
 void ril_tokens_check(void);
@@ -177,8 +178,6 @@ struct ril_state {
 	unsigned char sms_incoming_msg_tpid;
 };
 
-void ril_state_lpm(void);
-
 /**
  * RIL data
  */
@@ -191,6 +190,7 @@ struct ril_data {
 	struct list_head *gprs_connections;
 	struct list_head *incoming_sms;
 	struct list_head *outgoing_sms;
+	struct list_head *sim_io;
 	struct list_head *generic_responses;
 	struct list_head *requests;
 	int request_id;
@@ -271,9 +271,24 @@ void ipc_ss_ussd(struct ipc_message_info *info);
 
 /* SEC */
 
+struct ril_request_sim_io_info {
+	unsigned char command;
+	unsigned short fileid;
+	unsigned char p1;
+	unsigned char p2;
+	unsigned char p3;
+	void *data;
+	int length;
+
+	RIL_Token token;
+};
+
 void ril_state_update(ril_sim_state status);
 void ipc_sec_sim_status(struct ipc_message_info *info);
 void ril_request_get_sim_status(RIL_Token t);
+void ril_request_sim_io_next(void);
+void ril_request_sim_io_complete(RIL_Token t, unsigned char command, unsigned short fileid,
+	unsigned char p1, unsigned char p2, unsigned char p3, void *data, int length);
 void ril_request_sim_io(RIL_Token t, void *data, int length);
 void ipc_sec_rsim_access(struct ipc_message_info *info);
 void ipc_sec_sim_status_complete(struct ipc_message_info *info);
