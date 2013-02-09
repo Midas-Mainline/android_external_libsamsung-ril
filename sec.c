@@ -62,6 +62,7 @@ ril_sim_state ipc2ril_sim_state(struct ipc_sec_sim_status_response *pin_status)
 		case IPC_SEC_SIM_STATUS_INSIDE_PF_ERROR:
 		case IPC_SEC_SIM_STATUS_CARD_NOT_PRESENT:
 		case IPC_SEC_SIM_STATUS_CARD_ERROR:
+			return SIM_STATE_ABSENT;
 		default:
 			LOGE("Unknown SIM status: 0x%x", pin_status->status);
 			return SIM_STATE_ABSENT;
