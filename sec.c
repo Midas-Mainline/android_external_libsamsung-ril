@@ -314,35 +314,49 @@ void ril_request_get_sim_status(RIL_Token t)
  * Out: IPC_SEC_RSIM_ACCESS
  *   Performs a restricted SIM read operation
  */
-void ril_request_sim_io(RIL_Token t, void *data, size_t datalen)
+void ril_request_sim_io(RIL_Token t, void *data, int length)
 {
-	struct ipc_sec_rsim_access_get *rsim_data = NULL;
+#if RIL_VERSION >= 6
+	RIL_SIM_IO_v6 *sim_io = NULL;
+#else
 	RIL_SIM_IO *sim_io = NULL;
-	int rsim_data_length = sizeof(struct ipc_sec_rsim_access_get);
+#endif
+	int sim_io_data_length = 0;
+	struct ipc_sec_rsim_access_get *rsim_access = NULL;
+	void *rsim_access_data = NULL;
+	int rsim_access_length = 0;
 
-	if(data == NULL && datalen < sizeof(RIL_SIM_IO))
+	if(data == NULL || length < sizeof(*sim_io))
 		return;
 
+#if RIL_VERSION >= 6
+	sim_io = (RIL_SIM_IO_v6 *) data;
+#else
 	sim_io = (RIL_SIM_IO *) data;
+#endif
 
-	if(sim_io->data != NULL)
-		rsim_data_length += (2 * strlen(sim_io->data));
+	rsim_access_length += sizeof(struct ipc_sec_rsim_access_get);
 
-	rsim_data = (struct ipc_sec_rsim_access_get *) malloc(rsim_data_length);
+	if(sim_io->data != NULL) {
+		sim_io_data_length = (2 * strlen(sim_io->data));
+		rsim_access_length += sim_io_data_length;
+	}
 
-	/* Set up RSIM header */
-	rsim_data->command = sim_io->command;
-	rsim_data->fileid = sim_io->fileid;
-	rsim_data->p1 = sim_io->p1;
-	rsim_data->p2 = sim_io->p2;
-	rsim_data->p3 = sim_io->p3;
+	rsim_access_data = calloc(1, rsim_access_length);
+	rsim_access = (struct ipc_sec_rsim_access_get *) rsim_access_data;
 
-	if(sim_io->data != NULL && rsim_data_length > (int) sizeof(struct ipc_sec_rsim_access_get))
-		hex2bin(sim_io->data, strlen(sim_io->data), (void *) (rsim_data + sizeof(struct ipc_sec_rsim_access_get)));
+	rsim_access->command = sim_io->command;
+	rsim_access->fileid = sim_io->fileid;
+	rsim_access->p1 = sim_io->p1;
+	rsim_access->p2 = sim_io->p2;
+	rsim_access->p3 = sim_io->p3;
 
-	ipc_fmt_send(IPC_SEC_RSIM_ACCESS, IPC_TYPE_GET, (void *) rsim_data, rsim_data_length, ril_request_get_id(t));
+	if(sim_io->data != NULL && sim_io_data_length > 0)
+		hex2bin(sim_io->data, sim_io_data_length, (void *) ((int) rsim_access_data + sizeof(struct ipc_sec_rsim_access_get)));
 
-	free(rsim_data);
+	ipc_fmt_send(IPC_SEC_RSIM_ACCESS, IPC_TYPE_GET, rsim_access_data, rsim_access_length, ril_request_get_id(t));
+
+	free(rsim_access_data);
 }
 
 /**
@@ -357,26 +371,33 @@ void ril_request_sim_io(RIL_Token t, void *data, size_t datalen)
  */
 void ipc_sec_rsim_access(struct ipc_message_info *info)
 {
-	struct ipc_sec_rsim_access_response *rsim_resp = (struct ipc_sec_rsim_access_response *) info->data;
-	const unsigned char *data_ptr = ((unsigned char *) info->data + sizeof(*rsim_resp));
-	char *sim_resp;
-	RIL_SIM_IO_Response response;
+	RIL_SIM_IO_Response sim_io_response;
+	struct ipc_sec_rsim_access_response *rsim_access = NULL;
+	void *rsim_access_data = NULL;
+	char *sim_response = NULL;
 
-	response.sw1 = rsim_resp->sw1;
-	response.sw2 = rsim_resp->sw2;
+	if(info == NULL || info->data == NULL || info->length < sizeof(struct ipc_sec_rsim_access_response))
+		return;
 
-	if(rsim_resp->len) {
-		sim_resp = (char*)malloc(rsim_resp->len * 2 + 1);
-		bin2hex(data_ptr, rsim_resp->len, sim_resp);
-		response.simResponse = sim_resp;
+	memset(&sim_io_response, 0, sizeof(sim_io_response));
+
+	rsim_access = (struct ipc_sec_rsim_access_response *) info->data;
+	rsim_access_data = (void *) ((int) info->data + sizeof(struct ipc_sec_rsim_access_response));
+
+	sim_io_response.sw1 = rsim_access->sw1;
+	sim_io_response.sw2 = rsim_access->sw2;
+
+	if(rsim_access->len > 0) {
+		sim_response = (char *) malloc(rsim_access->len * 2 + 1);
+		bin2hex(rsim_access_data, rsim_access->len, sim_response);
+		sim_io_response.simResponse = sim_response;
 	} else {
-		response.simResponse = malloc(1);
-		response.simResponse[0] = '\0';
+		sim_io_response.simResponse = strdup("");
 	}
 
-	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_SUCCESS, &response, sizeof(response));
+	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_SUCCESS, &sim_io_response, sizeof(sim_io_response));
 
-	free(response.simResponse);
+	free(sim_io_response.simResponse);
 }
 
 /**

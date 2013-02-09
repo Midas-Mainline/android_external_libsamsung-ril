@@ -263,7 +263,7 @@ void ipc_ss_ussd(struct ipc_message_info *info);
 void ril_state_update(ril_sim_state status);
 void ipc_sec_sim_status(struct ipc_message_info *info);
 void ril_request_get_sim_status(RIL_Token t);
-void ril_request_sim_io(RIL_Token t, void *data, size_t datalen);
+void ril_request_sim_io(RIL_Token t, void *data, int length);
 void ipc_sec_rsim_access(struct ipc_message_info *info);
 void ipc_sec_sim_status_complete(struct ipc_message_info *info);
 void ipc_sec_lock_info(struct ipc_message_info *info);
