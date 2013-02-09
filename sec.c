@@ -56,10 +56,8 @@ ril_sim_state ipc2ril_sim_state(struct ipc_sec_sim_status_response *pin_status)
 		case IPC_SEC_SIM_STATUS_LOCK_PC:
 			return SIM_STATE_CORPORATE_PERSO;
 		case IPC_SEC_SIM_STATUS_INIT_COMPLETE:
-			return SIM_STATE_READY;
 		case IPC_SEC_SIM_STATUS_PB_INIT_COMPLETE:
-			// Ignore phone book init complete
-			return ril_data.state.sim_state;
+			return SIM_STATE_READY;
 		case IPC_SEC_SIM_STATUS_SIM_LOCK_REQUIRED:
 		case IPC_SEC_SIM_STATUS_INSIDE_PF_ERROR:
 		case IPC_SEC_SIM_STATUS_CARD_NOT_PRESENT:
