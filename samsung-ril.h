@@ -29,13 +29,24 @@
 
 #include <radio.h>
 
-#include "compat.h"
 #include "ipc.h"
 #include "srs.h"
 
 /**
  * Defines
  */
+
+#ifndef LOGE
+	#define LOGE ALOGE
+#endif
+
+#ifndef LOGI
+	#define LOGI ALOGI
+#endif
+
+#ifndef LOGD
+	#define LOGD ALOGD
+#endif
 
 #define RIL_VERSION_STRING "Samsung RIL"
 
@@ -282,8 +293,13 @@ void ril_plmn_string(char *plmn_data, char *response[3]);
 unsigned char ril_plmn_act_get(char *plmn_data);
 void ril_request_operator(RIL_Token t);
 void ipc_net_current_plmn(struct ipc_message_info *message);
+#if RIL_VERSION >= 6
+void ril_request_voice_registration_state(RIL_Token t);
+void ril_request_data_registration_state(RIL_Token t);
+#else
 void ril_request_registration_state(RIL_Token t);
 void ril_request_gprs_registration_state(RIL_Token t);
+#endif
 void ipc_net_regist(struct ipc_message_info *message);
 void ril_request_query_available_networks(RIL_Token t);
 void ipc_net_plmn_list(struct ipc_message_info *info);

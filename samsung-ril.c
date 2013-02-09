@@ -522,12 +522,21 @@ void ril_on_request(int request, void *data, size_t length, RIL_Token t)
 		case RIL_REQUEST_OPERATOR:
 			ril_request_operator(t);
 			break;
+#if RIL_VERSION >= 6
+		case RIL_REQUEST_VOICE_REGISTRATION_STATE:
+			ril_request_voice_registration_state(t);
+			break;
+		case RIL_REQUEST_DATA_REGISTRATION_STATE:
+			ril_request_data_registration_state(t);
+			break;
+#else
 		case RIL_REQUEST_REGISTRATION_STATE:
 			ril_request_registration_state(t);
 			break;
 		case RIL_REQUEST_GPRS_REGISTRATION_STATE:
 			ril_request_gprs_registration_state(t);
 			break;
+#endif
 		case RIL_REQUEST_QUERY_AVAILABLE_NETWORKS:
 			ril_request_query_available_networks(t);
 			break;
@@ -650,7 +659,7 @@ void ril_data_init(void)
  */
 
 static const RIL_RadioFunctions ril_ops = {
-	SAMSUNG_RIL_VERSION,
+	RIL_VERSION >= 6 ? 6 : RIL_VERSION,
 	ril_on_request,
 	ril_on_state_request,
 	ril_on_supports,

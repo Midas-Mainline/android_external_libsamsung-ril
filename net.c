@@ -416,7 +416,11 @@ void ipc_net_current_plmn(struct ipc_message_info *message)
 					LOGD("Updating Operator data in background");
 				} else {
 					ril_tokens_net_set_data_waiting();
+#if RIL_VERSION >= 6
+					ril_request_unsolicited(RIL_UNSOL_RESPONSE_VOICE_NETWORK_STATE_CHANGED, NULL, 0);
+#else
 					ril_request_unsolicited(RIL_UNSOL_RESPONSE_NETWORK_STATE_CHANGED, NULL, 0);
+#endif
 				}
 			}
 			break;
@@ -472,7 +476,11 @@ void ipc_net_current_plmn(struct ipc_message_info *message)
  *   return modem UNSOL data if available
  *   request IPC_NET_REGIST if no data is there
  */
+#if RIL_VERSION >= 6
+void ril_request_voice_registration_state(RIL_Token t)
+#else
 void ril_request_registration_state(RIL_Token t)
+#endif
 {
 	struct ipc_net_regist_get regist_req;
 	char *response[4];
@@ -524,7 +532,11 @@ void ril_request_registration_state(RIL_Token t)
  *   return modem UNSOL data if available
  *   request IPC_NET_REGIST if no data is there
  */
+#if RIL_VERSION >= 6
+void ril_request_data_registration_state(RIL_Token t)
+#else
 void ril_request_gprs_registration_state(RIL_Token t)
+#endif
 {
 	struct ipc_net_regist_get regist_req;
 	char *response[4];
@@ -590,7 +602,11 @@ void ipc_net_regist_unsol(struct ipc_message_info *message)
 				LOGD("Updating NetRegist data in background");
 			} else {
 				ril_tokens_net_set_data_waiting();
+#if RIL_VERSION >= 6
+				ril_request_unsolicited(RIL_UNSOL_RESPONSE_VOICE_NETWORK_STATE_CHANGED, NULL, 0);
+#else
 				ril_request_unsolicited(RIL_UNSOL_RESPONSE_NETWORK_STATE_CHANGED, NULL, 0);
+#endif
 			}
 			break;
 
@@ -607,7 +623,11 @@ void ipc_net_regist_unsol(struct ipc_message_info *message)
 				LOGD("Updating GPRSNetRegist data in background");
 			} else {
 				ril_tokens_net_set_data_waiting();
+#if RIL_VERSION >= 6
+				ril_request_unsolicited(RIL_UNSOL_RESPONSE_VOICE_NETWORK_STATE_CHANGED, NULL, 0);
+#else
 				ril_request_unsolicited(RIL_UNSOL_RESPONSE_NETWORK_STATE_CHANGED, NULL, 0);
+#endif
 			}
 			break;
 		default:

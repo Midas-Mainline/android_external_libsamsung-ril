@@ -121,7 +121,11 @@ void ril_state_update(ril_sim_state sim_state)
 	ril_request_unsolicited(RIL_UNSOL_RESPONSE_RADIO_STATE_CHANGED, NULL, 0);
 }
 
+#if RIL_VERSION >= 6
+void ipc2ril_card_status(struct ipc_sec_sim_status_response *pin_status, RIL_CardStatus_v6 *card_status)
+#else
 void ipc2ril_card_status(struct ipc_sec_sim_status_response *pin_status, RIL_CardStatus *card_status)
+#endif
 {
 	ril_sim_state sim_state;
 	int app_status_array_length;
@@ -216,7 +220,11 @@ void ipc_sec_sim_status(struct ipc_message_info *info)
 {
 	RIL_Token t = ril_request_get_token(info->aseq);
 	struct ipc_sec_sim_status_response *pin_status = (struct ipc_sec_sim_status_response *) info->data;
+#if RIL_VERSION >= 6
+	RIL_CardStatus_v6 card_status;
+#else
 	RIL_CardStatus card_status;
+#endif
 	ril_sim_state sim_state;
 
 	switch(info->type) {
@@ -253,7 +261,7 @@ void ipc_sec_sim_status(struct ipc_message_info *info)
 			memcpy(&(ril_data.state.sim_pin_status), pin_status, sizeof(struct ipc_sec_sim_status_response));
 
 			ipc2ril_card_status(pin_status, &card_status);
-			ril_request_complete(t, RIL_E_SUCCESS, &card_status, sizeof(RIL_CardStatus));
+			ril_request_complete(t, RIL_E_SUCCESS, &card_status, sizeof(card_status));
 
 			if(ril_data.tokens.pin_status != RIL_TOKEN_DATA_WAITING)
 				ril_data.tokens.pin_status = (RIL_Token) 0x00;
@@ -273,7 +281,11 @@ void ipc_sec_sim_status(struct ipc_message_info *info)
 void ril_request_get_sim_status(RIL_Token t)
 {
 	struct ipc_sec_sim_status_response *pin_status;
+#if RIL_VERSION >= 6
+	RIL_CardStatus_v6 card_status;
+#else
 	RIL_CardStatus card_status;
+#endif
 
 	if(ril_data.tokens.pin_status == RIL_TOKEN_DATA_WAITING) {
 		LOGD("Got RILJ request for UNSOL data");
@@ -282,7 +294,7 @@ void ril_request_get_sim_status(RIL_Token t)
 
 		ipc2ril_card_status(pin_status, &card_status);
 
-		ril_request_complete(t, RIL_E_SUCCESS, &card_status, sizeof(RIL_CardStatus));
+		ril_request_complete(t, RIL_E_SUCCESS, &card_status, sizeof(card_status));
 
 		ril_data.tokens.pin_status = (RIL_Token) 0x00;
 	} else if(ril_data.tokens.pin_status == (RIL_Token) 0x00) {
