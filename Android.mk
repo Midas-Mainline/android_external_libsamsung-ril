@@ -80,6 +80,16 @@ ifeq ($(TARGET_DEVICE),maguro)
 	samsung-ipc_device := maguro
 endif
 
+ifeq ($(TARGET_DEVICE),p5100)
+	LOCAL_CFLAGS += -DDEVICE_IPC_V4
+	samsung-ipc_device := espresso10
+endif
+
+ifeq ($(TARGET_DEVICE),p3100)
+	LOCAL_CFLAGS += -DDEVICE_IPC_V4
+	samsung-ipc_device := espresso
+endif
+
 LOCAL_C_INCLUDES := external/libsamsung-ipc/include
 LOCAL_C_INCLUDES += hardware/ril/libsamsung-ipc/include
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
