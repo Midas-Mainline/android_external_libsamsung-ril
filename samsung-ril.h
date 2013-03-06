@@ -52,6 +52,8 @@
 
 #define RIL_LOCK() pthread_mutex_lock(&ril_data.mutex)
 #define RIL_UNLOCK() pthread_mutex_unlock(&ril_data.mutex)
+#define RIL_START_LOCK() pthread_mutex_lock(&ril_data.start_mutex)
+#define RIL_START_UNLOCK() pthread_mutex_unlock(&ril_data.start_mutex)
 #define RIL_CLIENT_LOCK(client) pthread_mutex_lock(&(client->mutex))
 #define RIL_CLIENT_UNLOCK(client) pthread_mutex_unlock(&(client->mutex))
 
@@ -200,6 +202,7 @@ struct ril_data {
 	struct ril_client *srs_client;
 
 	pthread_mutex_t mutex;
+	pthread_mutex_t start_mutex;
 };
 
 extern struct ril_data ril_data;

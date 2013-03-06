@@ -759,5 +759,9 @@ end:
 
 	RIL_UNLOCK();
 
+	// Wait for power up
+	RIL_START_LOCK();
+	RIL_START_LOCK();
+
 	return &ril_ops;
 }

@@ -35,7 +35,7 @@ void ipc_pwr_phone_pwr_up(void)
 	ril_data.state.radio_state = RADIO_STATE_OFF;
 	ril_data.state.power_state = IPC_PWR_PHONE_STATE_LPM;
 
-	ril_request_unsolicited(RIL_UNSOL_RESPONSE_RADIO_STATE_CHANGED, NULL, 0);
+	RIL_START_UNLOCK();
 }
 
 /**
