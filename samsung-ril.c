@@ -288,6 +288,9 @@ void ipc_fmt_dispatch(struct ipc_message_info *info)
 		case IPC_PWR_PHONE_PWR_UP:
 			ipc_pwr_phone_pwr_up();
 			break;
+		case IPC_PWR_PHONE_RESET:
+			ipc_pwr_phone_reset();
+			break;
 		case IPC_PWR_PHONE_STATE:
 			ipc_pwr_phone_state(info);
 			break;

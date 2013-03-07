@@ -38,6 +38,12 @@ void ipc_pwr_phone_pwr_up(void)
 	RIL_START_UNLOCK();
 }
 
+void ipc_pwr_phone_reset(void)
+{
+	ril_data.state.radio_state = RADIO_STATE_OFF;
+	ril_request_unsolicited(RIL_UNSOL_RESPONSE_RADIO_STATE_CHANGED, NULL, 0);
+}
+
 /**
  * In: IPC_PWR_PHONE_STATE
  *   Noti from the modem giving current power mode (LPM or NORMAL)

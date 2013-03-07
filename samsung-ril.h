@@ -239,6 +239,7 @@ void ipc_gen_phone_res(struct ipc_message_info *info);
 /* PWR */
 
 void ipc_pwr_phone_pwr_up(void);
+void ipc_pwr_phone_reset(void);
 void ipc_pwr_phone_state(struct ipc_message_info *info);
 void ril_request_radio_power(RIL_Token t, void *data, size_t datalen);
 
