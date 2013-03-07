@@ -4,6 +4,9 @@
  * Copyright (C) 2010-2011 Joerie de Gram <j.de.gram@gmail.com>
  * Copyright (C) 2011-2012 Paul Kocialkowski <contact@paulk.fr>
  *
+ * Based on CyanogenMod Smdk4210RIL implementation
+ * Copyright (C) 2011 The CyanogenMod Project
+ *
  * samsung-ril is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -34,17 +37,20 @@ void ipc2ril_rssi(unsigned char rssi, RIL_SignalStrength_v6 *ss)
 void ipc2ril_rssi(unsigned char rssi, RIL_SignalStrength *ss)
 #endif
 {
-	int ril_rssi = 0;
+	int asu = 0;
+
+	if (ss == NULL)
+		return;
 
 	if (rssi > 0x6f) {
-		ril_rssi = 0;
+		asu = 0;
 	} else {
-		ril_rssi = (((rssi - 0x71) * -1) - ((rssi - 0x71) * -1) % 2) / 2;
-		if (ril_rssi > 31)
-			ril_rssi = 31;
+		asu = (((rssi - 0x71) * -1) - ((rssi - 0x71) * -1) % 2) / 2;
+		if (asu > 31)
+			asu = 31;
 	}
 
-	LOGD("Signal Strength is %d\n", ril_rssi);
+	LOGD("Signal Strength is %d\n", asu);
 
 #if RIL_VERSION >= 6
 	memset(ss, 0, sizeof(RIL_SignalStrength_v6));
@@ -53,7 +59,39 @@ void ipc2ril_rssi(unsigned char rssi, RIL_SignalStrength *ss)
 	memset(ss, 0, sizeof(RIL_SignalStrength));
 #endif
 
-	ss->GW_SignalStrength.signalStrength = ril_rssi;
+	ss->GW_SignalStrength.signalStrength = asu;
+	ss->GW_SignalStrength.bitErrorRate = 99;
+}
+
+#if RIL_VERSION >= 6
+void ipc2ril_bars(unsigned char bars, RIL_SignalStrength_v6 *ss)
+#else
+void ipc2ril_bars(unsigned char bars, RIL_SignalStrength *ss)
+#endif
+{
+	int asu = 0;
+
+	if (ss == NULL)
+		return;
+
+	switch (bars) {
+		case 0	: asu = 1;	break;
+		case 1	: asu = 3;	break;
+		case 2	: asu = 5;	break;
+		case 3	: asu = 8;	break;
+		case 4	: asu = 12;	break;
+		case 5	: asu = 15;	break;
+		default	: asu = bars ;	break;
+	}
+
+#if RIL_VERSION >= 6
+	memset(ss, 0, sizeof(RIL_SignalStrength_v6));
+	memset(&ss->LTE_SignalStrength, -1, sizeof(ss->LTE_SignalStrength));
+#else
+	memset(ss, 0, sizeof(RIL_SignalStrength));
+#endif
+
+	ss->GW_SignalStrength.signalStrength = asu;
 	ss->GW_SignalStrength.bitErrorRate = 99;
 }
 
@@ -77,16 +115,11 @@ void ipc_disp_icon_info(struct ipc_message_info *info)
 	if (ril_data.state.power_state != IPC_PWR_PHONE_STATE_NORMAL)
 		return;
 
-	if (info->type == IPC_TYPE_NOTI && icon_info->rssi == 0xff)
-		return;
-
-	ipc2ril_rssi(icon_info->rssi, &ss);
-
 	if (info->type == IPC_TYPE_NOTI) {
-		LOGD("Unsol request!");
+		ipc2ril_bars(icon_info->bars, &ss);
 		ril_request_unsolicited(RIL_UNSOL_SIGNAL_STRENGTH, &ss, sizeof(ss));
-	} else if (info->type == IPC_TYPE_RESP) {
-		LOGD("Sol request!");
+	} else {
+		ipc2ril_rssi(icon_info->rssi, &ss);
 		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_SUCCESS, &ss, sizeof(ss));
 	}
 }
