@@ -40,6 +40,19 @@
 
 #define SRS_CONTROL_CAFFE		0xCAFFE
 
+struct srs_header {
+	unsigned int length;
+	unsigned char group;
+	unsigned char index;
+} __attribute__((__packed__));
+
+struct srs_message {
+	unsigned short command;
+	int length;
+	void *data;
+};
+
+
 enum srs_snd_type {
 	SRS_SND_TYPE_VOICE,
 	SRS_SND_TYPE_SPEAKER,
@@ -66,16 +79,16 @@ struct srs_snd_call_volume {
 	int volume;
 } __attribute__((__packed__));
 
-struct srs_header {
-	unsigned int length;
-	unsigned char group;
-	unsigned char index;
+struct srs_snd_call_audio_path {
+	enum srs_snd_path path;
 } __attribute__((__packed__));
 
-struct srs_message {
-	unsigned short command;
-	int data_len;
-	void *data;
+struct srs_snd_call_clock_sync {
+	unsigned char sync;
+} __attribute__((__packed__));
+
+struct srs_control_ping {
+	int caffe;
 } __attribute__((__packed__));
 
 #endif

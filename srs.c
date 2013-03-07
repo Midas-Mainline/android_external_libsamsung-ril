@@ -195,7 +195,7 @@ int srs_client_send_message(struct srs_client_data *client_data, struct srs_mess
 		return -1;
 
 	memset(&header, 0, sizeof(header));
-	header.length = message->data_len + sizeof(header);
+	header.length = message->length + sizeof(header);
 	header.group = SRS_GROUP(message->command);
 	header.index = SRS_INDEX(message->command);
 
@@ -204,7 +204,7 @@ int srs_client_send_message(struct srs_client_data *client_data, struct srs_mess
 		return -1;
 
 	memcpy(data, &header, sizeof(header));
-	memcpy((void *) ((char *) data + sizeof(header)), message->data, message->data_len);
+	memcpy((void *) ((char *) data + sizeof(header)), message->data, message->length);
 
 	memset(&timeout, 0, sizeof(timeout));
 	timeout.tv_usec = 300;
@@ -248,7 +248,7 @@ int srs_client_send(struct srs_client_data *client_data, unsigned short command,
 	memset(&message, 0, sizeof(message));
 	message.command = command;
 	message.data = data;
-	message.data_len = length;
+	message.length = length;
 
 	RIL_CLIENT_LOCK(client_data->client);
 	rc = srs_client_send_message(client_data, &message);
@@ -277,7 +277,7 @@ int srs_send(unsigned short command, void *data, int length)
 
 	client_data = (struct srs_client_data *) ril_data.srs_client->data;
 
-	LOGD("SEND SRS: fd=%d command=%d data_len=%d", client_data->client_fd, command, length);
+	LOGD("SEND SRS: fd=%d command=%d length=%d", client_data->client_fd, command, length);
 	if (data != NULL && length > 0) {
 		LOGD("==== SRS DATA DUMP ====");
 		hex_dump(data, length);
@@ -329,10 +329,10 @@ int srs_client_recv(struct srs_client_data *client_data, struct srs_message *mes
 
 	memset(message, 0, sizeof(struct srs_message));
 	message->command = SRS_COMMAND(header);
-	message->data_len = header->length - sizeof(struct srs_header);
-	if (message->data_len > 0) {
-		message->data = calloc(1, message->data_len);
-		memcpy(message->data, (void *) ((char *) data + sizeof(struct srs_header)), message->data_len);
+	message->length = header->length - sizeof(struct srs_header);
+	if (message->length > 0) {
+		message->data = calloc(1, message->length);
+		memcpy(message->data, (void *) ((char *) data + sizeof(struct srs_header)), message->length);
 	} else {
 		message->data = NULL;
 	}
@@ -349,7 +349,7 @@ void srs_control_ping(struct srs_message *message)
 {
 	int caffe;
 
-	if (message == NULL || message->data == NULL || message->data_len < (int) sizeof(int))
+	if (message == NULL || message->data == NULL || message->length < (int) sizeof(int))
 		return;
 
 	caffe=*((int *) message->data);
@@ -430,10 +430,10 @@ void *srs_client_read_loop(void *data)
 			}
 			RIL_CLIENT_UNLOCK(client_data->client);
 
-			LOGD("RECV SRS: fd=%d command=%d data_len=%d", fd, message.command, message.data_len);
-			if (message.data != NULL && message.data_len > 0) {
+			LOGD("RECV SRS: fd=%d command=%d length=%d", fd, message.command, message.length);
+			if (message.data != NULL && message.length > 0) {
 				LOGD("==== SRS DATA DUMP ====");
-				hex_dump(message.data, message.data_len);
+				hex_dump(message.data, message.length);
 				LOGD("=======================");
 			}
 
