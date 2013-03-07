@@ -30,8 +30,6 @@
 ril_sim_state ipc2ril_sim_state(struct ipc_sec_sim_status_response *pin_status)
 {
 	switch(pin_status->status) {
-		case IPC_SEC_SIM_STATUS_INITIALIZING:
-			return SIM_STATE_NOT_READY;
 		case IPC_SEC_SIM_STATUS_LOCK_SC:
 			switch(pin_status->facility_lock) {
 				case IPC_SEC_FACILITY_LOCK_TYPE_SC_UNLOCKED:
@@ -57,6 +55,7 @@ ril_sim_state ipc2ril_sim_state(struct ipc_sec_sim_status_response *pin_status)
 			return SIM_STATE_SERVICE_PROVIDER_PERSO;
 		case IPC_SEC_SIM_STATUS_LOCK_PC:
 			return SIM_STATE_CORPORATE_PERSO;
+		case IPC_SEC_SIM_STATUS_READY:
 		case IPC_SEC_SIM_STATUS_INIT_COMPLETE:
 		case IPC_SEC_SIM_STATUS_PB_INIT_COMPLETE:
 			return SIM_STATE_READY;
@@ -114,7 +113,7 @@ void ril_state_update(ril_sim_state sim_state)
 			break;
 	}
 
-
+	LOGD("Setting radio state to %x", radio_state);
 	ril_data.state.radio_state = radio_state;
 
 	ril_tokens_check();
