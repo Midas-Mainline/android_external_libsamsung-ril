@@ -84,6 +84,8 @@ void ipc2ril_bars(unsigned char bars, RIL_SignalStrength *ss)
 		default	: asu = bars ;	break;
 	}
 
+	LOGD("Signal Strength is %d\n", asu);
+
 #if RIL_VERSION >= 6
 	memset(ss, 0, sizeof(RIL_SignalStrength_v6));
 	memset(&ss->LTE_SignalStrength, -1, sizeof(ss->LTE_SignalStrength));
