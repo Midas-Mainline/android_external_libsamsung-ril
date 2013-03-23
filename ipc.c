@@ -83,6 +83,8 @@ int ipc_fmt_read_loop(struct ril_client *client)
 	FD_SET(ipc_client_fd, &fds);
 
 	while (1) {
+		memset(&info, 0, sizeof(info));
+
 		if (ipc_client_fd < 0) {
 			LOGE("IPC FMT client fd is negative, aborting!");
 			return -1;
@@ -101,7 +103,7 @@ int ipc_fmt_read_loop(struct ril_client *client)
 
 			ipc_fmt_dispatch(&info);
 
-			if (info.data != NULL)
+			if (info.data != NULL && info.length > 0)
 				free(info.data);
 		}
 	}
