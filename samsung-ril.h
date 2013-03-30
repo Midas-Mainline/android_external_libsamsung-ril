@@ -59,6 +59,8 @@
 
 #define RIL_TOKEN_DATA_WAITING	(RIL_Token) 0xff
 
+#define RIL_CLIENT_MAX_TRIES	7
+
 /*
  * RIL client
  */
