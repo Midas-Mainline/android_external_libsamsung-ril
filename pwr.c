@@ -26,10 +26,11 @@
 #include "util.h"
 
 /*
- * Out: RIL_UNSOL_RESPONSE_RADIO_STATE_CHANGED
- *   Modem lets us know it's powered on. Though, it's still in LPM and should
- *   be considered as OFF. Send this to update RILJ radio state (OFF)
+ * Modem lets us know it's powered on. Though, it's still in LPM and should
+ * be considered as OFF. This request is used as a first indication that
+ * we can communicate with the modem, so unlock RIL start from here.
  */
+
 void ipc_pwr_phone_pwr_up(void)
 {
 	ril_data.state.radio_state = RADIO_STATE_OFF;
@@ -44,20 +45,16 @@ void ipc_pwr_phone_reset(void)
 	ril_request_unsolicited(RIL_UNSOL_RESPONSE_RADIO_STATE_CHANGED, NULL, 0);
 }
 
-/*
- * In: IPC_PWR_PHONE_STATE
- *   Noti from the modem giving current power mode (LPM or NORMAL)
- *   LPM = Low Power Mode (airplane mode for instance)
- *
- * Out: RIL_UNSOL_RESPONSE_RADIO_STATE_CHANGED
- *   Update radio state according to modem power state
- */
 void ipc_pwr_phone_state(struct ipc_message_info *info)
 {
-	uint8_t state = *((uint8_t *) info->data);
+	unsigned char state;
 
-	switch(state)
-	{
+	if (info == NULL || info->data == NULL || info->length < sizeof(unsigned char))
+		return;
+
+	state = *((unsigned char *) info->data);
+
+	switch (state) {
 		case IPC_PWR_R(IPC_PWR_PHONE_STATE_LPM):
 			LOGD("Got power to LPM");
 
@@ -69,7 +66,7 @@ void ipc_pwr_phone_state(struct ipc_message_info *info)
 			ril_data.state.radio_state = RADIO_STATE_OFF;
 			ril_data.state.power_state = IPC_PWR_PHONE_STATE_LPM;
 			ril_request_unsolicited(RIL_UNSOL_RESPONSE_RADIO_STATE_CHANGED, NULL, 0);
-		break;
+			break;
 		case IPC_PWR_R(IPC_PWR_PHONE_STATE_NORMAL):
 			LOGD("Got power to NORMAL");
 
@@ -81,23 +78,21 @@ void ipc_pwr_phone_state(struct ipc_message_info *info)
 			ril_data.state.radio_state = RADIO_STATE_SIM_NOT_READY;
 			ril_data.state.power_state = IPC_PWR_PHONE_STATE_NORMAL;
 			ril_request_unsolicited(RIL_UNSOL_RESPONSE_RADIO_STATE_CHANGED, NULL, 0);
-		break;
+			break;
 	}
 
 	ril_tokens_check();
 }
 
-/*
- * In: RIL_REQUEST_RADIO_POWER
- *   Request ON or OFF radio power mode
- *
- * Out: IPC_PWR_PHONE_STATE
- *   Order the modem to get in required power mode
- */
-void ril_request_radio_power(RIL_Token t, void *data, size_t datalen)
+void ril_request_radio_power(RIL_Token t, void *data, int length)
 {
-	int power_state = *((int *)data);
+	int power_state;
 	unsigned short power_data;
+
+	if (data == NULL || length < (int) sizeof(int))
+		return;
+
+	power_state = *((int *) data);
 
 	LOGD("requested power_state is %d", power_state);
 
