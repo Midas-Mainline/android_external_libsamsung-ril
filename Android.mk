@@ -1,23 +1,24 @@
-# This file is part of samsung-ril.
+# This file is part of Samsung-RIL.
 #
 # Copyright (C) 2010-2011 Joerie de Gram <j.de.gram@gmail.com>
 # Copyright (C) 2011-2012 Paul Kocialkowski <contact@paulk.fr>
 #
-# samsung-ril is free software: you can redistribute it and/or modify
+# Samsung-RIL is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# samsung-ril is distributed in the hope that it will be useful,
+# Samsung-RIL is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with samsung-ril.  If not, see <http://www.gnu.org/licenses/>.
+# along with Samsung-RIL.  If not, see <http://www.gnu.org/licenses/>.
 #
 
 LOCAL_PATH := $(call my-dir)
+
 include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := \
@@ -40,79 +41,26 @@ LOCAL_SRC_FILES := \
 	gprs.c \
 	rfs.c
 
-LOCAL_SHARED_LIBRARIES := \
-	libcutils libutils libril liblog
+LOCAL_C_INCLUDES := \
+	external/libsamsung-ipc/include \
+	$(LOCAL_PATH)/include
 
-LOCAL_STATIC_LIBRARIES := libsamsung-ipc
-
-# for asprinf
-LOCAL_CFLAGS := -D_GNU_SOURCE
+LOCAL_CFLAGS := -D_GNU_SOURCE -DRIL_SHLIB
 
 # Disable STK
 LOCAL_CFLAGS += -DDISABLE_STK
 
-ifeq ($(TARGET_DEVICE),crespo)
-	LOCAL_CFLAGS += -DDEVICE_IPC_V4
-	samsung-ipc_device := crespo
-endif
+# Samsung-RIL only supports IPC V4
+LOCAL_CFLAGS += -DDEVICE_IPC_V4
 
-ifeq ($(TARGET_DEVICE),galaxysmtd)
-	LOCAL_CFLAGS += -DDEVICE_IPC_V4
-	samsung-ipc_device := aries
-endif
-
-ifeq ($(TARGET_DEVICE),galaxys2)
-	LOCAL_CFLAGS += -DDEVICE_IPC_V4
-	samsung-ipc_device := galaxys2
-endif
-
-ifeq ($(TARGET_DEVICE),galaxytab)
-	LOCAL_CFLAGS += -DDEVICE_IPC_V4
-	samsung-ipc_device := aries
-endif
-
-ifeq ($(TARGET_DEVICE),h1)
-	LOCAL_CFLAGS += -DDEVICE_H1
-endif
-
-ifeq ($(TARGET_DEVICE),maguro)
-	LOCAL_CFLAGS += -DDEVICE_IPC_V4
-	samsung-ipc_device := maguro
-endif
-
-ifeq ($(TARGET_DEVICE),p5100)
-	LOCAL_CFLAGS += -DDEVICE_IPC_V4
-	samsung-ipc_device := espresso10
-endif
-
-ifeq ($(TARGET_DEVICE),p3100)
-	LOCAL_CFLAGS += -DDEVICE_IPC_V4
-	samsung-ipc_device := espresso
-endif
-
-LOCAL_C_INCLUDES := external/libsamsung-ipc/include
-LOCAL_C_INCLUDES += hardware/ril/libsamsung-ipc/include
-LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
-
-LOCAL_MODULE_TAGS := optional
-
+LOCAL_SHARED_LIBRARIES := libcutils libnetutils libutils liblog
+LOCAL_STATIC_LIBRARIES := libsamsung-ipc
 LOCAL_PRELINK_MODULE := false
 
-ifeq (foo,foo)
-	# build shared library
-	LOCAL_SHARED_LIBRARIES += \
-		libcutils libnetutils libutils liblog
-	LOCAL_LDLIBS += -lpthread
-	LOCAL_CFLAGS += -DRIL_SHLIB
-	LOCAL_MODULE:= libsamsung-ril
-	include $(BUILD_SHARED_LIBRARY)
-else
-	# build executable
-	LOCAL_SHARED_LIBRARIES += \
-		libril
-	LOCAL_MODULE:= samsung-ril
-	include $(BUILD_EXECUTABLE)
-endif
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE := libsamsung-ril
+
+include $(BUILD_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
 

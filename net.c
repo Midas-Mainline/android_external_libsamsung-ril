@@ -1,21 +1,21 @@
-/**
- * This file is part of samsung-ril.
+/*
+ * This file is part of Samsung-RIL.
  *
  * Copyright (C) 2010-2011 Joerie de Gram <j.de.gram@gmail.com>
  * Copyright (C) 2011-2012 Paul Kocialkowski <contact@paulk.fr>
  *
- * samsung-ril is free software: you can redistribute it and/or modify
+ * Samsung-RIL is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * samsung-ril is distributed in the hope that it will be useful,
+ * Samsung-RIL is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with samsung-ril.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Samsung-RIL.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -27,11 +27,11 @@
 
 #include <plmn_list.h>
 
-/**
+/*
  * Format conversion utils
  */
 
-/**
+/*
  * Converts IPC network registration status to Android RIL format
  */
 unsigned char ipc2ril_reg_state(unsigned char reg_state)
@@ -55,7 +55,7 @@ unsigned char ipc2ril_reg_state(unsigned char reg_state)
 	}
 }
 
-/**
+/*
  * Converts IPC network access technology to Android RIL format
  */
 unsigned char ipc2ril_act(unsigned char act)
@@ -74,7 +74,7 @@ unsigned char ipc2ril_act(unsigned char act)
 	}
 }
 
-/**
+/*
  * Converts IPC GPRS network access technology to Android RIL format
  */
 unsigned char ipc2ril_gprs_act(unsigned char act)
@@ -93,7 +93,7 @@ unsigned char ipc2ril_gprs_act(unsigned char act)
 	}
 }
 
-/**
+/*
  * Converts IPC preferred network type to Android RIL format
  */
 int ipc2ril_mode_sel(unsigned char mode)
@@ -112,7 +112,7 @@ int ipc2ril_mode_sel(unsigned char mode)
 	}
 }
 
-/**
+/*
  * Converts Android RIL preferred network type to IPC format
  */
 unsigned char ril2ipc_mode_sel(int mode)
@@ -128,7 +128,7 @@ unsigned char ril2ipc_mode_sel(int mode)
 	}
 }
 
-/**
+/*
  * Converts IPC preferred PLMN selection type to Android RIL format
  */
 int ipc2ril_plmn_sel(unsigned char mode)
@@ -143,7 +143,7 @@ int ipc2ril_plmn_sel(unsigned char mode)
 	}
 }
 
-/**
+/*
  * Converts Android RIL preferred PLMN selection type to IPC format
  */
 unsigned char ril2ipc_plmn_sel(int mode)
@@ -158,7 +158,7 @@ unsigned char ril2ipc_plmn_sel(int mode)
 	}
 }
 
-/**
+/*
  * Converts IPC reg state to Android format
  */
 void ipc2ril_reg_state_resp(struct ipc_net_regist_response *netinfo, char *response[15])
@@ -174,7 +174,7 @@ void ipc2ril_reg_state_resp(struct ipc_net_regist_response *netinfo, char *respo
 	asprintf(&response[3], "%d", act);
 }
 
-/**
+/*
  * Converts IPC GPRS reg state to Android format
  */
 void ipc2ril_gprs_reg_state_resp(struct ipc_net_regist_response *netinfo, char *response[4])
@@ -190,7 +190,7 @@ void ipc2ril_gprs_reg_state_resp(struct ipc_net_regist_response *netinfo, char *
 	asprintf(&response[3], "%d", act);
 }
 
-/**
+/*
  * Set all the tokens to data waiting.
  * For instance when only operator is updated by modem NOTI, we don't need
  * to ask the modem new NET Regist and GPRS Net Regist states so act like we got
@@ -203,7 +203,7 @@ void ril_tokens_net_set_data_waiting(void)
 	ril_data.tokens.operator = RIL_TOKEN_DATA_WAITING;
 }
 
-/**
+/*
  * Returns 1 if unsol data is waiting, 0 if not
  */
 int ril_tokens_net_get_data_waiting(void)
@@ -211,7 +211,7 @@ int ril_tokens_net_get_data_waiting(void)
 	return ril_data.tokens.registration_state == RIL_TOKEN_DATA_WAITING || ril_data.tokens.gprs_registration_state == RIL_TOKEN_DATA_WAITING || ril_data.tokens.operator == RIL_TOKEN_DATA_WAITING;
 }
 
-/**
+/*
  * Print net tokens values
  */
 void ril_tokens_net_state_dump(void)
@@ -273,7 +273,7 @@ void ril_plmn_string(char *plmn_data, char *response[3])
 	response[1] = NULL;
 }
 
-/**
+/*
  * How to handle NET unsol data from modem:
  * 1- Rx UNSOL (NOTI) data from modem
  * 2- copy data in a sized variable stored in radio
@@ -311,7 +311,7 @@ void ril_plmn_string(char *plmn_data, char *response[3])
  * 12- send back last data we have (from UNSOL RILJ request here)
  */
 
-/**
+/*
  * In: RIL_REQUEST_OPERATOR
  *   Request Operator name
  *
@@ -373,7 +373,7 @@ void ril_request_operator(RIL_Token t)
 	ril_tokens_net_state_dump();
 }
 
-/**
+/*
  * In: IPC_NET_CURRENT_PLMN
  *   This can be SOL (RESP) or UNSOL (NOTI) message from modem
  *
@@ -468,7 +468,7 @@ void ipc_net_current_plmn(struct ipc_message_info *message)
 	ril_tokens_net_state_dump();
 }
 
-/**
+/*
  * In: RIL_REQUEST_REGISTRATION_STATE
  *   Request reg state
  *
@@ -524,7 +524,7 @@ void ril_request_registration_state(RIL_Token t)
 	ril_tokens_net_state_dump();
 }
 
-/**
+/*
  * In: RIL_REQUEST_GPRS_REGISTRATION_STATE
  *   Request GPRS reg state
  *
@@ -694,7 +694,7 @@ void ipc_net_regist_sol(struct ipc_message_info *message)
 	ril_tokens_net_state_dump();
 }
 
-/**
+/*
  * In: IPC_NET_REGIST
  *   This can be SOL (RESP) or UNSOL (NOTI) message from modem
  */
@@ -718,7 +718,7 @@ void ipc_net_regist(struct ipc_message_info *message)
 
 }
 
-/**
+/*
  * In: RIL_REQUEST_QUERY_AVAILABLE_NETWORKS
  *
  * Out: IPC_NET_PLMN_LIST
@@ -729,7 +729,7 @@ void ril_request_query_available_networks(RIL_Token t)
 }
 
 /* FIXME: cleanup struct names & resp[] addressing */
-/**
+/*
  * In: IPC_NET_PLMN_LIST
  * Send back available PLMN list
  *

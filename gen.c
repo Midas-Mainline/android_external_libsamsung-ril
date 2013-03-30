@@ -1,20 +1,20 @@
-/**
- * This file is part of samsung-ril.
+/*
+ * This file is part of Samsung-RIL.
  *
  * Copyright (C) 2011-2012 Paul Kocialkowski <contact@paulk.fr>
  *
- * samsung-ril is free software: you can redistribute it and/or modify
+ * Samsung-RIL is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * samsung-ril is distributed in the hope that it will be useful,
+ * Samsung-RIL is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with samsung-ril.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Samsung-RIL.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -24,7 +24,7 @@
 #include "samsung-ril.h"
 #include "util.h"
 
-/**
+/*
  * IPC_GEN_PHONE_RES has shared aseq (in the header), group, index and type (in the data)
  * with the original request it responds to. 
  * On this implementation, we just check aseq and command (group and index).
@@ -46,7 +46,7 @@
  * Please use GEN_PHONE_RES engine as often as possible!
  */
 
-/**
+/*
  * GEN expects functions
  */
 
@@ -141,11 +141,11 @@ int ipc_gen_phone_res_expect_to_abort(unsigned char aseq, unsigned short command
 	return ipc_gen_phone_res_expect_register(aseq, command, NULL, 0, 1);
 }
 
-/**
+/*
  * GEN dequeue function
  */
 
-/**
+/*
  * In: IPC_GEN_PHONE_RES
  *   Check the ipc_gen_phone_res_expects queue and act accordingly
  */

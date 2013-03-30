@@ -1,21 +1,21 @@
-/**
- * This file is part of samsung-ril.
+/*
+ * This file is part of Samsung-RIL.
  *
  * Copyright (C) 2010-2011 Joerie de Gram <j.de.gram@gmail.com>
  * Copyright (C) 2011-2012 Paul Kocialkowski <contact@paulk.fr>
  *
- * samsung-ril is free software: you can redistribute it and/or modify
+ * Samsung-RIL is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * samsung-ril is distributed in the hope that it will be useful,
+ * Samsung-RIL is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with samsung-ril.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Samsung-RIL.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -25,7 +25,7 @@
 #include "samsung-ril.h"
 #include "util.h"
 
-/**
+/*
  * Format conversion utils
  */
 
@@ -58,7 +58,7 @@ RIL_Errno ipc2ril_sms_ack_error(unsigned short error, int *error_code)
 	}
 }
 
-/**
+/*
  * Outgoing SMS functions
  */
 
@@ -225,7 +225,7 @@ void ril_request_send_sms_next(void)
 	}
 }
 
-/**
+/*
  * In: RIL_REQUEST_SEND_SMS
  *   Send an SMS message.
  *
@@ -416,7 +416,7 @@ void ril_request_send_sms(RIL_Token t, void *data, size_t length)
 	}
 }
 
-/**
+/*
  * In: RIL_REQUEST_SEND_SMS_EXPECT_MORE
  *   Send an SMS message. Identical to RIL_REQUEST_SEND_SMS,
  *   except that more messages are expected to be sent soon. If possible,
@@ -430,7 +430,7 @@ void ril_request_send_sms_expect_more(RIL_Token t, void *data, size_t length)
 	ril_request_send_sms(t, data, length);
 }
 
-/**
+/*
  * In: IPC_SMS_SVC_CENTER_ADDR
  *   SMSC: Service Center Address, needed to send an SMS
  *
@@ -493,7 +493,7 @@ void ipc_sms_send_msg_complete(struct ipc_message_info *info)
 	}
 }
 
-/**
+/*
  * In: IPC_SMS_SEND_MSG
  *   This comes to ACK the latest sent SMS message
  */
@@ -522,7 +522,7 @@ void ipc_sms_send_msg(struct ipc_message_info *info)
 	ril_request_send_sms_next();
 }
 
-/**
+/*
  * Incoming SMS functions
  */
 
@@ -612,7 +612,7 @@ void ipc_sms_incoming_msg_next(void)
 	ipc_sms_incoming_msg_unregister(incoming_msg);
 }
 
-/**
+/*
  * In: IPC_SMS_INCOMING_MSG
  *   Message to notify an incoming message, with PDU
  *
@@ -668,7 +668,7 @@ void ipc_sms_incoming_msg(struct ipc_message_info *info)
 	ipc_sms_incoming_msg_complete(pdu, length, msg->type, msg->msg_tpid);
 }
 
-/**
+/*
  * In: RIL_REQUEST_SMS_ACKNOWLEDGE
  *   Acknowledge successful or failed receipt of SMS previously indicated
  *   via RIL_UNSOL_RESPONSE_NEW_SMS
@@ -706,7 +706,7 @@ void ril_request_sms_acknowledge(RIL_Token t, void *data, size_t length)
 	ipc_sms_incoming_msg_next();
 }
 
-/**
+/*
  * In: IPC_SMS_DELIVER_REPORT
  *   Attest that the modem successfully sent our SMS recv ACK 
  */
@@ -725,7 +725,7 @@ void ipc_sms_deliver_report(struct ipc_message_info *info)
 	ril_request_complete(ril_request_get_token(info->aseq), e, NULL, 0);
 }
 
-/**
+/*
  * Apparently non-SMS-messages-related function
  */
 

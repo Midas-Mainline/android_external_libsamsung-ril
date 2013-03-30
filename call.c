@@ -1,21 +1,21 @@
-/**
- * This file is part of samsung-ril.
+/*
+ * This file is part of Samsung-RIL.
  *
  * Copyright (C) 2010-2011 Joerie de Gram <j.de.gram@gmail.com>
  * Copyright (C) 2011-2012 Paul Kocialkowski <contact@paulk.fr>
  *
- * samsung-ril is free software: you can redistribute it and/or modify
+ * Samsung-RIL is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * samsung-ril is distributed in the hope that it will be useful,
+ * Samsung-RIL is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with samsung-ril.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Samsung-RIL.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -24,7 +24,7 @@
 
 #include "samsung-ril.h"
 
-/**
+/*
  * Format conversion utils
  */
 
@@ -61,7 +61,7 @@ RIL_LastCallFailCause ipc2ril_call_fail_cause(unsigned char end_cause)
 	}
 }
 
-/**
+/*
  * In: RIL_UNSOL_CALL_RING
  *   Ring indication for an incoming call (eg, RING or CRING event).
  */
@@ -73,7 +73,7 @@ void ipc_call_incoming(struct ipc_message_info *info)
 	ril_request_unsolicited(RIL_UNSOL_RESPONSE_CALL_STATE_CHANGED, NULL, 0);
 }
 
-/**
+/*
  * In: IPC_CALL_STATUS
  *   Indicates that a call's status has changed
  *
@@ -92,7 +92,7 @@ void ipc_call_status(struct ipc_message_info *info)
 	ril_request_unsolicited(RIL_UNSOL_RESPONSE_CALL_STATE_CHANGED, NULL, 0);
 }
 
-/**
+/*
  * In: RIL_REQUEST_DIAL
  *   Initiate voice call
  *
@@ -140,7 +140,7 @@ void ril_request_dial(RIL_Token t, void *data, size_t datalen)
 	ril_request_complete(t, RIL_E_SUCCESS, NULL, 0);
 }
 
-/**
+/*
  * In: RIL_REQUEST_GET_CURRENT_CALLS
  *   Requests current call list
  *
@@ -152,7 +152,7 @@ void ril_request_get_current_calls(RIL_Token t)
 	ipc_fmt_send_get(IPC_CALL_LIST, ril_request_get_id(t));
 }
 
-/**
+/*
  * In: IPC_CALL_LIST GET
  *   Provides a list of active calls
  *
@@ -218,7 +218,7 @@ void ipc_call_list(struct ipc_message_info *info)
 	free(calls);
 }
 
-/**
+/*
  * In: RIL_REQUEST_HANGUP
  *   Hang up a specific line (like AT+CHLD=1x)
  *
@@ -235,7 +235,7 @@ void ril_request_hangup(RIL_Token t)
 	ril_request_unsolicited(RIL_UNSOL_RESPONSE_CALL_STATE_CHANGED, NULL, 0);
 }
 
-/**
+/*
  * In: RIL_REQUEST_ANSWER
  *   Answer incoming call
  *
@@ -252,7 +252,7 @@ void ril_request_answer(RIL_Token t)
 	ril_request_unsolicited(RIL_UNSOL_RESPONSE_CALL_STATE_CHANGED, NULL, 0);
 }
 
-/**
+/*
  * In: RIL_REQUEST_LAST_CALL_FAIL_CAUSE
  *   Reason why last call was terminated
  */
@@ -270,7 +270,7 @@ void ril_request_last_call_fail_cause(RIL_Token t)
 	ril_request_complete(t, RIL_E_SUCCESS, &fail_cause, sizeof(RIL_LastCallFailCause));
 }
 
-/**
+/*
  * In: IPC_CALL_BURST_DTMF
  *   Send DTMF burst. RILJ only sends 1 DTMF tone to send at a time.
  *

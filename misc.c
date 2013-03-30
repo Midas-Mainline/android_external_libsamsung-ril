@@ -1,21 +1,21 @@
-/**
- * This file is part of samsung-ril.
+/*
+ * This file is part of Samsung-RIL.
  *
  * Copyright (C) 2010-2011 Joerie de Gram <j.de.gram@gmail.com>
  * Copyright (C) 2011-2012 Paul Kocialkowski <contact@paulk.fr>
  *
- * samsung-ril is free software: you can redistribute it and/or modify
+ * Samsung-RIL is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * samsung-ril is distributed in the hope that it will be useful,
+ * Samsung-RIL is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with samsung-ril.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Samsung-RIL.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -176,7 +176,7 @@ void ipc_misc_me_version(struct ipc_message_info *info)
 	ril_data.tokens.baseband_version = 0;
 }
 
-/**
+/*
  * In: RIL_REQUEST_GET_IMSI
  *   Get the SIM IMSI
  *   Only valid when radio state is "RADIO_STATE_SIM_READY"
@@ -189,7 +189,7 @@ void ril_request_get_imsi(RIL_Token t)
 	ipc_fmt_send_get(IPC_MISC_ME_IMSI, ril_request_get_id(t));
 }
 
-/**
+/*
  * In: IPC_MISC_ME_IMSI
  *   Provides ME's IMSI
  *

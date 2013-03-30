@@ -1,21 +1,21 @@
-/**
- * This file is part of samsung-ril.
+/*
+ * This file is part of Samsung-RIL.
  *
  * Copyright (C) 2010-2011 Joerie de Gram <j.de.gram@gmail.com>
  * Copyright (C) 2011-2012 Paul Kocialkowski <contact@paulk.fr>
  *
- * samsung-ril is free software: you can redistribute it and/or modify
+ * Samsung-RIL is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * samsung-ril is distributed in the hope that it will be useful,
+ * Samsung-RIL is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with samsung-ril.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Samsung-RIL.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -70,7 +70,7 @@ ril_sim_state ipc2ril_sim_state(struct ipc_sec_sim_status_response *pin_status)
 	}
 }
 
-/**
+/*
  * Update the radio state based on SIM state
  *
  * Out: RIL_UNSOL_RESPONSE_RADIO_STATE_CHANGED
@@ -204,7 +204,7 @@ void ril_tokens_pin_status_dump(void)
 	\tril_data.tokens.pin_status = %p\n", ril_data.tokens.pin_status);
 }
 
-/**
+/*
  * In: IPC_SEC_SIM_STATUS
  *   Provides SIM initialization/lock status
  *
@@ -274,7 +274,7 @@ void ipc_sec_sim_status(struct ipc_message_info *info)
 	ril_tokens_pin_status_dump();
 }
 
-/**
+/*
  * In: RIL_REQUEST_GET_SIM_STATUS
  *   Requests status of the SIM interface and the SIM card
  */
@@ -496,7 +496,7 @@ void ril_request_sim_io_complete(RIL_Token t, unsigned char command, unsigned sh
 	free(rsim_access_data);
 }
 
-/**
+/*
  * In: RIL_REQUEST_SIM_IO
  *   Request SIM I/O operation.
  *   This is similar to the TS 27.007 "restricted SIM" operation
@@ -567,7 +567,7 @@ void ril_request_sim_io(RIL_Token t, void *data, int length)
 	sim_io_info->length = 0;
 }
 
-/**
+/*
  * In: IPC_SEC_RSIM_ACCESS
  *   Provides restricted SIM read operation result
  *
@@ -716,7 +716,7 @@ void ipc_sec_rsim_access(struct ipc_message_info *info)
 	ril_request_sim_io_next();
 }
 
-/**
+/*
  * In: IPC_GEN_PHONE_RES
  *   Provides result of IPC_SEC_SIM_STATUS SET
  *
@@ -752,7 +752,7 @@ void ipc_sec_sim_status_complete(struct ipc_message_info *info)
 	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_SUCCESS, &attempts, sizeof(attempts));
 }
 
-/**
+/*
  * In: IPC_SEC_LOCK_INFO
  *   Provides number of retries left for a lock type
  */
@@ -773,7 +773,7 @@ void ipc_sec_lock_info(struct ipc_message_info *info)
 	}
 }
 
-/**
+/*
  * In: RIL_REQUEST_ENTER_SIM_PIN
  *   Supplies SIM PIN. Only called if RIL_CardStatus has RIL_APPSTATE_PIN state
  * 
@@ -853,7 +853,7 @@ void ril_request_enter_sim_puk(RIL_Token t, void *data, size_t datalen)
 	ipc_fmt_send_set(IPC_SEC_SIM_STATUS, ril_request_get_id(t), (unsigned char *) &pin_status, sizeof(pin_status));
 }
 
-/**
+/*
  * In: IPC_SEC_PHONE_LOCK
  *
  * Out: RIL_REQUEST_QUERY_FACILITY_LOCK
@@ -869,7 +869,7 @@ void ipc_sec_phone_lock(struct ipc_message_info *info)
 	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_SUCCESS, &status, sizeof(status));
 }
 
-/**
+/*
  * In: RIL_REQUEST_QUERY_FACILITY_LOCK
  *   Query the status of a facility lock state
  *
@@ -905,7 +905,7 @@ void ril_request_query_facility_lock(RIL_Token t, void *data, size_t datalen)
 #define ipc_sec_phone_lock_complete \
 	ipc_sec_sim_status_complete
 
-/**
+/*
  * In: RIL_REQUEST_SET_FACILITY_LOCK
  *   Enable/disable one facility lock
  *

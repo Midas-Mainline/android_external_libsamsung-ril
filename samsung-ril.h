@@ -1,21 +1,21 @@
-/**
- * This file is part of samsung-ril.
+/*
+ * This file is part of Samsung-RIL.
  *
  * Copyright (C) 2010-2011 Joerie de Gram <j.de.gram@gmail.com>
  * Copyright (C) 2011-2012 Paul Kocialkowski <contact@paulk.fr>
  *
- * samsung-ril is free software: you can redistribute it and/or modify
+ * Samsung-RIL is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * samsung-ril is distributed in the hope that it will be useful,
+ * Samsung-RIL is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with samsung-ril.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Samsung-RIL.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -32,7 +32,7 @@
 #include "ipc.h"
 #include "srs.h"
 
-/**
+/*
  * Defines
  */
 
@@ -59,7 +59,7 @@
 
 #define RIL_TOKEN_DATA_WAITING	(RIL_Token) 0xff
 
-/**
+/*
  * RIL client
  */
 
@@ -95,7 +95,7 @@ int ril_client_create(struct ril_client *client);
 int ril_client_destroy(struct ril_client *client);
 int ril_client_thread_start(struct ril_client *client);
 
-/**
+/*
  * RIL requests
  */
 
@@ -120,7 +120,7 @@ void ril_request_complete(RIL_Token t, RIL_Errno e, void *data, size_t length);
 void ril_request_unsolicited(int request, void *data, size_t length);
 void ril_request_timed_callback(RIL_TimedCallback callback, void *data, const struct timeval *time);
 
-/**
+/*
  * RIL tokens
  */
 
@@ -141,7 +141,7 @@ struct ril_tokens {
 
 void ril_tokens_check(void);
 
-/**
+/*
  * RIL state
  */
 
@@ -180,7 +180,7 @@ struct ril_state {
 	unsigned char sms_incoming_msg_tpid;
 };
 
-/**
+/*
  * RIL data
  */
 
@@ -207,7 +207,7 @@ struct ril_data {
 
 extern struct ril_data ril_data;
 
-/**
+/*
  * Dispatch functions
  */
 

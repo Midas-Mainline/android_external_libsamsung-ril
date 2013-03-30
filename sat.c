@@ -1,21 +1,21 @@
-/**
- * This file is part of samsung-ril.
+/*
+ * This file is part of Samsung-RIL.
  *
  * Copyright (C) 2010-2011 Joerie de Gram <j.de.gram@gmail.com>
  * Copyright (C) 2011-2012 Paul Kocialkowski <contact@paulk.fr>
  *
- * samsung-ril is free software: you can redistribute it and/or modify
+ * Samsung-RIL is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * samsung-ril is distributed in the hope that it will be useful,
+ * Samsung-RIL is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with samsung-ril.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Samsung-RIL.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -34,7 +34,7 @@ void ril_request_report_stk_service_is_running(RIL_Token t)
 #endif
 }
 
-/**
+/*
  * In: IPC_SAT_PROACTIVE_CMD
  *   STK proactive command
  *
@@ -54,7 +54,7 @@ void ipc_sat_proactive_cmd_unsol(struct ipc_message_info *info)
 	free(hexdata);
 }
 
-/**
+/*
  * In: IPC_SAT_PROACTIVE_CMD RESP
  *   STK proactive command
  *
@@ -74,7 +74,7 @@ void ipc_sat_proactive_cmd_sol(struct ipc_message_info *info)
 	}
 }
 
-/**
+/*
  * Proactive command indi/resp helper function
  */
 void ipc_sat_proactive_cmd(struct ipc_message_info *info)
@@ -88,7 +88,7 @@ void ipc_sat_proactive_cmd(struct ipc_message_info *info)
 	}
 }
 
-/**
+/*
  * In: RIL_REQUEST_STK_SEND_TERMINAL_RESPONSE
  *   Requests to send a terminal response to SIM for a received
  *   proactive command
@@ -115,7 +115,7 @@ void ril_request_stk_send_terminal_response(RIL_Token t, void *data, size_t data
 	ril_request_complete(t, RIL_E_SUCCESS, buf, sizeof(char*));
 }
 
-/**
+/*
  * In: RIL_REQUEST_STK_SEND_ENVELOPE_COMMAND
  *   Requests to send a SAT/USAT envelope command to SIM.
  *   The SAT/USAT envelope command refers to 3GPP TS 11.14 and 3GPP TS 31.111
@@ -140,7 +140,7 @@ void ril_request_stk_send_envelope_command(RIL_Token t, void *data, size_t datal
 	ipc_fmt_send(IPC_SAT_ENVELOPE_CMD, IPC_TYPE_EXEC, buf, sizeof(buf), ril_request_get_id(t));
 }
 
-/**
+/*
  * In: IPC_SAT_ENVELOPE_CMD EXEC
  *
  * Out: RIL_REQUEST_STK_SEND_ENVELOPE_COMMAND

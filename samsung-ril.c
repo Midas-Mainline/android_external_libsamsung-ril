@@ -1,21 +1,21 @@
-/**
- * This file is part of samsung-ril.
+/*
+ * This file is part of Samsung-RIL.
  *
  * Copyright (C) 2010-2011 Joerie de Gram <j.de.gram@gmail.com>
  * Copyright (C) 2011-2012 Paul Kocialkowski <contact@paulk.fr>
  *
- * samsung-ril is free software: you can redistribute it and/or modify
+ * Samsung-RIL is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * samsung-ril is distributed in the hope that it will be useful,
+ * Samsung-RIL is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with samsung-ril.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Samsung-RIL.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -23,7 +23,7 @@
 #include "samsung-ril.h"
 #include "util.h"
 
-/**
+/*
  * Samsung-RIL TODO:
  *
  * General:
@@ -31,13 +31,13 @@
  * - Review code with requests that produce GEN_PHONE_RES messages to use the GEN_PHONE_RES engine
  */
 
-/**
+/*
  * RIL data
  */
 
 struct ril_data ril_data;
 
-/**
+/*
  * RIL requests
  */
 
@@ -241,7 +241,7 @@ void ril_request_timed_callback(RIL_TimedCallback callback, void *data, const st
 	ril_data.env->RequestTimedCallback(callback, data, time);
 }
 
-/**
+/*
  * RIL tokens
  */
 
@@ -266,7 +266,7 @@ void ril_tokens_check(void)
 	}
 }
 
-/**
+/*
  * Clients dispatch functions
  */
 
@@ -655,7 +655,7 @@ const char *ril_get_version(void)
 	return RIL_VERSION_STRING;
 }
 
-/**
+/*
  * RIL init
  */
 
@@ -666,7 +666,7 @@ void ril_data_init(void)
 	pthread_mutex_init(&ril_data.mutex, NULL);
 }
 
-/**
+/*
  * RIL interface
  */
 

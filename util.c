@@ -1,21 +1,21 @@
-/**
- * This file is part of samsung-ril.
+/*
+ * This file is part of Samsung-RIL.
  *
  * Copyright (C) 2010-2011 Joerie de Gram <j.de.gram@gmail.com>
  * Copyright (C) 2011-2012 Paul Kocialkowski <contact@paulk.fr>
  *
- * samsung-ril is free software: you can redistribute it and/or modify
+ * Samsung-RIL is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * samsung-ril is distributed in the hope that it will be useful,
+ * Samsung-RIL is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with samsung-ril.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Samsung-RIL.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -29,7 +29,7 @@
 
 #include "samsung-ril.h"
 
-/**
+/*
  * List
  */
 
@@ -67,7 +67,7 @@ void list_head_free(struct list_head *list)
 	free(list);
 }
 
-/**
+/*
  * Converts a hexidecimal string to binary
  */
 void hex2bin(const char *data, int length, unsigned char *buf)
@@ -103,7 +103,7 @@ void hex2bin(const char *data, int length, unsigned char *buf)
 	}
 }
 
-/**
+/*
  * Converts binary data to a hexidecimal string
  */
 void bin2hex(const unsigned char *data, int length, char *buf)
@@ -127,7 +127,7 @@ void bin2hex(const unsigned char *data, int length, char *buf)
 	*p = '\0';
 }
 
-/**
+/*
  * Converts GSM7 (8 bits) data to ASCII (7 bits)
  */
 int gsm72ascii(unsigned char *data, char **data_dec, int length)
@@ -163,7 +163,7 @@ int gsm72ascii(unsigned char *data, char **data_dec, int length)
 	return dec_length;
 }
 
-/**
+/*
  * Converts ASCII (7 bits) data to GSM7 (8 bits)
  */
 int ascii2gsm7(char *data, unsigned char **data_enc, int length)
