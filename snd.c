@@ -24,10 +24,6 @@
 #include "samsung-ril.h"
 #include "util.h"
 
-/*
- * Format conversion utils
- */
-
 unsigned char srs2ipc_call_type(int type)
 {
 	switch(type) {
@@ -66,32 +62,51 @@ unsigned char srs2ipc_audio_path(int path)
 	}
 }
 
-void ril_request_set_mute(RIL_Token t, void *data, size_t datalen)
+void ril_request_set_mute(RIL_Token t, void *data, int length)
 {
-	unsigned char mute_data = ((int *)data)[0] > 0 ? 1 : 0;
+	int *value;
+	unsigned char mute;
 
-	LOGD("Mute data is %d\n", mute_data);
+	if (data == NULL || length < (int) sizeof(int))
+		return;
+
+	value = (int *) data;
+	mute = *value ? 1 : 0;
+
+	LOGD("Mute is %d\n", mute);
 
 	ipc_gen_phone_res_expect_to_complete(ril_request_get_id(t), IPC_SND_MIC_MUTE_CTRL);
 
-	ipc_fmt_send(IPC_SND_MIC_MUTE_CTRL, IPC_TYPE_SET, (void *) &mute_data, sizeof(mute_data), ril_request_get_id(t));
+	ipc_fmt_send(IPC_SND_MIC_MUTE_CTRL, IPC_TYPE_SET, (void *) &mute, sizeof(mute), ril_request_get_id(t));
 }
 
 void srs_snd_set_call_clock_sync(struct srs_message *message)
 {
-	unsigned char data = *((unsigned char *) message->data);
-	LOGD("Clock sync data is 0x%x\n", data);
+	unsigned char *sync;
 
-	ipc_fmt_send(IPC_SND_CLOCK_CTRL, IPC_TYPE_EXEC, &data, sizeof(data), ril_request_id_get());
+	if (message == NULL || message->data == NULL || message->length < (int) sizeof(unsigned char))
+		return;
+
+	sync = (unsigned char *) message->data;
+
+	LOGD("Clock sync is 0x%x\n", *sync);
+
+	ipc_fmt_send(IPC_SND_CLOCK_CTRL, IPC_TYPE_EXEC, sync, sizeof(unsigned char), ril_request_id_get());
 }
 
 void srs_snd_set_call_volume(struct srs_message *message)
 {
-	struct srs_snd_call_volume *call_volume = (struct srs_snd_call_volume *) message->data;
+	struct srs_snd_call_volume *call_volume;
 	struct ipc_snd_spkr_volume_ctrl volume_ctrl;
+
+	if (message == NULL || message->data == NULL || message->length < (int) sizeof(struct srs_snd_call_volume))
+		return;
+
+	call_volume = (struct srs_snd_call_volume *) message->data;
 
 	LOGD("Call volume for: 0x%x vol = 0x%x\n", call_volume->type, call_volume->volume);
 
+	memset(&volume_ctrl, 0, sizeof(volume_ctrl));
 	volume_ctrl.type = srs2ipc_call_type(call_volume->type);
 	volume_ctrl.volume = call_volume->volume;
 
@@ -100,8 +115,14 @@ void srs_snd_set_call_volume(struct srs_message *message)
 
 void srs_snd_set_call_audio_path(struct srs_message *message)
 {
-	int audio_path = ((int *) message->data)[0];
-	unsigned char path = srs2ipc_audio_path(audio_path);
+	int *audio_path;
+	unsigned char path;
+
+	if (message == NULL || message->data == NULL || message->length < (int) sizeof(int))
+		return;
+
+	audio_path = (int *) message->data;
+	path = srs2ipc_audio_path(*audio_path);
 
 	LOGD("Audio path to: 0x%x\n", path);
 
