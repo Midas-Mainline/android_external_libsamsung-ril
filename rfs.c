@@ -26,24 +26,31 @@
 
 void ipc_rfs_nv_read_item(struct ipc_message_info *info)
 {
-	struct ipc_rfs_io *rfs_io = (struct ipc_rfs_io *) info->data;
-	struct ipc_rfs_io_confirm *rfs_io_conf;
+	struct ipc_client_data *ipc_client_data;
 	struct ipc_client *ipc_client;
+
+	struct ipc_rfs_io *rfs_io;
+	struct ipc_rfs_io_confirm *rfs_io_conf;
+
 	void *rfs_data;
 	int rc;
 
-	if (ril_data.ipc_rfs_client == NULL)
+	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_rfs_io))
 		return;
 
-	ipc_client = ((struct ipc_client_data *) ril_data.ipc_rfs_client->data)->ipc_client;
+	rfs_io = (struct ipc_rfs_io *) info->data;
 
-	if (rfs_io == NULL) {
-		LOGE("Error: NULL rfs_io");
+	if (ril_data.ipc_rfs_client == NULL || ril_data.ipc_rfs_client->data == NULL)
 		return;
-	}
 
-	rfs_io_conf = malloc(rfs_io->length + sizeof(struct ipc_rfs_io_confirm));
-	memset(rfs_io_conf, 0, rfs_io->length + sizeof(struct ipc_rfs_io_confirm));
+	ipc_client_data = (struct ipc_client_data *) ril_data.ipc_rfs_client->data;
+
+	if (ipc_client_data->ipc_client == NULL)
+		return;
+
+	ipc_client = ipc_client_data->ipc_client;
+
+	rfs_io_conf = calloc(1, rfs_io->length + sizeof(struct ipc_rfs_io_confirm));
 	rfs_data = rfs_io_conf + sizeof(struct ipc_rfs_io_confirm);
 
 	LOGD("Asked to read 0x%x bytes at offset 0x%x", rfs_io->length, rfs_io->offset);
@@ -64,22 +71,31 @@ void ipc_rfs_nv_read_item(struct ipc_message_info *info)
 
 void ipc_rfs_nv_write_item(struct ipc_message_info *info)
 {
-	struct ipc_rfs_io *rfs_io = (struct ipc_rfs_io *) info->data;
-	struct ipc_rfs_io_confirm rfs_io_conf;
+	struct ipc_client_data *ipc_client_data;
 	struct ipc_client *ipc_client;
+
+	struct ipc_rfs_io *rfs_io;
+	struct ipc_rfs_io_confirm rfs_io_conf;
+
 	void *rfs_data;
 	int rc;
 
-	if (ril_data.ipc_rfs_client == NULL)
+	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_rfs_io))
 		return;
 
-	ipc_client = ((struct ipc_client_data *) ril_data.ipc_rfs_client->data)->ipc_client;
+	rfs_io = (struct ipc_rfs_io *) info->data;
 
-	if (rfs_io == NULL) {
-		LOGE("Error: NULL rfs_io");
+	if (ril_data.ipc_rfs_client == NULL || ril_data.ipc_rfs_client->data == NULL)
 		return;
-	}
 
+	ipc_client_data = (struct ipc_client_data *) ril_data.ipc_rfs_client->data;
+
+	if (ipc_client_data->ipc_client == NULL)
+		return;
+
+	ipc_client = ipc_client_data->ipc_client;
+
+	memset(&rfs_io_conf, 0, sizeof(rfs_io_conf));
 	rfs_data = info->data + sizeof(struct ipc_rfs_io);
 
 	LOGD("Write rfs_data dump:");
