@@ -329,12 +329,12 @@ void ipc_net_regist(struct ipc_message_info *message);
 void ril_request_query_available_networks(RIL_Token t);
 void ipc_net_plmn_list(struct ipc_message_info *info);
 void ril_request_get_preferred_network_type(RIL_Token t);
-void ril_request_set_preferred_network_type(RIL_Token t, void *data, size_t datalen);
+void ril_request_set_preferred_network_type(RIL_Token t, void *data, size_t length);
 void ipc_net_mode_sel(struct ipc_message_info *info);
 void ril_request_query_network_selection_mode(RIL_Token t);
 void ipc_net_plmn_sel(struct ipc_message_info *info);
 void ril_request_set_network_selection_automatic(RIL_Token t);
-void ril_request_set_network_selection_manual(RIL_Token t, void *data, size_t datalen);
+void ril_request_set_network_selection_manual(RIL_Token t, void *data, size_t length);
 
 /* SMS */
 

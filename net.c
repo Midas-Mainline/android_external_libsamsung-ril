@@ -27,13 +27,6 @@
 
 #include <plmn_list.h>
 
-/*
- * Format conversion utils
- */
-
-/*
- * Converts IPC network registration status to Android RIL format
- */
 unsigned char ipc2ril_reg_state(unsigned char reg_state)
 {
 	switch(reg_state) {
@@ -50,14 +43,11 @@ unsigned char ipc2ril_reg_state(unsigned char reg_state)
 		case IPC_NET_REGISTRATION_STATE_UNKNOWN:
 			return 4;
 		default:
-			LOGE("%s: invalid reg_state: %d", __FUNCTION__, reg_state);
+			LOGE("%s: invalid reg_state: %d", __func__, reg_state);
 			return 0;
 	}
 }
 
-/*
- * Converts IPC network access technology to Android RIL format
- */
 unsigned char ipc2ril_act(unsigned char act)
 {
 	switch(act) {
@@ -74,9 +64,6 @@ unsigned char ipc2ril_act(unsigned char act)
 	}
 }
 
-/*
- * Converts IPC GPRS network access technology to Android RIL format
- */
 unsigned char ipc2ril_gprs_act(unsigned char act)
 {
 	switch(act) {
@@ -93,9 +80,6 @@ unsigned char ipc2ril_gprs_act(unsigned char act)
 	}
 }
 
-/*
- * Converts IPC preferred network type to Android RIL format
- */
 int ipc2ril_mode_sel(unsigned char mode)
 {
 	switch(mode) {
@@ -112,9 +96,6 @@ int ipc2ril_mode_sel(unsigned char mode)
 	}
 }
 
-/*
- * Converts Android RIL preferred network type to IPC format
- */
 unsigned char ril2ipc_mode_sel(int mode)
 {
 	switch(mode) {
@@ -128,9 +109,6 @@ unsigned char ril2ipc_mode_sel(int mode)
 	}
 }
 
-/*
- * Converts IPC preferred PLMN selection type to Android RIL format
- */
 int ipc2ril_plmn_sel(unsigned char mode)
 {
 	switch(mode) {
@@ -143,9 +121,6 @@ int ipc2ril_plmn_sel(unsigned char mode)
 	}
 }
 
-/*
- * Converts Android RIL preferred PLMN selection type to IPC format
- */
 unsigned char ril2ipc_plmn_sel(int mode)
 {
 	switch(mode) {
@@ -158,13 +133,16 @@ unsigned char ril2ipc_plmn_sel(int mode)
 	}
 }
 
-/*
- * Converts IPC reg state to Android format
- */
 void ipc2ril_reg_state_resp(struct ipc_net_regist_response *netinfo, char *response[15])
 {
-	unsigned char reg_state = ipc2ril_reg_state(netinfo->reg_state);
-	unsigned char act = ipc2ril_act(netinfo->act);
+	unsigned char reg_state;
+	unsigned char act;
+
+	if (netinfo == NULL || response == NULL)
+		return;
+
+	reg_state = ipc2ril_reg_state(netinfo->reg_state);
+	act = ipc2ril_act(netinfo->act);
 
 	memset(response, 0, sizeof(response));
 
@@ -174,13 +152,16 @@ void ipc2ril_reg_state_resp(struct ipc_net_regist_response *netinfo, char *respo
 	asprintf(&response[3], "%d", act);
 }
 
-/*
- * Converts IPC GPRS reg state to Android format
- */
 void ipc2ril_gprs_reg_state_resp(struct ipc_net_regist_response *netinfo, char *response[4])
 {
-	unsigned char reg_state = ipc2ril_reg_state(netinfo->reg_state);
-	unsigned char act = ipc2ril_gprs_act(netinfo->act);
+	unsigned char reg_state;
+	unsigned char act;
+
+	if (netinfo == NULL || response == NULL)
+		return;
+
+	reg_state = ipc2ril_reg_state(netinfo->reg_state);
+	act = ipc2ril_gprs_act(netinfo->act);
 
 	memset(response, 0, sizeof(response));
 
@@ -211,9 +192,6 @@ int ril_tokens_net_get_data_waiting(void)
 	return ril_data.tokens.registration_state == RIL_TOKEN_DATA_WAITING || ril_data.tokens.gprs_registration_state == RIL_TOKEN_DATA_WAITING || ril_data.tokens.operator == RIL_TOKEN_DATA_WAITING;
 }
 
-/*
- * Print net tokens values
- */
 void ril_tokens_net_state_dump(void)
 {
 	LOGD("ril_tokens_net_state_dump:\n\
@@ -247,15 +225,20 @@ void ril_plmn_split(char *plmn_data, char **plmn, unsigned int *mcc, unsigned in
 void ril_plmn_string(char *plmn_data, char *response[3])
 {
 	unsigned int mcc, mnc;
-	char *plmn;
+	char *plmn = NULL;
 
 	int plmn_entries;
 	int i;
 
+	if (plmn_data == NULL || response == NULL)
+		return;
+
 	ril_plmn_split(plmn_data, &plmn, &mcc, &mnc);
 
 	asprintf(&response[2], "%s", plmn);
-	free(plmn);
+
+	if (plmn != NULL)
+		free(plmn);
 
 	plmn_entries = sizeof(plmn_list) / sizeof(struct plmn_list_entry);
 
@@ -263,8 +246,8 @@ void ril_plmn_string(char *plmn_data, char *response[3])
 
 	for (i=0 ; i < plmn_entries ; i++) {
 		if (plmn_list[i].mcc == mcc && plmn_list[i].mnc == mnc) {
-			asprintf(&response[0], "%s", plmn_list[i].operator_short);
-			asprintf(&response[1], "%s", plmn_list[i].operator_long);
+			asprintf(&response[0], "%s", plmn_list[i].operator_long);
+			asprintf(&response[1], "%s", plmn_list[i].operator_short);
 			return;	
 		}
 	}
@@ -311,15 +294,6 @@ void ril_plmn_string(char *plmn_data, char *response[3])
  * 12- send back last data we have (from UNSOL RILJ request here)
  */
 
-/*
- * In: RIL_REQUEST_OPERATOR
- *   Request Operator name
- *
- * Out: IPC_NET_CURRENT_PLMN
- *   return modem UNSOL data if available
- *   request IPC_NET_CURRENT_PLMN if no data is there
- *   return RIL_E_OP_NOT_ALLOWED_BEFORE_REG_TO_NW if not registered
- */
 void ril_request_operator(RIL_Token t)
 {
 	char *response[3];
@@ -373,24 +347,21 @@ void ril_request_operator(RIL_Token t)
 	ril_tokens_net_state_dump();
 }
 
-/*
- * In: IPC_NET_CURRENT_PLMN
- *   This can be SOL (RESP) or UNSOL (NOTI) message from modem
- *
- * Out: RIL_UNSOL_RESPONSE_NETWORK_STATE_CHANGED
- *   enqueue modem data if UNSOL modem message and then call
- *   RIL_UNSOL_RESPONSE_NETWORK_STATE_CHANGED
- *   if SOL message, send back data to RILJ
- */
-void ipc_net_current_plmn(struct ipc_message_info *message)
+void ipc_net_current_plmn(struct ipc_message_info *info)
 {
-	RIL_Token t = ril_request_get_token(message->aseq);
-	struct ipc_net_current_plmn_response *plmndata = (struct ipc_net_current_plmn_response *) message->data;
+	struct ipc_net_current_plmn_response *plmndata;
+	RIL_Token t;
 
 	char *response[3];
 	size_t i;
 
-	switch(message->type) {
+	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_net_current_plmn_response))
+		goto error;
+
+	plmndata = (struct ipc_net_current_plmn_response *) info->data;
+	t = ril_request_get_token(info->aseq);
+
+	switch (info->type) {
 		case IPC_TYPE_NOTI:
 			LOGD("Got UNSOL Operator message");
 
@@ -461,21 +432,19 @@ void ipc_net_current_plmn(struct ipc_message_info *message)
 			}
 			break;
 		default:
-			LOGE("%s: unhandled ipc method: %d", __FUNCTION__, message->type);
+			LOGE("%s: unhandled ipc method: %d", __func__, info->type);
 			break;
 	}
 
 	ril_tokens_net_state_dump();
+
+	return;
+
+error:
+	if (info != NULL)
+		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
-/*
- * In: RIL_REQUEST_REGISTRATION_STATE
- *   Request reg state
- *
- * Out: IPC_NET_REGIST
- *   return modem UNSOL data if available
- *   request IPC_NET_REGIST if no data is there
- */
 #if RIL_VERSION >= 6
 void ril_request_voice_registration_state(RIL_Token t)
 #else
@@ -524,14 +493,6 @@ void ril_request_registration_state(RIL_Token t)
 	ril_tokens_net_state_dump();
 }
 
-/*
- * In: RIL_REQUEST_GPRS_REGISTRATION_STATE
- *   Request GPRS reg state
- *
- * Out: IPC_NET_REGIST
- *   return modem UNSOL data if available
- *   request IPC_NET_REGIST if no data is there
- */
 #if RIL_VERSION >= 6
 void ril_request_data_registration_state(RIL_Token t)
 #else
@@ -581,10 +542,14 @@ void ril_request_gprs_registration_state(RIL_Token t)
 	ril_tokens_net_state_dump();
 }
 
-void ipc_net_regist_unsol(struct ipc_message_info *message)
+void ipc_net_regist_unsol(struct ipc_message_info *info)
 {
 	struct ipc_net_regist_response *netinfo;
-	netinfo = (struct ipc_net_regist_response *) message->data;
+
+	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_net_regist_response))
+		goto error;
+
+	netinfo = (struct ipc_net_regist_response *) info->data;
 
 	LOGD("Got UNSOL NetRegist message");
 
@@ -631,20 +596,32 @@ void ipc_net_regist_unsol(struct ipc_message_info *message)
 			}
 			break;
 		default:
-			LOGE("%s: unhandled service domain: %d", __FUNCTION__, netinfo->domain);
+			LOGE("%s: unhandled service domain: %d", __func__, netinfo->domain);
 			break;
 	}
 
 	ril_tokens_net_state_dump();
+
+	return;
+
+error:
+	if (info != NULL)
+		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
-void ipc_net_regist_sol(struct ipc_message_info *message)
+void ipc_net_regist_sol(struct ipc_message_info *info)
 {
+	struct ipc_net_regist_response *netinfo;
+	RIL_Token t;
+
 	char *response[4];
 	size_t i;
 
-	struct ipc_net_regist_response *netinfo = (struct ipc_net_regist_response *) message->data;
-	RIL_Token t = ril_request_get_token(message->aseq);
+	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_net_regist_response))
+		goto error;
+
+	netinfo = (struct ipc_net_regist_response *) info->data;
+	t = ril_request_get_token(info->aseq);
 
 	LOGD("Got SOL NetRegist message");
 
@@ -687,99 +664,112 @@ void ipc_net_regist_sol(struct ipc_message_info *message)
 				ril_data.tokens.gprs_registration_state = (RIL_Token) 0x00;
 			break;
 		default:
-			LOGE("%s: unhandled service domain: %d", __FUNCTION__, netinfo->domain);
+			LOGE("%s: unhandled service domain: %d", __func__, netinfo->domain);
 			break;
 	}
 
 	ril_tokens_net_state_dump();
+
+	return;
+
+error:
+	if (info != NULL)
+		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
-/*
- * In: IPC_NET_REGIST
- *   This can be SOL (RESP) or UNSOL (NOTI) message from modem
- */
-void ipc_net_regist(struct ipc_message_info *message)
+void ipc_net_regist(struct ipc_message_info *info)
 {
+	if (info == NULL)
+		return;
+
 	/* Don't consider this if modem isn't in normal power mode. */
 	if (ril_data.state.power_state != IPC_PWR_PHONE_STATE_NORMAL)
 		return;
 
-	switch(message->type) {
+	switch(info->type) {
 		case IPC_TYPE_NOTI:
-			ipc_net_regist_unsol(message);
+			ipc_net_regist_unsol(info);
 			break;
 		case IPC_TYPE_RESP:
-			ipc_net_regist_sol(message);
+			ipc_net_regist_sol(info);
 			break;
 		default:
-			LOGE("%s: unhandled ipc method: %d", __FUNCTION__, message->type);
+			LOGE("%s: unhandled ipc method: %d", __func__, info->type);
 			break;
 	}
 
 }
 
-/*
- * In: RIL_REQUEST_QUERY_AVAILABLE_NETWORKS
- *
- * Out: IPC_NET_PLMN_LIST
- */
 void ril_request_query_available_networks(RIL_Token t)
 {
 	ipc_fmt_send_get(IPC_NET_PLMN_LIST, ril_request_get_id(t));
 }
 
-/* FIXME: cleanup struct names & resp[] addressing */
-/*
- * In: IPC_NET_PLMN_LIST
- * Send back available PLMN list
- *
- */
 void ipc_net_plmn_list(struct ipc_message_info *info)
 {
-	struct ipc_net_plmn_entries *entries_info = (struct ipc_net_plmn_entries *) info->data;
-	struct ipc_net_plmn_entry *entries = (struct ipc_net_plmn_entry *)
-		(info->data + sizeof(struct ipc_net_plmn_entries));
+	struct ipc_net_plmn_entries *entries_info;
+	struct ipc_net_plmn_entry *entries;
 
+	char **response;
+	int length;
+	int count;
+
+	int index;
 	int i;
-	int size = (4 * entries_info->num * sizeof(char*));
-	int actual_size = 0;
 
-	char **resp = malloc(size);
-	char **resp_ptr = resp;
+	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_net_plmn_entries))
+		goto error;
+
+	entries_info = (struct ipc_net_plmn_entries *) info->data;
+	entries = (struct ipc_net_plmn_entry *) (info->data + sizeof(struct ipc_net_plmn_entries));
 
 	LOGD("Listed %d PLMNs\n", entries_info->num);
 
-	for (i = 0; i < entries_info->num; i++) {
-		/* Assumed type for 'emergency only' PLMNs */
+	length = sizeof(char *) * 4 * entries_info->num;
+	response = (char **) calloc(1, length);
+
+	count = 0;
+	for (i=0 ; i < entries_info->num ; i++) {
+		// Assumed type for 'emergency only' PLMNs
 		if (entries[i].type == 0x01)
 			continue;
 
-		ril_plmn_string(entries[i].plmn, resp_ptr);
+		index = count * 4;
+		ril_plmn_string(entries[i].plmn, &response[index]);
 
-		/* PLMN status */
-		switch(entries[i].status) {
+		index = count * 4 + 3;
+		switch (entries[i].status) {
 			case IPC_NET_PLMN_STATUS_AVAILABLE:
-				asprintf(&resp_ptr[3], "available");
+				response[index] = strdup("available");
 				break;
 			case IPC_NET_PLMN_STATUS_CURRENT:
-				asprintf(&resp_ptr[3], "current");
+				response[index] = strdup("current");
 				break;
 			case IPC_NET_PLMN_STATUS_FORBIDDEN:
-				asprintf(&resp_ptr[3], "forbidden");
+				response[index] = strdup("forbidden");
 				break;
 			default:
-				asprintf(&resp_ptr[3], "unknown");
+				response[index] = strdup("unknown");
 				break;
 		}
 
-		actual_size++;
-		resp_ptr += 4;
+		count++;
 	}
 
-	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_SUCCESS, resp, (4 * sizeof(char*) * actual_size));
+	length = sizeof(char *) * 4 * count;
+	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_SUCCESS, response, length);
 
-	/* FIXME: free individual strings */
-	free(resp);
+	for (i=0 ; i < entries_info->num ; i++)
+		if (response[i] != NULL)
+			free(response[i]);
+
+	free(response);
+
+	return;
+
+error:
+	if (info != NULL)
+		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
 void ril_request_get_preferred_network_type(RIL_Token t)
@@ -787,26 +777,47 @@ void ril_request_get_preferred_network_type(RIL_Token t)
 	ipc_fmt_send_get(IPC_NET_MODE_SEL, ril_request_get_id(t));
 }
 
-void ril_request_set_preferred_network_type(RIL_Token t, void *data, size_t datalen)
+void ril_request_set_preferred_network_type(RIL_Token t, void *data, size_t length)
 {
-	int ril_mode = *(int*)data;
+	int ril_mode;
 	struct ipc_net_mode_sel mode_sel;
+
+	if (data == NULL || length < (int) sizeof(int))
+		goto error;
+
+	ril_mode = *((int *) data);
 
 	mode_sel.mode_sel = ril2ipc_mode_sel(ril_mode);
 
 	ipc_gen_phone_res_expect_to_complete(ril_request_get_id(t), IPC_NET_MODE_SEL);
 
-	ipc_fmt_send(IPC_NET_MODE_SEL, IPC_TYPE_SET, (void *) &mode_sel, sizeof(mode_sel), ril_request_get_id(t));
+	ipc_fmt_send(IPC_NET_MODE_SEL, IPC_TYPE_SET, (unsigned char *) &mode_sel, sizeof(mode_sel), ril_request_get_id(t));
+
+	return;
+
+error:
+	ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
 void ipc_net_mode_sel(struct ipc_message_info *info)
 {
-	struct ipc_net_mode_sel *mode_sel = (struct ipc_net_mode_sel *) info->data;
-	int ril_mode = ipc2ril_mode_sel(mode_sel->mode_sel);
+	struct ipc_net_mode_sel *mode_sel;
+	int ril_mode;
 
-	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_SUCCESS, &ril_mode, sizeof(int));
+	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_net_mode_sel))
+		goto error;
+
+	mode_sel = (struct ipc_net_mode_sel *) info->data;
+	ril_mode = ipc2ril_mode_sel(mode_sel->mode_sel);
+
+	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_SUCCESS, &ril_mode, sizeof(ril_mode));
+
+	return;
+
+error:
+	if (info != NULL)
+		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
-
 
 void ril_request_query_network_selection_mode(RIL_Token t)
 {
@@ -818,22 +829,27 @@ void ipc_net_plmn_sel(struct ipc_message_info *info)
 	struct ipc_net_plmn_sel_get *plmn_sel;
 	int ril_mode;
 
-	if (!info)
-		return;
-
-	if (!info->data || info->length < sizeof(struct ipc_net_plmn_sel_get))
-		return;
+	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_net_plmn_sel_get))
+		goto error;
 
 	plmn_sel = (struct ipc_net_plmn_sel_get *) info->data;
 	ril_mode = ipc2ril_plmn_sel(plmn_sel->plmn_sel);
-	ril_request_complete(ril_request_get_token(info->aseq),
-		RIL_E_SUCCESS, &ril_mode, sizeof(int));
+
+	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_SUCCESS, &ril_mode, sizeof(ril_mode));
+
+	return;
+
+error:
+	if (info != NULL)
+		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
 void ipc_net_plmn_sel_complete(struct ipc_message_info *info)
 {
-	struct ipc_gen_phone_res *phone_res = (struct ipc_gen_phone_res *) info->data;
+	struct ipc_gen_phone_res *phone_res;
 	int rc;
+
+	phone_res = (struct ipc_gen_phone_res *) info->data;
 
 	rc = ipc_gen_phone_res_check(phone_res);
 	if (rc < 0) {
@@ -858,17 +874,20 @@ void ril_request_set_network_selection_automatic(RIL_Token t)
 
 	ipc_gen_phone_res_expect_to_func(ril_request_get_id(t), IPC_NET_PLMN_SEL, ipc_net_plmn_sel_complete);
 
-	ipc_fmt_send(IPC_NET_PLMN_SEL, IPC_TYPE_SET, (void *) &plmn_sel, sizeof(plmn_sel), ril_request_get_id(t));
+	ipc_fmt_send(IPC_NET_PLMN_SEL, IPC_TYPE_SET, (unsigned char *) &plmn_sel, sizeof(plmn_sel), ril_request_get_id(t));
 }
 
-void ril_request_set_network_selection_manual(RIL_Token t, void *data, size_t datalen)
+void ril_request_set_network_selection_manual(RIL_Token t, void *data, size_t length)
 {
 	struct ipc_net_plmn_sel_set plmn_sel;
+
+	if (data == NULL || length < (int) sizeof(char *))
+		return;
 
 	// FIXME: We always assume UMTS capability
 	ipc_net_plmn_sel_set_setup(&plmn_sel, IPC_NET_PLMN_SEL_MANUAL, data, IPC_NET_ACCESS_TECHNOLOGY_UMTS);
 
 	ipc_gen_phone_res_expect_to_func(ril_request_get_id(t), IPC_NET_PLMN_SEL, ipc_net_plmn_sel_complete);
 
-	ipc_fmt_send(IPC_NET_PLMN_SEL, IPC_TYPE_SET, (void *) &plmn_sel, sizeof(plmn_sel), ril_request_get_id(t));
+	ipc_fmt_send(IPC_NET_PLMN_SEL, IPC_TYPE_SET, (unsigned char *) &plmn_sel, sizeof(plmn_sel), ril_request_get_id(t));
 }
