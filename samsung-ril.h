@@ -22,6 +22,8 @@
 #ifndef _SAMSUNG_RIL_H_
 #define _SAMSUNG_RIL_H_
 
+#include <errno.h>
+#include <string.h>
 #include <pthread.h>
 
 #include <utils/Log.h>
