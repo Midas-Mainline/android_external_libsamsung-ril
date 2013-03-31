@@ -60,6 +60,7 @@
 #define RIL_CLIENT_UNLOCK(client) pthread_mutex_unlock(&(client->mutex))
 
 #define RIL_TOKEN_DATA_WAITING	(RIL_Token) 0xff
+#define RIL_TOKEN_NULL		(RIL_Token) 0x00
 
 #define RIL_CLIENT_MAX_TRIES	7
 

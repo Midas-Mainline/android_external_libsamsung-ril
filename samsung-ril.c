@@ -184,7 +184,7 @@ RIL_Token ril_request_get_token(int id)
 
 	request = ril_request_info_find_id(id);
 	if (request == NULL)
-		return (RIL_Token) 0x00;
+		return RIL_TOKEN_NULL;
 
 	return request->token;
 }

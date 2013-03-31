@@ -306,7 +306,7 @@ void ril_request_operator(RIL_Token t)
 	ril_data.state.netinfo.reg_state > IPC_NET_REGISTRATION_STATE_ROAMING) {
 		ril_request_complete(t, RIL_E_OP_NOT_ALLOWED_BEFORE_REG_TO_NW, NULL, 0);
 
-		ril_data.tokens.operator = (RIL_Token) 0x00;
+		ril_data.tokens.operator = RIL_TOKEN_NULL;
 		return;
 	}
 
@@ -323,8 +323,8 @@ void ril_request_operator(RIL_Token t)
 				free(response[i]);
 		}
 
-		ril_data.tokens.operator = (RIL_Token) 0x00;
-	} else if (ril_data.tokens.operator == (RIL_Token) 0x00) {
+		ril_data.tokens.operator = RIL_TOKEN_NULL;
+	} else if (ril_data.tokens.operator == RIL_TOKEN_NULL) {
 		LOGD("Got RILJ request for SOL data");
 		/* Request data to the modem */
 		ril_data.tokens.operator = t;
@@ -375,7 +375,7 @@ void ipc_net_current_plmn(struct ipc_message_info *info)
 
 				return;
 			} else {
-				if (ril_data.tokens.operator != (RIL_Token) 0x00 && ril_data.tokens.operator != RIL_TOKEN_DATA_WAITING) {
+				if (ril_data.tokens.operator != RIL_TOKEN_NULL && ril_data.tokens.operator != RIL_TOKEN_DATA_WAITING) {
 					LOGE("Another Operator Req is in progress, skipping");
 					return;
 				}
@@ -409,7 +409,7 @@ void ipc_net_current_plmn(struct ipc_message_info *info)
 				ril_request_complete(t, RIL_E_OP_NOT_ALLOWED_BEFORE_REG_TO_NW, NULL, 0);
 
 				if (ril_data.tokens.operator != RIL_TOKEN_DATA_WAITING)
-					ril_data.tokens.operator = (RIL_Token) 0x00;
+					ril_data.tokens.operator = RIL_TOKEN_NULL;
 				return;
 			} else {
 				if (ril_data.tokens.operator != t)
@@ -428,7 +428,7 @@ void ipc_net_current_plmn(struct ipc_message_info *info)
 				}
 
 				if (ril_data.tokens.operator != RIL_TOKEN_DATA_WAITING)
-					ril_data.tokens.operator = (RIL_Token) 0x00;
+					ril_data.tokens.operator = RIL_TOKEN_NULL;
 			}
 			break;
 		default:
@@ -468,8 +468,8 @@ void ril_request_registration_state(RIL_Token t)
 				free(response[i]);
 		}
 
-		ril_data.tokens.registration_state = (RIL_Token) 0x00;
-	} else if (ril_data.tokens.registration_state == (RIL_Token) 0x00) {
+		ril_data.tokens.registration_state = RIL_TOKEN_NULL;
+	} else if (ril_data.tokens.registration_state == RIL_TOKEN_NULL) {
 		LOGD("Got RILJ request for SOL data");
 		/* Request data to the modem */
 		ril_data.tokens.registration_state = t;
@@ -516,8 +516,8 @@ void ril_request_gprs_registration_state(RIL_Token t)
 				free(response[i]);
 		}
 
-		ril_data.tokens.gprs_registration_state = (RIL_Token) 0x00;
-	} else if (ril_data.tokens.gprs_registration_state == (RIL_Token) 0x00) {
+		ril_data.tokens.gprs_registration_state = RIL_TOKEN_NULL;
+	} else if (ril_data.tokens.gprs_registration_state == RIL_TOKEN_NULL) {
 		LOGD("Got RILJ request for SOL data");
 
 		/* Request data to the modem */
@@ -555,7 +555,7 @@ void ipc_net_regist_unsol(struct ipc_message_info *info)
 
 	switch(netinfo->domain) {
 		case IPC_NET_SERVICE_DOMAIN_GSM:
-			if (ril_data.tokens.registration_state != (RIL_Token) 0 && ril_data.tokens.registration_state != RIL_TOKEN_DATA_WAITING) {
+			if (ril_data.tokens.registration_state != RIL_TOKEN_NULL && ril_data.tokens.registration_state != RIL_TOKEN_DATA_WAITING) {
 				LOGE("Another NetRegist Req is in progress, skipping");
 				return;
 			}
@@ -576,7 +576,7 @@ void ipc_net_regist_unsol(struct ipc_message_info *info)
 			break;
 
 		case IPC_NET_SERVICE_DOMAIN_GPRS:
-			if (ril_data.tokens.gprs_registration_state != (RIL_Token) 0 && ril_data.tokens.gprs_registration_state != RIL_TOKEN_DATA_WAITING) {
+			if (ril_data.tokens.gprs_registration_state != RIL_TOKEN_NULL && ril_data.tokens.gprs_registration_state != RIL_TOKEN_DATA_WAITING) {
 				LOGE("Another GPRS NetRegist Req is in progress, skipping");
 				return;
 			}
@@ -643,7 +643,7 @@ void ipc_net_regist_sol(struct ipc_message_info *info)
 			}
 
 			if (ril_data.tokens.registration_state != RIL_TOKEN_DATA_WAITING)
-				ril_data.tokens.registration_state = (RIL_Token) 0x00;
+				ril_data.tokens.registration_state = RIL_TOKEN_NULL;
 			break;
 		case IPC_NET_SERVICE_DOMAIN_GPRS:
 			if (ril_data.tokens.gprs_registration_state != t)
@@ -661,7 +661,7 @@ void ipc_net_regist_sol(struct ipc_message_info *info)
 					free(response[i]);
 			}
 			if (ril_data.tokens.registration_state != RIL_TOKEN_DATA_WAITING)
-				ril_data.tokens.gprs_registration_state = (RIL_Token) 0x00;
+				ril_data.tokens.gprs_registration_state = RIL_TOKEN_NULL;
 			break;
 		default:
 			LOGE("%s: unhandled service domain: %d", __func__, netinfo->domain);

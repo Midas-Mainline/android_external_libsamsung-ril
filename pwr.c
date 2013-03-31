@@ -58,9 +58,9 @@ void ipc_pwr_phone_state(struct ipc_message_info *info)
 		case IPC_PWR_R(IPC_PWR_PHONE_STATE_LPM):
 			LOGD("Got power to LPM");
 
-			if (ril_data.tokens.radio_power != (RIL_Token) 0x00) {
+			if (ril_data.tokens.radio_power != RIL_TOKEN_NULL) {
 				ril_request_complete(ril_data.tokens.radio_power, RIL_E_SUCCESS, NULL, 0);
-				ril_data.tokens.radio_power = (RIL_Token) 0x00;
+				ril_data.tokens.radio_power = RIL_TOKEN_NULL;
 			}
 
 			ril_data.state.radio_state = RADIO_STATE_OFF;
@@ -70,9 +70,9 @@ void ipc_pwr_phone_state(struct ipc_message_info *info)
 		case IPC_PWR_R(IPC_PWR_PHONE_STATE_NORMAL):
 			LOGD("Got power to NORMAL");
 
-			if (ril_data.tokens.radio_power != (RIL_Token) 0x00) {
+			if (ril_data.tokens.radio_power != RIL_TOKEN_NULL) {
 				ril_request_complete(ril_data.tokens.radio_power, RIL_E_SUCCESS, NULL, 0);
-				ril_data.tokens.radio_power = (RIL_Token) 0x00;
+				ril_data.tokens.radio_power = RIL_TOKEN_NULL;
 			}
 
 			ril_data.state.radio_state = RADIO_STATE_SIM_NOT_READY;

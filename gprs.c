@@ -262,7 +262,7 @@ void ipc_gprs_pdp_context_enable_complete(struct ipc_message_info *info)
 		LOGE("There was an error, aborting PDP context complete");
 
 		gprs_connection->fail_cause = PDP_FAIL_ERROR_UNSPECIFIED;
-		gprs_connection->token = (RIL_Token) 0x00;
+		gprs_connection->token = RIL_TOKEN_NULL;
 		ril_data.state.gprs_last_failed_cid = gprs_connection->cid;
 
 		ril_request_complete(ril_request_get_token(info->aseq),
@@ -297,7 +297,7 @@ void ipc_gprs_define_pdp_context_complete(struct ipc_message_info *info)
 		LOGE("There was an error, aborting define PDP context complete");
 
 		gprs_connection->fail_cause = PDP_FAIL_ERROR_UNSPECIFIED;
-		gprs_connection->token = (RIL_Token) 0x00;
+		gprs_connection->token = RIL_TOKEN_NULL;
 		ril_data.state.gprs_last_failed_cid = gprs_connection->cid;
 
 		ril_request_complete(ril_request_get_token(info->aseq),
@@ -343,7 +343,7 @@ void ipc_gprs_port_list_complete(struct ipc_message_info *info)
 		LOGE("There was an error, aborting port list complete");
 
 		gprs_connection->fail_cause = PDP_FAIL_ERROR_UNSPECIFIED;
-		gprs_connection->token = (RIL_Token) 0x00;
+		gprs_connection->token = RIL_TOKEN_NULL;
 		ril_data.state.gprs_last_failed_cid = gprs_connection->cid;
 
 		ril_request_complete(ril_request_get_token(info->aseq),
@@ -806,7 +806,7 @@ void ipc_gprs_call_status(struct ipc_message_info *info)
 	if (call_status->fail_cause == 0) {
 		if (!gprs_connection->enabled &&
 			call_status->state == IPC_GPRS_STATE_ENABLED &&
-			gprs_connection->token != (RIL_Token) 0x00) {
+			gprs_connection->token != RIL_TOKEN_NULL) {
 			LOGD("GPRS connection is now enabled");
 
 			rc = ipc_gprs_connection_enable(gprs_connection,
@@ -828,7 +828,7 @@ void ipc_gprs_call_status(struct ipc_message_info *info)
 				ril_request_complete(gprs_connection->token,
 					RIL_E_SUCCESS, &setup_data_call_response,
 					sizeof(setup_data_call_response));
-				gprs_connection->token = (RIL_Token) 0x00;
+				gprs_connection->token = RIL_TOKEN_NULL;
 			}
 #if RIL_VERSION >= 6
 			ril_data_call_response_free(&setup_data_call_response);
@@ -842,7 +842,7 @@ void ipc_gprs_call_status(struct ipc_message_info *info)
 #endif
 		} else if (gprs_connection->enabled &&
 			call_status->state == IPC_GPRS_STATE_DISABLED &&
-			gprs_connection->token != (RIL_Token) 0x00) {
+			gprs_connection->token != RIL_TOKEN_NULL) {
 			LOGD("GPRS connection is now disabled");
 
 			rc = ipc_gprs_connection_disable(gprs_connection);
@@ -875,7 +875,7 @@ void ipc_gprs_call_status(struct ipc_message_info *info)
 		if (!gprs_connection->enabled &&
 			(call_status->state == IPC_GPRS_STATE_NOT_ENABLED ||
 			call_status->state == IPC_GPRS_STATE_DISABLED) &&
-			gprs_connection->token != (RIL_Token) 0x00) {
+			gprs_connection->token != RIL_TOKEN_NULL) {
 			LOGE("Failed to enable GPRS connection");
 
 			gprs_connection->enabled = 0;
@@ -885,7 +885,7 @@ void ipc_gprs_call_status(struct ipc_message_info *info)
 
 			ril_request_complete(gprs_connection->token,
 				RIL_E_GENERIC_FAILURE, NULL, 0);
-			gprs_connection->token = (RIL_Token) 0x00;
+			gprs_connection->token = RIL_TOKEN_NULL;
 
 			ril_unsol_data_call_list_changed();
 		} else if (gprs_connection->enabled &&

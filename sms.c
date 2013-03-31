@@ -177,7 +177,7 @@ void ril_request_send_sms_next(void)
 	int smsc_length;
 	int rc;
 
-	ril_data.tokens.outgoing_sms = (RIL_Token) 0x00;
+	ril_data.tokens.outgoing_sms = RIL_TOKEN_NULL;
 
 	send_sms = ril_request_send_sms_info_find();
 	if (send_sms == NULL)
@@ -360,7 +360,7 @@ void ril_request_send_sms(RIL_Token t, void *data, size_t length)
 		smsc = (unsigned char *) strdup((char *) smsc);
 	}
 
-	if (ril_data.tokens.outgoing_sms != (RIL_Token) 0x00) {
+	if (ril_data.tokens.outgoing_sms != RIL_TOKEN_NULL) {
 		LOGD("Another outgoing SMS is being processed, adding to the list");
 
 		rc = ril_request_send_sms_register(pdu, pdu_length, smsc, smsc_length, t);

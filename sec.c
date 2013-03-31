@@ -228,7 +228,7 @@ void ipc_sec_sim_status(struct ipc_message_info *info)
 
 			LOGD("Got UNSOL PIN status message");
 
-			if (ril_data.tokens.pin_status != (RIL_Token) 0x00 && ril_data.tokens.pin_status != RIL_TOKEN_DATA_WAITING) {
+			if (ril_data.tokens.pin_status != RIL_TOKEN_NULL && ril_data.tokens.pin_status != RIL_TOKEN_DATA_WAITING) {
 				LOGE("Another PIN status Req is in progress, skipping");
 				return;
 			}
@@ -257,7 +257,7 @@ void ipc_sec_sim_status(struct ipc_message_info *info)
 			ril_request_complete(t, RIL_E_SUCCESS, &card_status, sizeof(card_status));
 
 			if (ril_data.tokens.pin_status != RIL_TOKEN_DATA_WAITING)
-				ril_data.tokens.pin_status = (RIL_Token) 0x00;
+				ril_data.tokens.pin_status = RIL_TOKEN_NULL;
 			break;
 		default:
 			LOGE("%s: unhandled ipc method: %d", __func__, info->type);
@@ -291,8 +291,8 @@ void ril_request_get_sim_status(RIL_Token t)
 
 		ril_request_complete(t, RIL_E_SUCCESS, &card_status, sizeof(card_status));
 
-		ril_data.tokens.pin_status = (RIL_Token) 0x00;
-	} else if (ril_data.tokens.pin_status == (RIL_Token) 0x00) {
+		ril_data.tokens.pin_status = RIL_TOKEN_NULL;
+	} else if (ril_data.tokens.pin_status == RIL_TOKEN_NULL) {
 		LOGD("Got RILJ request for SOL data");
 
 		/* Request data to the modem */
@@ -450,7 +450,7 @@ void ril_request_sim_io_next(void)
 	struct ril_request_sim_io_info *sim_io;
 	int rc;
 
-	ril_data.tokens.sim_io = (RIL_Token) 0x00;
+	ril_data.tokens.sim_io = RIL_TOKEN_NULL;
 
 	sim_io = ril_request_sim_io_info_find();
 	if (sim_io == NULL)
@@ -541,7 +541,7 @@ void ril_request_sim_io(RIL_Token t, void *data, int length)
 		ril_request_sim_io_next();
 	}
 
-	if (ril_data.tokens.sim_io != (RIL_Token) 0x00) {
+	if (ril_data.tokens.sim_io != RIL_TOKEN_NULL) {
 		LOGD("Another SIM I/O is being processed, adding to the list");
 		return;
 	}
