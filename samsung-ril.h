@@ -303,13 +303,13 @@ void ril_request_sim_io(RIL_Token t, void *data, int length);
 void ipc_sec_rsim_access(struct ipc_message_info *info);
 void ipc_sec_sim_status_complete(struct ipc_message_info *info);
 void ipc_sec_lock_info(struct ipc_message_info *info);
-void ril_request_enter_sim_pin(RIL_Token t, void *data, size_t datalen);
-void ril_request_change_sim_pin(RIL_Token t, void *data, size_t datalen);
-void ril_request_enter_sim_puk(RIL_Token t, void *data, size_t datalen);
-void ril_request_query_facility_lock(RIL_Token t, void *data, size_t datalen);
+void ril_request_enter_sim_pin(RIL_Token t, void *data, size_t length);
+void ril_request_change_sim_pin(RIL_Token t, void *data, size_t length);
+void ril_request_enter_sim_puk(RIL_Token t, void *data, size_t length);
+void ril_request_query_facility_lock(RIL_Token t, void *data, size_t length);
 void ipc_sec_phone_lock(struct ipc_message_info *info);
 void ipc_sec_phone_lock_complete(struct ipc_message_info *info);
-void ril_request_set_facility_lock(RIL_Token t, void *data, size_t datalen);
+void ril_request_set_facility_lock(RIL_Token t, void *data, size_t length);
 
 /* NET */
 

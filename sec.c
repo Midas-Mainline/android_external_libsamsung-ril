@@ -29,6 +29,9 @@
 
 ril_sim_state ipc2ril_sim_state(struct ipc_sec_sim_status_response *pin_status)
 {
+	if (pin_status == NULL)
+		return -EINVAL;
+
 	switch(pin_status->status) {
 		case IPC_SEC_SIM_STATUS_LOCK_SC:
 			switch(pin_status->facility_lock) {
@@ -70,13 +73,6 @@ ril_sim_state ipc2ril_sim_state(struct ipc_sec_sim_status_response *pin_status)
 	}
 }
 
-/*
- * Update the radio state based on SIM state
- *
- * Out: RIL_UNSOL_RESPONSE_RADIO_STATE_CHANGED
- *   Indicate when value of RIL_RadioState has changed
- *   Callee will invoke RIL_RadioStateRequest method on main thread
- */
 void ril_state_update(ril_sim_state sim_state)
 {
 	RIL_RadioState radio_state;
@@ -131,6 +127,9 @@ void ipc2ril_card_status(struct ipc_sec_sim_status_response *pin_status, RIL_Car
 	int app_status_array_length;
 	int app_index;
 	int i;
+
+	if (pin_status == NULL || card_status == NULL)
+		return;
 
 	static RIL_AppStatus app_status_array[] = {
 		/* SIM_ABSENT = 0 */
@@ -204,28 +203,22 @@ void ril_tokens_pin_status_dump(void)
 	\tril_data.tokens.pin_status = %p\n", ril_data.tokens.pin_status);
 }
 
-/*
- * In: IPC_SEC_SIM_STATUS
- *   Provides SIM initialization/lock status
- *
- * Out: RIL_UNSOL_RESPONSE_SIM_STATUS_CHANGED
- *   Indicates that SIM state changes.
- *   Callee will invoke RIL_REQUEST_GET_SIM_STATUS on main thread
- *
- * Out: RIL_UNSOL_RESPONSE_RADIO_STATE_CHANGED
- *   Indicate when value of RIL_RadioState has changed
- *   Callee will invoke RIL_RadioStateRequest method on main thread
- */
 void ipc_sec_sim_status(struct ipc_message_info *info)
 {
-	RIL_Token t = ril_request_get_token(info->aseq);
-	struct ipc_sec_sim_status_response *pin_status = (struct ipc_sec_sim_status_response *) info->data;
+	struct ipc_sec_sim_status_response *pin_status;
+	RIL_Token t;
 #if RIL_VERSION >= 6
 	RIL_CardStatus_v6 card_status;
 #else
 	RIL_CardStatus card_status;
 #endif
 	ril_sim_state sim_state;
+
+	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_sec_sim_status_response))
+		goto error;
+
+	pin_status = (struct ipc_sec_sim_status_response *) info->data;
+	t = ril_request_get_token(info->aseq);
 
 	switch(info->type) {
 		case IPC_TYPE_NOTI:
@@ -267,17 +260,19 @@ void ipc_sec_sim_status(struct ipc_message_info *info)
 				ril_data.tokens.pin_status = (RIL_Token) 0x00;
 			break;
 		default:
-			LOGE("%s: unhandled ipc method: %d", __FUNCTION__, info->type);
+			LOGE("%s: unhandled ipc method: %d", __func__, info->type);
 			break;
 	}
 
 	ril_tokens_pin_status_dump();
+
+	return;
+
+error:
+	if (info != NULL)
+		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
-/*
- * In: RIL_REQUEST_GET_SIM_STATUS
- *   Requests status of the SIM interface and the SIM card
- */
 void ril_request_get_sim_status(RIL_Token t)
 {
 	struct ipc_sec_sim_status_response *pin_status;
@@ -320,12 +315,18 @@ void ipc_sec_sim_icc_type(struct ipc_message_info *info)
 {
 	struct ipc_sec_sim_icc_type *sim_icc_type;
 
-	if (info == NULL || info->length < sizeof(struct ipc_sec_sim_icc_type))
-		return;
+	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_sec_sim_icc_type))
+		goto error;
 
 	sim_icc_type = (struct ipc_sec_sim_icc_type *) info->data;
 
 	memcpy(&ril_data.state.sim_icc_type, sim_icc_type, sizeof(struct ipc_sec_sim_icc_type));
+
+	return;
+
+error:
+	if (info != NULL)
+		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
 /*
@@ -496,16 +497,6 @@ void ril_request_sim_io_complete(RIL_Token t, unsigned char command, unsigned sh
 	free(rsim_access_data);
 }
 
-/*
- * In: RIL_REQUEST_SIM_IO
- *   Request SIM I/O operation.
- *   This is similar to the TS 27.007 "restricted SIM" operation
- *   where it assumes all of the EF selection will be done by the
- *   callee.
- *
- * Out: IPC_SEC_RSIM_ACCESS
- *   Performs a restricted SIM read operation
- */
 void ril_request_sim_io(RIL_Token t, void *data, int length)
 {
 	struct ril_request_sim_io_info *sim_io_info = NULL;
@@ -519,7 +510,7 @@ void ril_request_sim_io(RIL_Token t, void *data, int length)
 	int rc;
 
 	if (data == NULL || length < (int) sizeof(*sim_io))
-		return;
+		goto error;
 
 #if RIL_VERSION >= 6
 	sim_io = (RIL_SIM_IO_v6 *) data;
@@ -565,18 +556,13 @@ void ril_request_sim_io(RIL_Token t, void *data, int length)
 		free(sim_io_data);
 	sim_io_info->data = NULL;
 	sim_io_info->length = 0;
+
+	return;
+
+error:
+	ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
-/*
- * In: IPC_SEC_RSIM_ACCESS
- *   Provides restricted SIM read operation result
- *
- * Out: RIL_REQUEST_SIM_IO
- *   Request SIM I/O operation.
- *   This is similar to the TS 27.007 "restricted SIM" operation
- *   where it assumes all of the EF selection will be done by the
- *   callee.
- */
 void ipc_sec_rsim_access(struct ipc_message_info *info)
 {
 	struct ril_request_sim_io_info *sim_io_info;
@@ -591,7 +577,7 @@ void ipc_sec_rsim_access(struct ipc_message_info *info)
 	int i;
 
 	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_sec_rsim_access_response))
-		return;
+		goto error;
 
 	sim_io_info = ril_request_sim_io_info_find_token(ril_request_get_token(info->aseq));
 	if (sim_io_info == NULL) {
@@ -714,21 +700,21 @@ void ipc_sec_rsim_access(struct ipc_message_info *info)
 
 	// Send the next SIM I/O in the list
 	ril_request_sim_io_next();
+
+	return;
+
+error:
+	if (info != NULL)
+		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
-/*
- * In: IPC_GEN_PHONE_RES
- *   Provides result of IPC_SEC_SIM_STATUS SET
- *
- * Out: RIL_REQUEST_ENTER_SIM_PIN
- *   Returns PIN SIM unlock result
- */
 void ipc_sec_sim_status_complete(struct ipc_message_info *info)
 {
-	struct ipc_gen_phone_res *phone_res = (struct ipc_gen_phone_res *) info->data;
+	struct ipc_gen_phone_res *phone_res;
+	int attempts = -1;
 	int rc;
 
-	int attempts = -1;
+	phone_res = (struct ipc_gen_phone_res *) info->data;
 
 	rc = ipc_gen_phone_res_check(phone_res);
 	if (rc < 0) {
@@ -752,70 +738,75 @@ void ipc_sec_sim_status_complete(struct ipc_message_info *info)
 	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_SUCCESS, &attempts, sizeof(attempts));
 }
 
-/*
- * In: IPC_SEC_LOCK_INFO
- *   Provides number of retries left for a lock type
- */
 void ipc_sec_lock_info(struct ipc_message_info *info)
 {
+	struct ipc_sec_lock_info_response *lock_info;
+	int attempts;
+
+	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_sec_lock_info_response))
+		return;
+
+	lock_info = (struct ipc_sec_lock_info_response *) info->data;
+
 	/*
 	 * FIXME: solid way of handling lockinfo and sim unlock response together
 	 * so we can return the number of attempts left in respondSecPinStatus
 	 */
-	int attempts;
-	struct ipc_sec_lock_info_response *lock_info = (struct ipc_sec_lock_info_response *) info->data;
 
 	if (lock_info->type == IPC_SEC_PIN_TYPE_PIN1) {
 		attempts = lock_info->attempts;
-		LOGD("%s: PIN1 %d attempts left", __FUNCTION__, attempts);
+		LOGD("%s: PIN1 %d attempts left", __func__, attempts);
 	} else {
-		LOGE("%s: unhandled lock type %d", __FUNCTION__, lock_info->type);
+		LOGE("%s: unhandled lock type %d", __func__, lock_info->type);
 	}
 }
 
-/*
- * In: RIL_REQUEST_ENTER_SIM_PIN
- *   Supplies SIM PIN. Only called if RIL_CardStatus has RIL_APPSTATE_PIN state
- * 
- * Out: IPC_SEC_SIM_STATUS SET
- *   Attempts to unlock SIM PIN1
- *
- * Out: IPC_SEC_LOCK_INFO
- *   Retrieves PIN1 lock status
- */
-void ril_request_enter_sim_pin(RIL_Token t, void *data, size_t datalen)
+void ril_request_enter_sim_pin(RIL_Token t, void *data, size_t length)
 {
 	struct ipc_sec_pin_status_set pin_status;
 	char *pin = ((char **) data)[0];
 	unsigned char buf[9];
 
-	/* 1. Send PIN */
+	if (data == NULL || length < (int) sizeof(char *))
+		goto error;
+
+	// 1. Send PIN
 	if (strlen(data) > 16) {
-		LOGE("%s: pin exceeds maximum length", __FUNCTION__);
+		LOGE("%s: pin exceeds maximum length", __func__);
 		ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 	}
 
 	ipc_sec_pin_status_set_setup(&pin_status, IPC_SEC_PIN_TYPE_PIN1, pin, NULL);
 
-	ipc_gen_phone_res_expect_to_func(ril_request_get_id(t), IPC_SEC_SIM_STATUS,
-		ipc_sec_sim_status_complete);
+	ipc_gen_phone_res_expect_to_func(ril_request_get_id(t), IPC_SEC_SIM_STATUS, ipc_sec_sim_status_complete);
 
 	ipc_fmt_send_set(IPC_SEC_SIM_STATUS, ril_request_get_id(t), (unsigned char *) &pin_status, sizeof(pin_status));
 
-	/* 2. Get lock status */
+	// 2. Get lock status
 	// FIXME: This is not clean at all
 	memset(buf, 0, sizeof(buf));
 	buf[0] = 1;
 	buf[1] = IPC_SEC_PIN_TYPE_PIN1;
 
 	ipc_fmt_send(IPC_SEC_LOCK_INFO, IPC_TYPE_GET, buf, sizeof(buf), ril_request_get_id(t));
+
+	return;
+
+error:
+	ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
-void ril_request_change_sim_pin(RIL_Token t, void *data, size_t datalen)
+void ril_request_change_sim_pin(RIL_Token t, void *data, size_t length)
 {
-	char *password_old = ((char **) data)[0];
-	char *password_new = ((char **) data)[1];
+	char *password_old;
+	char *password_new;
 	struct ipc_sec_change_locking_pw_set locking_pw;
+
+	if (data == NULL || length < (int) (2 * sizeof(char *)))
+		goto error;
+
+	password_old = ((char **) data)[0];
+	password_new = ((char **) data)[1];
 
 	memset(&locking_pw, 0, sizeof(locking_pw));
 
@@ -837,13 +828,24 @@ void ril_request_change_sim_pin(RIL_Token t, void *data, size_t datalen)
 		ipc_sec_sim_status_complete);
 
 	ipc_fmt_send_set(IPC_SEC_CHANGE_LOCKING_PW, ril_request_get_id(t), (unsigned char *) &locking_pw, sizeof(locking_pw));
+
+	return;
+
+error:
+	ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
-void ril_request_enter_sim_puk(RIL_Token t, void *data, size_t datalen)
+void ril_request_enter_sim_puk(RIL_Token t, void *data, size_t length)
 {
 	struct ipc_sec_pin_status_set pin_status;
-	char *puk = ((char **) data)[0];
-	char *pin = ((char **) data)[1];
+	char *puk;
+	char *pin;
+
+	if (data == NULL || length < (int) (2 * sizeof(char *)))
+		goto error;
+
+	puk = ((char **) data)[0];
+	pin = ((char **) data)[1];
 
 	ipc_sec_pin_status_set_setup(&pin_status, IPC_SEC_PIN_TYPE_PIN1, pin, puk);
 
@@ -851,35 +853,42 @@ void ril_request_enter_sim_puk(RIL_Token t, void *data, size_t datalen)
 		ipc_sec_sim_status_complete);
 
 	ipc_fmt_send_set(IPC_SEC_SIM_STATUS, ril_request_get_id(t), (unsigned char *) &pin_status, sizeof(pin_status));
+
+	return;
+
+error:
+	ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
-/*
- * In: IPC_SEC_PHONE_LOCK
- *
- * Out: RIL_REQUEST_QUERY_FACILITY_LOCK
- *   Query the status of a facility lock state
- */
 void ipc_sec_phone_lock(struct ipc_message_info *info)
 {
 	int status;
-	struct ipc_sec_phone_lock_response *lock = (struct ipc_sec_phone_lock_response *) info->data;
+	struct ipc_sec_phone_lock_response *lock;
 
+	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_sec_phone_lock_response))
+		goto error;
+
+	lock = (struct ipc_sec_phone_lock_response *) info->data;
 	status = lock->status;
 
 	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_SUCCESS, &status, sizeof(status));
+
+	return;
+
+error:
+	if (info != NULL)
+		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
-/*
- * In: RIL_REQUEST_QUERY_FACILITY_LOCK
- *   Query the status of a facility lock state
- *
- * Out: IPC_SEC_PHONE_LOCK GET
- */
-void ril_request_query_facility_lock(RIL_Token t, void *data, size_t datalen)
+void ril_request_query_facility_lock(RIL_Token t, void *data, size_t length)
 {
 	struct ipc_sec_phone_lock_get lock_request;
+	char *facility;
 
-	char *facility = ((char **) data)[0];
+	if (data == NULL || length < sizeof(char *))
+		goto error;
+
+	facility = ((char **) data)[0];
 
 	if (!strcmp(facility, "SC")) {
 		lock_request.facility = IPC_SEC_FACILITY_TYPE_SC;
@@ -894,31 +903,37 @@ void ril_request_query_facility_lock(RIL_Token t, void *data, size_t datalen)
 	} else if (!strcmp(facility, "PC")) {
 		lock_request.facility = IPC_SEC_FACILITY_TYPE_PC;
 	} else {
-		LOGE("%s: unsupported facility: %s", __FUNCTION__, facility);
+		LOGE("%s: unsupported facility: %s", __func__, facility);
 		ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 	}
 
 	ipc_fmt_send(IPC_SEC_PHONE_LOCK, IPC_TYPE_GET, (void *) &lock_request, sizeof(lock_request), ril_request_get_id(t));
+
+	return;
+
+error:
+	ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
 // Both functions were the same
 #define ipc_sec_phone_lock_complete \
 	ipc_sec_sim_status_complete
 
-/*
- * In: RIL_REQUEST_SET_FACILITY_LOCK
- *   Enable/disable one facility lock
- *
- * Out: IPC_SEC_PHONE_LOCK SET
- */
-void ril_request_set_facility_lock(RIL_Token t, void *data, size_t datalen)
+void ril_request_set_facility_lock(RIL_Token t, void *data, size_t length)
 {
 	struct ipc_sec_phone_lock_set lock_request;
+	char *facility;
+	char *lock;
+	char *password;
+	char *class;
 
-	char *facility = ((char **) data)[0];
-	char *lock = ((char **) data)[1];
-	char *password = ((char **) data)[2];
-	char *class = ((char **) data)[3];
+	if (data == NULL || length < (int) (4 * sizeof(char *)))
+		goto error;
+
+	facility = ((char **) data)[0];
+	lock = ((char **) data)[1];
+	password = ((char **) data)[2];
+	class = ((char **) data)[3];
 
 	memset(&lock_request, 0, sizeof(lock_request));
 
@@ -935,7 +950,7 @@ void ril_request_set_facility_lock(RIL_Token t, void *data, size_t datalen)
 	} else if (!strcmp(facility, "PC")) {
 		lock_request.type = IPC_SEC_SIM_STATUS_LOCK_PC;
 	} else {
-		LOGE("%s: unsupported facility: %s", __FUNCTION__, facility);
+		LOGE("%s: unsupported facility: %s", __func__, facility);
 		ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 	}
 
@@ -950,4 +965,9 @@ void ril_request_set_facility_lock(RIL_Token t, void *data, size_t datalen)
 		ipc_sec_phone_lock_complete);
 
 	ipc_fmt_send(IPC_SEC_PHONE_LOCK, IPC_TYPE_SET, (void *) &lock_request, sizeof(lock_request), ril_request_get_id(t));
+
+	return;
+
+error:
+	ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 }
