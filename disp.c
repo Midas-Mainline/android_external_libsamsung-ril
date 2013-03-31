@@ -28,9 +28,6 @@
 #include "samsung-ril.h"
 #include "util.h"
 
-/*
- * Converts IPC RSSI to Android RIL format
- */
 #if RIL_VERSION >= 6
 void ipc2ril_rssi(unsigned char rssi, RIL_SignalStrength_v6 *ss)
 #else
@@ -81,7 +78,7 @@ void ipc2ril_bars(unsigned char bars, RIL_SignalStrength *ss)
 		case 3	: asu = 8;	break;
 		case 4	: asu = 12;	break;
 		case 5	: asu = 15;	break;
-		default	: asu = bars ;	break;
+		default	: asu = bars;	break;
 	}
 
 	LOGD("Signal Strength is %d\n", asu);
@@ -106,35 +103,52 @@ void ril_request_signal_strength(RIL_Token t)
 
 void ipc_disp_icon_info(struct ipc_message_info *info)
 {
-	struct ipc_disp_icon_info *icon_info = (struct ipc_disp_icon_info *) info->data;
+	struct ipc_disp_icon_info *icon_info;
 #if RIL_VERSION >= 6
 	RIL_SignalStrength_v6 ss;
 #else
 	RIL_SignalStrength ss;
 #endif
 
+	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_disp_icon_info))
+		goto error;
+
+	icon_info = (struct ipc_disp_icon_info *) info->data;
+
 	/* Don't consider this if modem isn't in normal power mode. */
 	if (ril_data.state.power_state != IPC_PWR_PHONE_STATE_NORMAL)
 		return;
 
-	if (info->type == IPC_TYPE_NOTI) {
-		ipc2ril_bars(icon_info->bars, &ss);
-		ril_request_unsolicited(RIL_UNSOL_SIGNAL_STRENGTH, &ss, sizeof(ss));
-	} else {
+	if (info->type == IPC_TYPE_RESP) {
 		ipc2ril_rssi(icon_info->rssi, &ss);
 		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_SUCCESS, &ss, sizeof(ss));
+
+	} else {
+		ipc2ril_bars(icon_info->bars, &ss);
+		ril_request_unsolicited(RIL_UNSOL_SIGNAL_STRENGTH, &ss, sizeof(ss));
 	}
+
+	return;
+
+error:
+	if (info != NULL && info->type == IPC_TYPE_RESP)
+		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
 void ipc_disp_rssi_info(struct ipc_message_info *info)
 {
-	struct ipc_disp_rssi_info *rssi_info = (struct ipc_disp_rssi_info *) info->data;
+	struct ipc_disp_rssi_info *rssi_info;
 #if RIL_VERSION >= 6
 	RIL_SignalStrength_v6 ss;
 #else
 	RIL_SignalStrength ss;
 #endif
 	int rssi;
+
+	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_disp_rssi_info))
+		return;
+
+	rssi_info = (struct ipc_disp_rssi_info *) info->data;
 
 	/* Don't consider this if modem isn't in normal power mode. */
 	if (ril_data.state.power_state != IPC_PWR_PHONE_STATE_NORMAL)
