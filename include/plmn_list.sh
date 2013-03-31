@@ -26,7 +26,7 @@ echo "};"
 echo ""
 echo "struct plmn_list_entry plmn_list[] = {"
 
-wget "http://en.wikipedia.org/w/index.php?title=Special:Export&pages=Mobile_Network_Code&action=submit" --quiet -O - | tr -d '\n' | sed -e "s|.*<text[^>]*>\(.*\)</text>.*|\1|g" -e "s/|-/\n|-\n/g" | sed -e "s/\(}===.*\)/\n\1/g" -e "s/===={.*/===={\n/g" -e "s/\&amp;/\&/g" -e "s/\&lt;[^\&]*\&gt;//g" -e "s/&quot;//g" -e "s#\[http[^]]*\]##g" -e "s#\[\[\([^]|]*\)|\([^]]*\)\]\]#\2#g" -e "s#\[\[\([^]]*\)\]\]#\1#g" -e "s#\[\([^] ]*\) \([^]]*\)\]#\2#g" | tail -n +2 | sed "s|.*=== \(.*\) ===.*|// \1|g" | grep -v "|-" | while read line
+wget "http://en.wikipedia.org/w/index.php?title=Special:Export&pages=Mobile_country_code&action=submit" --quiet -O - | tr -d '\n' | sed -e "s|.*<text[^>]*>\(.*\)</text>.*|\1|g" -e "s/|-/\n|-\n/g" | sed -e "s/\(}===.*\)/\n\1/g" -e "s/===={.*/===={\n/g" -e "s/\&amp;/\&/g" -e "s/\&lt;[^\&]*\&gt;//g" -e "s/&quot;//g" -e "s#\[http[^]]*\]##g" -e "s#\[\[\([^]|]*\)|\([^]]*\)\]\]#\2#g" -e "s#\[\[\([^]]*\)\]\]#\1#g" -e "s#\[\([^] ]*\) \([^]]*\)\]#\2#g" | tail -n +2 | sed "s|.*=== \(.*\) ===.*|// \1|g" | grep -v "|-" | while read line
 do
 	if [ "$line" = "" ]
 	then
