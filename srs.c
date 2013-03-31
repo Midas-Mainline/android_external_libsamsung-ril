@@ -362,7 +362,7 @@ static int srs_server_open(void)
 	int server_fd;
 	int t;
 
-	for (t=0 ; t < 5 ; t++) {
+	for (t = 0 ; t < 5 ; t++) {
 		unlink(SRS_SOCKET_NAME);
 #if RIL_VERSION >= 6
 		server_fd = socket_local_server(SRS_SOCKET_NAME, ANDROID_SOCKET_NAMESPACE_ABSTRACT, SOCK_STREAM);

@@ -194,7 +194,7 @@ struct ril_gprs_connection *ril_gprs_connection_start(void)
 	ipc_client_gprs_get_capabilities(ipc_client, &gprs_capabilities);
 	cid_max = gprs_capabilities.cid_max;
 
-	for (i=0 ; i < cid_max ; i++) {
+	for (i = 0 ; i < cid_max ; i++) {
 		cid = i + 1;
 		list = ril_data.gprs_connections;
 		while (list != NULL) {
@@ -974,10 +974,10 @@ void ipc_gprs_pdp_context_fix(RIL_Data_Call_Response *data_call_list, int c)
 {
 	int i, j, k;
 
-	for (i=0 ; i < c ; i++) {
-		for (j=i-1 ; j >= 0 ; j--) {
+	for (i = 0 ; i < c ; i++) {
+		for (j = i-1 ; j >= 0 ; j--) {
 			if (data_call_list[i].cid == data_call_list[j].cid) {
-				for (k=0 ; k < c ; k++) {
+				for (k = 0 ; k < c ; k++) {
 					if (data_call_list[k].cid == 1) {
 						data_call_list[i].cid = 0;
 						break;
@@ -1011,7 +1011,7 @@ void ipc_gprs_pdp_context(struct ipc_message_info *info)
 
 	context = (struct ipc_gprs_pdp_context_get *) info->data;
 
-	for (i=0 ; i < IPC_GPRS_PDP_CONTEXT_GET_DESC_COUNT ; i++) {
+	for (i = 0 ; i < IPC_GPRS_PDP_CONTEXT_GET_DESC_COUNT ; i++) {
 		data_call_list[i].cid = context->desc[i].cid;
 		data_call_list[i].active =
 			ipc2ril_gprs_connection_active(context->desc[i].state);

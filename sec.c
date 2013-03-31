@@ -651,7 +651,7 @@ void ipc_sec_rsim_access(struct ipc_message_info *info)
 
 			// Fallback to EF
 			sim_file_response.file_type = SIM_FILE_TYPE_EF;
-			for (i=0 ; i < sim_file_ids_count ; i++) {
+			for (i = 0 ; i < sim_file_ids_count ; i++) {
 				if (sim_io_info->fileid == sim_file_ids[i].file_id) {
 					sim_file_response.file_type = sim_file_ids[i].type;
 					break;

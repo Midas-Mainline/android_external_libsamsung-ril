@@ -143,7 +143,7 @@ int gsm72ascii(unsigned char *data, char **data_dec, int length)
 
 	memset(dec, 0, dec_length);
 
-	for (i=0 ; i < length ; i++)
+	for (i = 0 ; i < length ; i++)
 	{
 		d = 7 - i % 7;
 		if (d == 7 && i != 0)
@@ -183,7 +183,7 @@ int ascii2gsm7(char *data, unsigned char **data_enc, int length)
 	enc = malloc(enc_length);
 	memset(enc, 0, enc_length);
 
-	for (i=0 ; i < length ; i++)
+	for (i = 0 ; i < length ; i++)
 	{
 		// offset from the right of data to keep
 		d_off = i % 8;

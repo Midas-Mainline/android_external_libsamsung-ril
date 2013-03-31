@@ -156,7 +156,7 @@ void ipc_call_list(struct ipc_message_info *info)
 	current_calls = (RIL_Call **) calloc(1, count * sizeof(RIL_Call *));
 	entry = (struct ipc_call_list_entry *) ((char *) info->data + sizeof(unsigned char));
 
-	for (i=0 ; i < count ; i++) {
+	for (i = 0 ; i < count ; i++) {
 		if (((int) entry - (int) info->data) >= (int) info->length)
 			goto error;
 
@@ -183,7 +183,7 @@ void ipc_call_list(struct ipc_message_info *info)
 
 	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_SUCCESS, current_calls, (count * sizeof(RIL_Call *)));
 
-	for (i=0 ; i < count ; i++) {
+	for (i = 0 ; i < count ; i++) {
 		if (current_calls[i]->number != NULL)
 			free(current_calls[i]->number);
 
@@ -196,7 +196,7 @@ void ipc_call_list(struct ipc_message_info *info)
 
 error:
 	if (current_calls != NULL) {
-		for (i=0 ; i < count ; i++) {
+		for (i = 0 ; i < count ; i++) {
 			if (current_calls[i]->number != NULL)
 				free(current_calls[i]->number);
 
@@ -276,7 +276,7 @@ void ril_request_dtmf(RIL_Token t, void *data, int length)
 	burst[0] = count;
 
 	// Apparently, it's possible to set multiple DTMF tones on this message
-	for (i=0 ; i < count ; i++) {
+	for (i = 0 ; i < count ; i++) {
 		cont_dtmf.state = IPC_CALL_DTMF_STATE_START;
 		cont_dtmf.tone = tone;
 

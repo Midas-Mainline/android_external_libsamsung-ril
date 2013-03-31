@@ -244,7 +244,7 @@ void ril_plmn_string(char *plmn_data, char *response[3])
 
 	LOGD("Found %d plmn records", plmn_entries);
 
-	for (i=0 ; i < plmn_entries ; i++) {
+	for (i = 0 ; i < plmn_entries ; i++) {
 		if (plmn_list[i].mcc == mcc && plmn_list[i].mnc == mnc) {
 			asprintf(&response[0], "%s", plmn_list[i].operator_long);
 			asprintf(&response[1], "%s", plmn_list[i].operator_short);
@@ -729,7 +729,7 @@ void ipc_net_plmn_list(struct ipc_message_info *info)
 	response = (char **) calloc(1, length);
 
 	count = 0;
-	for (i=0 ; i < entries_info->num ; i++) {
+	for (i = 0 ; i < entries_info->num ; i++) {
 		// Assumed type for 'emergency only' PLMNs
 		if (entries[i].type == 0x01)
 			continue;
@@ -759,7 +759,7 @@ void ipc_net_plmn_list(struct ipc_message_info *info)
 	length = sizeof(char *) * 4 * count;
 	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_SUCCESS, response, length);
 
-	for (i=0 ; i < entries_info->num ; i++)
+	for (i = 0 ; i < entries_info->num ; i++)
 		if (response[i] != NULL)
 			free(response[i]);
 
