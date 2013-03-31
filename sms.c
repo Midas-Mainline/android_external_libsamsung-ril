@@ -25,10 +25,6 @@
 #include "samsung-ril.h"
 #include "util.h"
 
-/*
- * Format conversion utils
- */
-
 unsigned short ril2ipc_sms_ack_error(int success, int failcause)
 {
 	if (success) {
@@ -45,7 +41,10 @@ unsigned short ril2ipc_sms_ack_error(int success, int failcause)
 
 RIL_Errno ipc2ril_sms_ack_error(unsigned short error, int *error_code)
 {
-	/* error_code is defined in See 3GPP 27.005, 3.2.5 for GSM/UMTS */
+	// error_code is defined in See 3GPP 27.005, 3.2.5 for GSM/UMTS
+
+	if (error_code == NULL)
+		return RIL_E_GENERIC_FAILURE;
 
 	switch(error) {
 		case IPC_SMS_ACK_NO_ERROR:
@@ -225,12 +224,6 @@ void ril_request_send_sms_next(void)
 	}
 }
 
-/*
- * In: RIL_REQUEST_SEND_SMS
- *   Send an SMS message.
- *
- * Out: IPC_SMS_SEND_MSG
- */
 void ril_request_send_sms_complete(RIL_Token t, char *pdu, int pdu_length, unsigned char *smsc, int smsc_length)
 {
 	struct ipc_sms_send_msg_request send_msg;
@@ -244,23 +237,12 @@ void ril_request_send_sms_complete(RIL_Token t, char *pdu, int pdu_length, unsig
 
 	unsigned char *p;
 
-	if (pdu == NULL || pdu_length <= 0 || smsc == NULL || smsc_length <= 0) {
-		LOGE("Provided PDU or SMSC is invalid! Aborting");
+	if (pdu == NULL || pdu_length <= 0 || smsc == NULL || smsc_length <= 0)
+		goto error;
 
-		ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
-		// Send the next SMS in the list
-		ril_request_send_sms_next();
-
-		return;
-	}
 	if ((pdu_length / 2 + smsc_length) > 0xfe) {
 		LOGE("PDU or SMSC too large, aborting");
-
-		ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
-		// Send the next SMS in the list
-		ril_request_send_sms_next();
-
-		return;
+		goto error;
 	}
 
 	pdu_hex_length = pdu_length % 2 == 0 ? pdu_length / 2 :
@@ -344,18 +326,25 @@ pdu_end:
 
 	free(pdu_hex);
 	free(data);
+
+	return;
+
+error:
+	ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
+	// Send the next SMS in the list
+	ril_request_send_sms_next();
 }
 
 void ril_request_send_sms(RIL_Token t, void *data, size_t length)
 {
-	char *pdu;
+	char *pdu = NULL;
 	int pdu_length;
-	unsigned char *smsc;
+	unsigned char *smsc = NULL;
 	int smsc_length;
 	int rc;
 
-	if (data == NULL || length < 2 * sizeof(char *))
-		return;
+	if (data == NULL || length < (int) (2 * sizeof(char *)))
+		goto error;
 
 	pdu = ((char **) data)[1];
 	smsc = ((unsigned char **) data)[0];
@@ -377,14 +366,7 @@ void ril_request_send_sms(RIL_Token t, void *data, size_t length)
 		rc = ril_request_send_sms_register(pdu, pdu_length, smsc, smsc_length, t);
 		if (rc < 0) {
 			LOGE("Unable to add the request to the list");
-
-			ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
-			if (pdu != NULL)
-				free(pdu);
-			if (smsc != NULL)
-				free(smsc);
-			// Send the next SMS in the list
-			ril_request_send_sms_next();
+			goto error;
 		}
 
 		return;
@@ -398,12 +380,7 @@ void ril_request_send_sms(RIL_Token t, void *data, size_t length)
 		rc = ril_request_send_sms_register(pdu, pdu_length, NULL, 0, t);
 		if (rc < 0) {
 			LOGE("Unable to add the request to the list");
-
-			ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
-			if (pdu != NULL)
-				free(pdu);
-			// Send the next SMS in the list
-			ril_request_send_sms_next();
+			goto error;
 		}
 
 		ipc_fmt_send_get(IPC_SMS_SVC_CENTER_ADDR, ril_request_get_id(t));
@@ -414,28 +391,26 @@ void ril_request_send_sms(RIL_Token t, void *data, size_t length)
 		if (smsc != NULL)
 			free(smsc);
 	}
+
+	return;
+
+error:
+	ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
+
+	if (pdu != NULL)
+		free(pdu);
+	if (smsc != NULL)
+		free(smsc);
+	// Send the next SMS in the list
+	ril_request_send_sms_next();
 }
 
-/*
- * In: RIL_REQUEST_SEND_SMS_EXPECT_MORE
- *   Send an SMS message. Identical to RIL_REQUEST_SEND_SMS,
- *   except that more messages are expected to be sent soon. If possible,
- *   keep SMS relay protocol link open (eg TS 27.005 AT+CMMS command)
- *
- * Out: IPC_SMS_SEND_MSG
- */
 void ril_request_send_sms_expect_more(RIL_Token t, void *data, size_t length)
 {
-	/* No particular treatment here, we already have a queue */
+	// No particular treatment here, we already have a queue
 	ril_request_send_sms(t, data, length);
 }
 
-/*
- * In: IPC_SMS_SVC_CENTER_ADDR
- *   SMSC: Service Center Address, needed to send an SMS
- *
- * Out: IPC_SMS_SEND_MSG
- */
 void ipc_sms_svc_center_addr(struct ipc_message_info *info)
 {
 	struct ril_request_send_sms_info *send_sms;
@@ -446,8 +421,8 @@ void ipc_sms_svc_center_addr(struct ipc_message_info *info)
 	int smsc_length;
 	int rc;
 
-	if (info == NULL || info->data == NULL)
-		return;
+	if (info == NULL || info->data == NULL || info->length < sizeof(unsigned char))
+		goto error;
 
 	send_sms = ril_request_send_sms_info_find_token(ril_request_get_token(info->aseq));
 	if (send_sms == NULL || send_sms->pdu == NULL || send_sms->pdu_length <= 0) {
@@ -473,15 +448,18 @@ void ipc_sms_svc_center_addr(struct ipc_message_info *info)
 	ril_request_send_sms_complete(t, pdu, pdu_length, smsc, smsc_length);
 	if (pdu != NULL)
 		free(pdu);
+
+	return;
+
+error:
+	if (info != NULL)
+		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
 void ipc_sms_send_msg_complete(struct ipc_message_info *info)
 {
 	struct ril_request_send_sms_info *send_sms;
 	struct ipc_gen_phone_res *phone_res;
-
-	if (info->data == NULL || info->length < sizeof(struct ipc_gen_phone_res))
-		return;
 
 	phone_res = (struct ipc_gen_phone_res *) info->data;
 	if (ipc_gen_phone_res_check(phone_res) < 0) {
@@ -493,10 +471,6 @@ void ipc_sms_send_msg_complete(struct ipc_message_info *info)
 	}
 }
 
-/*
- * In: IPC_SMS_SEND_MSG
- *   This comes to ACK the latest sent SMS message
- */
 void ipc_sms_send_msg(struct ipc_message_info *info)
 {
 	struct ipc_sms_send_msg_response *report_msg;
@@ -504,7 +478,7 @@ void ipc_sms_send_msg(struct ipc_message_info *info)
 	RIL_Errno e;
 
 	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_sms_send_msg_response))
-		return;
+		goto error;
 
 	report_msg = (struct ipc_sms_send_msg_response *) info->data;
 
@@ -520,6 +494,12 @@ void ipc_sms_send_msg(struct ipc_message_info *info)
 
 	// Send the next SMS in the list
 	ril_request_send_sms_next();
+
+	return;
+
+error:
+	if (info != NULL)
+		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
 /*
@@ -612,13 +592,6 @@ void ipc_sms_incoming_msg_next(void)
 	ipc_sms_incoming_msg_unregister(incoming_msg);
 }
 
-/*
- * In: IPC_SMS_INCOMING_MSG
- *   Message to notify an incoming message, with PDU
- *
- * Out: RIL_UNSOL_RESPONSE_NEW_SMS or RIL_UNSOL_RESPONSE_NEW_SMS_STATUS_REPORT
- *   Notify RILJ about the incoming message
- */
 void ipc_sms_incoming_msg_complete(char *pdu, int length, unsigned char type, unsigned char tpid)
 {
 	if (pdu == NULL || length <= 0)
@@ -646,7 +619,7 @@ void ipc_sms_incoming_msg(struct ipc_message_info *info)
 	int rc;
 
 	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_sms_incoming_msg))
-		return;
+		goto error;
 
 	msg = (struct ipc_sms_incoming_msg *) info->data;
 	pdu_hex = ((unsigned char *) info->data + sizeof(struct ipc_sms_incoming_msg));
@@ -666,32 +639,28 @@ void ipc_sms_incoming_msg(struct ipc_message_info *info)
 	}
 
 	ipc_sms_incoming_msg_complete(pdu, length, msg->type, msg->msg_tpid);
+
+	return;
+
+error:
+	if (info != NULL)
+		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
-/*
- * In: RIL_REQUEST_SMS_ACKNOWLEDGE
- *   Acknowledge successful or failed receipt of SMS previously indicated
- *   via RIL_UNSOL_RESPONSE_NEW_SMS
- *
- * Out: IPC_SMS_DELIVER_REPORT
- *   Sends a SMS delivery report
- */
 void ril_request_sms_acknowledge(RIL_Token t, void *data, size_t length)
 {
 	struct ipc_sms_deliver_report_request report_msg;
 	int success, fail_cause;
 
 	if (data == NULL || length < 2 * sizeof(int))
-		return;
+		goto error;
 
 	success = ((int *) data)[0];
 	fail_cause = ((int *) data)[1];
 
 	if (ril_data.state.sms_incoming_msg_tpid == 0) {
 		LOGE("There is no SMS message to ACK!");
-		ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
-		ipc_sms_incoming_msg_next();
-		return;
+		goto error;
 	}
 
 	report_msg.type = IPC_SMS_TYPE_STATUS_REPORT;
@@ -704,12 +673,15 @@ void ril_request_sms_acknowledge(RIL_Token t, void *data, size_t length)
 	ipc_fmt_send(IPC_SMS_DELIVER_REPORT, IPC_TYPE_EXEC, (void *) &report_msg, sizeof(report_msg), ril_request_get_id(t));
 
 	ipc_sms_incoming_msg_next();
+
+	return;
+
+error:
+	ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
+
+	ipc_sms_incoming_msg_next();
 }
 
-/*
- * In: IPC_SMS_DELIVER_REPORT
- *   Attest that the modem successfully sent our SMS recv ACK 
- */
 void ipc_sms_deliver_report(struct ipc_message_info *info)
 {
 	struct ipc_sms_deliver_report_response *report_msg;
@@ -717,12 +689,18 @@ void ipc_sms_deliver_report(struct ipc_message_info *info)
 	int error_code;
 
 	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_sms_deliver_report_response))
-		return;
+		goto error;
 
 	report_msg = (struct ipc_sms_deliver_report_response *) info->data;
 	e = ipc2ril_sms_ack_error(report_msg->error, &error_code);
 
 	ril_request_complete(ril_request_get_token(info->aseq), e, NULL, 0);
+
+	return;
+
+error:
+	if (info != NULL)
+		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
 /*
