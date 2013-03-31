@@ -34,49 +34,47 @@ void ril_request_report_stk_service_is_running(RIL_Token t)
 #endif
 }
 
-/*
- * In: IPC_SAT_PROACTIVE_CMD
- *   STK proactive command
- *
- * Out: RIL_UNSOL_STK_PROACTIVE_COMMAND
- */
 void ipc_sat_proactive_cmd_unsol(struct ipc_message_info *info)
 {
-	int data_len = (info->length-2);
 	char *hexdata;
+	int length;
 
-	hexdata = (char*)malloc(data_len*2+1);
+	if (info == NULL || info->data == NULL || info->length < 2)
+		return;
 
-	bin2hex((unsigned char*)info->data+2, data_len, hexdata);
+	length = (info->length - 2);
+	hexdata = (char *) calloc(1, length * 2 + 1);
 
-	ril_request_unsolicited(RIL_UNSOL_STK_PROACTIVE_COMMAND, hexdata, sizeof(char*));
+	bin2hex((unsigned char *) info->data + 2, length, hexdata);
+
+	ril_request_unsolicited(RIL_UNSOL_STK_PROACTIVE_COMMAND, hexdata, sizeof(char *));
 
 	free(hexdata);
 }
 
-/*
- * In: IPC_SAT_PROACTIVE_CMD RESP
- *   STK proactive command
- *
- * Out: RIL_UNSOL_STK_SESSION_END
- */
 void ipc_sat_proactive_cmd_sol(struct ipc_message_info *info)
 {
 	unsigned char sw1, sw2;
 
-	sw1 = ((unsigned char*)info->data)[0];
-	sw2 = ((unsigned char*)info->data)[1];
+	if (info == NULL || info->data == NULL || info->length < 2 * sizeof(unsigned char))
+		goto error;
+
+	sw1 = ((unsigned char*) info->data)[0];
+	sw2 = ((unsigned char*) info->data)[1];
 
 	if (sw1 == 0x90 && sw2 == 0x00) {
 		ril_request_unsolicited(RIL_UNSOL_STK_SESSION_END, NULL, 0);
 	} else {
-		LOGE("%s: unhandled response sw1=%02x sw2=%02x", __FUNCTION__, sw1, sw2);
+		LOGE("%s: unhandled response sw1=%02x sw2=%02x", __func__, sw1, sw2);
 	}
+
+	return;
+
+error:
+	if (info != NULL)
+		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
-/*
- * Proactive command indi/resp helper function
- */
 void ipc_sat_proactive_cmd(struct ipc_message_info *info)
 {
 	if (info->type == IPC_TYPE_INDI) {
@@ -88,76 +86,83 @@ void ipc_sat_proactive_cmd(struct ipc_message_info *info)
 	}
 }
 
-/*
- * In: RIL_REQUEST_STK_SEND_TERMINAL_RESPONSE
- *   Requests to send a terminal response to SIM for a received
- *   proactive command
- *
- * Out: IPC_SAT_PROACTIVE_CMD GET
- */
-void ril_request_stk_send_terminal_response(RIL_Token t, void *data, size_t datalen)
+void ril_request_stk_send_terminal_response(RIL_Token t, void *data, size_t length)
 {
-	unsigned char buf[264];
-	int len = (strlen(data) / 2);
+	unsigned char buffer[264];
+	int size;
 
-	if (len > 255) {
-		LOGE("%s: data exceeds maximum length", __FUNCTION__);
-		ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
+	if (data == NULL || length < sizeof(char *))
+		goto error;
+
+	size = strlen(data) / 2;
+	if (size > 255) {
+		LOGE("%s: data exceeds maximum length", __func__);
+		goto error;
 	}
 
-	memset(buf, 0, sizeof(buf));
+	memset(buffer, 0, sizeof(buffer));
 
-	buf[0] = len;
-	hex2bin(data, strlen(data), &buf[1]);
+	buffer[0] = (unsigned char) size;
+	hex2bin(data, strlen(data), &buffer[1]);
 
-	ipc_fmt_send(IPC_SAT_PROACTIVE_CMD, IPC_TYPE_GET, buf, sizeof(buf), ril_request_get_id(t));
+	ipc_fmt_send(IPC_SAT_PROACTIVE_CMD, IPC_TYPE_GET, buffer, sizeof(buffer), ril_request_get_id(t));
 
-	ril_request_complete(t, RIL_E_SUCCESS, buf, sizeof(char*));
+	ril_request_complete(t, RIL_E_SUCCESS, buffer, sizeof(char *));
+
+	return;
+
+error:
+	ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
-/*
- * In: RIL_REQUEST_STK_SEND_ENVELOPE_COMMAND
- *   Requests to send a SAT/USAT envelope command to SIM.
- *   The SAT/USAT envelope command refers to 3GPP TS 11.14 and 3GPP TS 31.111
- *
- * Out: IPC_SAT_ENVELOPE_CMD EXEC
- */
-void ril_request_stk_send_envelope_command(RIL_Token t, void *data, size_t datalen)
+void ril_request_stk_send_envelope_command(RIL_Token t, void *data, size_t length)
 {
-	unsigned char buf[264];
-	int len = (strlen(data) / 2);
+	unsigned char buffer[264];
+	int size;
 
-	if (len > 255) {
-		LOGE("%s: data exceeds maximum length", __FUNCTION__);
-		ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
+	if (data == NULL || length < sizeof(char *))
+		goto error;
+
+	size = strlen(data) / 2;
+	if (size > 255) {
+		LOGE("%s: data exceeds maximum length", __func__);
+		goto error;
 	}
 
-	memset(buf, 0, sizeof(buf));
+	memset(buffer, 0, sizeof(buffer));
 
-	buf[0] = len;
-	hex2bin(data, strlen(data), &buf[1]);
+	buffer[0] = (unsigned char) size;
+	hex2bin(data, strlen(data), &buffer[1]);
 
-	ipc_fmt_send(IPC_SAT_ENVELOPE_CMD, IPC_TYPE_EXEC, buf, sizeof(buf), ril_request_get_id(t));
+	ipc_fmt_send(IPC_SAT_ENVELOPE_CMD, IPC_TYPE_EXEC, buffer, sizeof(buffer), ril_request_get_id(t));
+
+	return;
+
+error:
+	ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
-/*
- * In: IPC_SAT_ENVELOPE_CMD EXEC
- *
- * Out: RIL_REQUEST_STK_SEND_ENVELOPE_COMMAND
- *   Requests to send a SAT/USAT envelope command to SIM.
- *   The SAT/USAT envelope command refers to 3GPP TS 11.14 and 3GPP TS 31.111
- */
 void ipc_sat_envelope_cmd(struct ipc_message_info *info)
 {
-	int data_len = (info->length-2);
 	char *hexdata;
+	int size;
 
-	hexdata = (char*)malloc(data_len*2+1);
+	if (info == NULL || info->data == NULL || info->length < 2)
+		goto error;
 
-	bin2hex((unsigned char*)info->data+2, data_len, hexdata);
+	size = (info->length - 2);
+	hexdata = (char *) calloc(1, size * 2 + 1);
 
-	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_SUCCESS, hexdata, sizeof(char*));
+	bin2hex((unsigned char *) info->data + 2, size, hexdata);
+
+	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_SUCCESS, hexdata, sizeof(char *));
 
 	free(hexdata);
+
+	return;
+
+error:
+	if (info != NULL)
+		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
