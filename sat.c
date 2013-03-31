@@ -39,7 +39,7 @@ void ipc_sat_proactive_cmd_unsol(struct ipc_message_info *info)
 	char *hexdata;
 	int length;
 
-	if (info == NULL || info->data == NULL || info->length < 2)
+	if (info->data == NULL || info->length < 2)
 		return;
 
 	length = (info->length - 2);
@@ -56,7 +56,7 @@ void ipc_sat_proactive_cmd_sol(struct ipc_message_info *info)
 {
 	unsigned char sw1, sw2;
 
-	if (info == NULL || info->data == NULL || info->length < 2 * sizeof(unsigned char))
+	if (info->data == NULL || info->length < 2 * sizeof(unsigned char))
 		goto error;
 
 	sw1 = ((unsigned char*) info->data)[0];
@@ -147,7 +147,7 @@ void ipc_sat_envelope_cmd(struct ipc_message_info *info)
 	char *hexdata;
 	int size;
 
-	if (info == NULL || info->data == NULL || info->length < 2)
+	if (info->data == NULL || info->length < 2)
 		goto error;
 
 	size = (info->length - 2);
@@ -162,7 +162,6 @@ void ipc_sat_envelope_cmd(struct ipc_message_info *info)
 	return;
 
 error:
-	if (info != NULL)
-		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
+	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 

@@ -110,7 +110,7 @@ void ipc_disp_icon_info(struct ipc_message_info *info)
 	RIL_SignalStrength ss;
 #endif
 
-	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_disp_icon_info))
+	if (info->data == NULL || info->length < sizeof(struct ipc_disp_icon_info))
 		goto error;
 
 	icon_info = (struct ipc_disp_icon_info *) info->data;
@@ -131,7 +131,7 @@ void ipc_disp_icon_info(struct ipc_message_info *info)
 	return;
 
 error:
-	if (info != NULL && info->type == IPC_TYPE_RESP)
+	if (info->type == IPC_TYPE_RESP)
 		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
@@ -145,7 +145,7 @@ void ipc_disp_rssi_info(struct ipc_message_info *info)
 #endif
 	int rssi;
 
-	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_disp_rssi_info))
+	if (info->data == NULL || info->length < sizeof(struct ipc_disp_rssi_info))
 		return;
 
 	rssi_info = (struct ipc_disp_rssi_info *) info->data;

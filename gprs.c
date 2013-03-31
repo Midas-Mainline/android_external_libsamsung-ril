@@ -446,7 +446,7 @@ void ipc_gprs_ip_configuration(struct ipc_message_info *info)
 	struct ril_gprs_connection *gprs_connection;
 	struct ipc_gprs_ip_configuration *ip_configuration;
 
-	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_gprs_ip_configuration))
+	if (info->data == NULL || info->length < sizeof(struct ipc_gprs_ip_configuration))
 		goto error;
 
 	ip_configuration = (struct ipc_gprs_ip_configuration *) info->data;
@@ -472,8 +472,7 @@ void ipc_gprs_ip_configuration(struct ipc_message_info *info)
 	return;
 
 error:
-	if (info != NULL)
-		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
+	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
 void ipc_gprs_pdp_context_disable_complete(struct ipc_message_info *info)
@@ -786,7 +785,7 @@ void ipc_gprs_call_status(struct ipc_message_info *info)
 
 	int rc;
 
-	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_gprs_call_status))
+	if (info->data == NULL || info->length < sizeof(struct ipc_gprs_call_status))
 		goto error;
 
 	call_status = (struct ipc_gprs_call_status *) info->data;
@@ -918,8 +917,7 @@ void ipc_gprs_call_status(struct ipc_message_info *info)
 	return;
 
 error:
-	if (info != NULL)
-		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
+	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
 void ril_request_last_data_call_fail_cause(RIL_Token t)
@@ -1006,7 +1004,7 @@ void ipc_gprs_pdp_context(struct ipc_message_info *info)
 
 	int i;
 
-	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_gprs_pdp_context_get))
+	if (info->data == NULL || info->length < sizeof(struct ipc_gprs_pdp_context_get))
 		goto error;
 
 	context = (struct ipc_gprs_pdp_context_get *) info->data;
@@ -1080,8 +1078,7 @@ void ipc_gprs_pdp_context(struct ipc_message_info *info)
 	return;
 
 error:
-	if (info != NULL)
-		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
+	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
 void ril_unsol_data_call_list_changed(void)

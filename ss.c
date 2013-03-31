@@ -189,7 +189,7 @@ void ipc_ss_ussd(struct ipc_message_info *info)
 	struct ipc_ss_ussd *ussd = NULL;
 	unsigned char state;
 
-	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_ss_ussd))
+	if (info->data == NULL || info->length < sizeof(struct ipc_ss_ussd))
 		goto error;
 
 	memset(message, 0, sizeof(message));
@@ -242,6 +242,5 @@ void ipc_ss_ussd(struct ipc_message_info *info)
 	return;
 
 error:
-	if (info != NULL)
-		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
+	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }

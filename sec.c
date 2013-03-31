@@ -214,7 +214,7 @@ void ipc_sec_sim_status(struct ipc_message_info *info)
 #endif
 	ril_sim_state sim_state;
 
-	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_sec_sim_status_response))
+	if (info->data == NULL || info->length < sizeof(struct ipc_sec_sim_status_response))
 		goto error;
 
 	pin_status = (struct ipc_sec_sim_status_response *) info->data;
@@ -315,7 +315,7 @@ void ipc_sec_sim_icc_type(struct ipc_message_info *info)
 {
 	struct ipc_sec_sim_icc_type *sim_icc_type;
 
-	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_sec_sim_icc_type))
+	if (info->data == NULL || info->length < sizeof(struct ipc_sec_sim_icc_type))
 		goto error;
 
 	sim_icc_type = (struct ipc_sec_sim_icc_type *) info->data;
@@ -576,7 +576,7 @@ void ipc_sec_rsim_access(struct ipc_message_info *info)
 	int offset;
 	int i;
 
-	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_sec_rsim_access_response))
+	if (info->data == NULL || info->length < sizeof(struct ipc_sec_rsim_access_response))
 		goto error;
 
 	sim_io_info = ril_request_sim_io_info_find_token(ril_request_get_token(info->aseq));
@@ -704,8 +704,7 @@ void ipc_sec_rsim_access(struct ipc_message_info *info)
 	return;
 
 error:
-	if (info != NULL)
-		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
+	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
 void ipc_sec_sim_status_complete(struct ipc_message_info *info)
@@ -743,7 +742,7 @@ void ipc_sec_lock_info(struct ipc_message_info *info)
 	struct ipc_sec_lock_info_response *lock_info;
 	int attempts;
 
-	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_sec_lock_info_response))
+	if (info->data == NULL || info->length < sizeof(struct ipc_sec_lock_info_response))
 		return;
 
 	lock_info = (struct ipc_sec_lock_info_response *) info->data;
@@ -865,7 +864,7 @@ void ipc_sec_phone_lock(struct ipc_message_info *info)
 	int status;
 	struct ipc_sec_phone_lock_response *lock;
 
-	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_sec_phone_lock_response))
+	if (info->data == NULL || info->length < sizeof(struct ipc_sec_phone_lock_response))
 		goto error;
 
 	lock = (struct ipc_sec_phone_lock_response *) info->data;
@@ -876,8 +875,7 @@ void ipc_sec_phone_lock(struct ipc_message_info *info)
 	return;
 
 error:
-	if (info != NULL)
-		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
+	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
 void ril_request_query_facility_lock(RIL_Token t, void *data, size_t length)

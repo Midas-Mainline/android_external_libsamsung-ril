@@ -152,7 +152,7 @@ void ipc_gen_phone_res(struct ipc_message_info *info)
 	RIL_Errno e;
 	int rc;
 
-	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_gen_phone_res))
+	if (info->data == NULL || info->length < sizeof(struct ipc_gen_phone_res))
 		return;
 
 	phone_res = (struct ipc_gen_phone_res *) info->data;

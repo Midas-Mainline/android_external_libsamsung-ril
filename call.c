@@ -84,7 +84,7 @@ void ipc_call_status(struct ipc_message_info *info)
 {
 	struct ipc_call_status *call_status;
 
-	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_call_status))
+	if (info->data == NULL || info->length < sizeof(struct ipc_call_status))
 		return;
 
 	call_status = (struct ipc_call_status *) info->data;
@@ -141,7 +141,7 @@ void ipc_call_list(struct ipc_message_info *info)
 	RIL_Call **current_calls = NULL;
 	int i;
 
-	if (info == NULL || info->data == NULL || info->length < sizeof(unsigned char))
+	if (info->data == NULL || info->length < sizeof(unsigned char))
 		goto error;
 
 	if (info->type != IPC_TYPE_RESP)
@@ -206,7 +206,7 @@ error:
 		free(current_calls);
 	}
 
-	if (info != NULL && info->type == IPC_TYPE_RESP)
+	if (info->type == IPC_TYPE_RESP)
 		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
@@ -299,7 +299,7 @@ void ipc_call_burst_dtmf(struct ipc_message_info *info)
 {
 	unsigned char code;
 
-	if (info == NULL || info->data == NULL || info->length < sizeof(unsigned char))
+	if (info->data == NULL || info->length < sizeof(unsigned char))
 		goto error;
 
 	code = *((unsigned char *) info->data);

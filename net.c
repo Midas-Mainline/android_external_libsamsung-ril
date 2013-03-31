@@ -355,7 +355,7 @@ void ipc_net_current_plmn(struct ipc_message_info *info)
 	char *response[3];
 	size_t i;
 
-	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_net_current_plmn_response))
+	if (info->data == NULL || info->length < sizeof(struct ipc_net_current_plmn_response))
 		goto error;
 
 	plmndata = (struct ipc_net_current_plmn_response *) info->data;
@@ -546,7 +546,7 @@ void ipc_net_regist_unsol(struct ipc_message_info *info)
 {
 	struct ipc_net_regist_response *netinfo;
 
-	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_net_regist_response))
+	if (info->data == NULL || info->length < sizeof(struct ipc_net_regist_response))
 		goto error;
 
 	netinfo = (struct ipc_net_regist_response *) info->data;
@@ -617,7 +617,7 @@ void ipc_net_regist_sol(struct ipc_message_info *info)
 	char *response[4];
 	size_t i;
 
-	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_net_regist_response))
+	if (info->data == NULL || info->length < sizeof(struct ipc_net_regist_response))
 		goto error;
 
 	netinfo = (struct ipc_net_regist_response *) info->data;
@@ -717,7 +717,7 @@ void ipc_net_plmn_list(struct ipc_message_info *info)
 	int index;
 	int i;
 
-	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_net_plmn_entries))
+	if (info->data == NULL || info->length < sizeof(struct ipc_net_plmn_entries))
 		goto error;
 
 	entries_info = (struct ipc_net_plmn_entries *) info->data;
@@ -768,8 +768,7 @@ void ipc_net_plmn_list(struct ipc_message_info *info)
 	return;
 
 error:
-	if (info != NULL)
-		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
+	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
 void ril_request_get_preferred_network_type(RIL_Token t)
@@ -804,7 +803,7 @@ void ipc_net_mode_sel(struct ipc_message_info *info)
 	struct ipc_net_mode_sel *mode_sel;
 	int ril_mode;
 
-	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_net_mode_sel))
+	if (info->data == NULL || info->length < sizeof(struct ipc_net_mode_sel))
 		goto error;
 
 	mode_sel = (struct ipc_net_mode_sel *) info->data;
@@ -829,7 +828,7 @@ void ipc_net_plmn_sel(struct ipc_message_info *info)
 	struct ipc_net_plmn_sel_get *plmn_sel;
 	int ril_mode;
 
-	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_net_plmn_sel_get))
+	if (info->data == NULL || info->length < sizeof(struct ipc_net_plmn_sel_get))
 		goto error;
 
 	plmn_sel = (struct ipc_net_plmn_sel_get *) info->data;
@@ -840,8 +839,7 @@ void ipc_net_plmn_sel(struct ipc_message_info *info)
 	return;
 
 error:
-	if (info != NULL)
-		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
+	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
 void ipc_net_plmn_sel_complete(struct ipc_message_info *info)

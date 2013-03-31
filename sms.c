@@ -421,7 +421,7 @@ void ipc_sms_svc_center_addr(struct ipc_message_info *info)
 	int smsc_length;
 	int rc;
 
-	if (info == NULL || info->data == NULL || info->length < sizeof(unsigned char))
+	if (info->data == NULL || info->length < sizeof(unsigned char))
 		goto error;
 
 	send_sms = ril_request_send_sms_info_find_token(ril_request_get_token(info->aseq));
@@ -452,8 +452,7 @@ void ipc_sms_svc_center_addr(struct ipc_message_info *info)
 	return;
 
 error:
-	if (info != NULL)
-		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
+	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
 void ipc_sms_send_msg_complete(struct ipc_message_info *info)
@@ -477,7 +476,7 @@ void ipc_sms_send_msg(struct ipc_message_info *info)
 	RIL_SMS_Response response;
 	RIL_Errno e;
 
-	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_sms_send_msg_response))
+	if (info->data == NULL || info->length < sizeof(struct ipc_sms_send_msg_response))
 		goto error;
 
 	report_msg = (struct ipc_sms_send_msg_response *) info->data;
@@ -498,8 +497,7 @@ void ipc_sms_send_msg(struct ipc_message_info *info)
 	return;
 
 error:
-	if (info != NULL)
-		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
+	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
 /*
@@ -618,7 +616,7 @@ void ipc_sms_incoming_msg(struct ipc_message_info *info)
 	int length;
 	int rc;
 
-	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_sms_incoming_msg))
+	if (info->data == NULL || info->length < sizeof(struct ipc_sms_incoming_msg))
 		goto error;
 
 	msg = (struct ipc_sms_incoming_msg *) info->data;
@@ -688,7 +686,7 @@ void ipc_sms_deliver_report(struct ipc_message_info *info)
 	RIL_Errno e;
 	int error_code;
 
-	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_sms_deliver_report_response))
+	if (info->data == NULL || info->length < sizeof(struct ipc_sms_deliver_report_response))
 		goto error;
 
 	report_msg = (struct ipc_sms_deliver_report_response *) info->data;

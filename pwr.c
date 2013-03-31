@@ -49,7 +49,7 @@ void ipc_pwr_phone_state(struct ipc_message_info *info)
 {
 	unsigned char state;
 
-	if (info == NULL || info->data == NULL || info->length < sizeof(unsigned char))
+	if (info->data == NULL || info->length < sizeof(unsigned char))
 		return;
 
 	state = *((unsigned char *) info->data);

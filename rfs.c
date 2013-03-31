@@ -35,7 +35,7 @@ void ipc_rfs_nv_read_item(struct ipc_message_info *info)
 	void *rfs_data;
 	int rc;
 
-	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_rfs_io))
+	if (info->data == NULL || info->length < sizeof(struct ipc_rfs_io))
 		return;
 
 	rfs_io = (struct ipc_rfs_io *) info->data;
@@ -80,7 +80,7 @@ void ipc_rfs_nv_write_item(struct ipc_message_info *info)
 	void *rfs_data;
 	int rc;
 
-	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_rfs_io))
+	if (info->data == NULL || info->length < sizeof(struct ipc_rfs_io))
 		return;
 
 	rfs_io = (struct ipc_rfs_io *) info->data;
