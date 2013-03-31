@@ -26,8 +26,10 @@
 
 void ipc_ss_ussd_complete(struct ipc_message_info *info)
 {
-	struct ipc_gen_phone_res *phone_res = (struct ipc_gen_phone_res *) info->data;
+	struct ipc_gen_phone_res *phone_res;
 	int rc;
+
+	phone_res = (struct ipc_gen_phone_res *) info->data;
 
 	rc = ipc_gen_phone_res_check(phone_res);
 	if (rc < 0) {
@@ -42,7 +44,7 @@ void ipc_ss_ussd_complete(struct ipc_message_info *info)
 	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_SUCCESS, NULL, 0);
 }
 
-void ril_request_send_ussd(RIL_Token t, void *data, size_t datalen)
+void ril_request_send_ussd(RIL_Token t, void *data, size_t length)
 {
 	char *data_enc = NULL;
 	int data_enc_len = 0;
@@ -51,6 +53,9 @@ void ril_request_send_ussd(RIL_Token t, void *data, size_t datalen)
 	struct ipc_ss_ussd *ussd = NULL;
 
 	int message_size = 0xc0;
+
+	if (data == NULL || length < (int) sizeof(char *))
+		goto error;
 
 	switch(ril_data.state.ussd_state) {
 		case 0:
@@ -61,7 +66,7 @@ void ril_request_send_ussd(RIL_Token t, void *data, size_t datalen)
 		case IPC_SS_USSD_TIME_OUT:
 			LOGD("USSD Tx encoding is GSM7");
 
-			data_enc_len = ascii2gsm7(data, (unsigned char**)&data_enc, datalen);
+			data_enc_len = ascii2gsm7(data, (unsigned char**)&data_enc, length);
 			if (data_enc_len > message_size) {
 				LOGE("USSD message size is too long, aborting");
 				ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
@@ -125,9 +130,14 @@ void ril_request_send_ussd(RIL_Token t, void *data, size_t datalen)
 		ipc_ss_ussd_complete);
 
 	ipc_fmt_send(IPC_SS_USSD, IPC_TYPE_EXEC, (void *) message, message_size, ril_request_get_id(t));
+
+	return;
+
+error:
+	ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
-void ril_request_cancel_ussd(RIL_Token t, void *data, size_t datalen)
+void ril_request_cancel_ussd(RIL_Token t, void *data, size_t length)
 {
 	struct ipc_ss_ussd ussd;
 
@@ -143,6 +153,9 @@ void ril_request_cancel_ussd(RIL_Token t, void *data, size_t datalen)
 
 void ipc2ril_ussd_state(struct ipc_ss_ussd *ussd, char *message[2])
 {
+	if (ussd == NULL || message == NULL)
+		return;
+
 	switch(ussd->state) {
 		case IPC_SS_USSD_NO_ACTION_REQUIRE:
 			asprintf(&message[0], "%d", 0);
@@ -175,6 +188,9 @@ void ipc_ss_ussd(struct ipc_message_info *info)
 
 	struct ipc_ss_ussd *ussd = NULL;
 	unsigned char state;
+
+	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_ss_ussd))
+		goto error;
 
 	memset(message, 0, sizeof(message));
 
@@ -222,4 +238,10 @@ void ipc_ss_ussd(struct ipc_message_info *info)
 	}
 
 	ril_request_unsolicited(RIL_UNSOL_ON_USSD, message, sizeof(message));
+
+	return;
+
+error:
+	if (info != NULL)
+		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
