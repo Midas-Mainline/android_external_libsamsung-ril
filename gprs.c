@@ -1,7 +1,7 @@
 /*
  * This file is part of Samsung-RIL.
  *
- * Copyright (C) 2011-2012 Paul Kocialkowski <contact@paulk.fr>
+ * Copyright (C) 2011-2013 Paul Kocialkowski <contact@paulk.fr>
  * Copyright (C) 2011 Denis 'GNUtoo' Carikli <GNUtoo@no-log.org>
  *
  * Samsung-RIL is free software: you can redistribute it and/or modify
@@ -16,7 +16,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Samsung-RIL.  If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 #include <netinet/in.h>

@@ -2,7 +2,7 @@
  * This file is part of Samsung-RIL.
  *
  * Copyright (C) 2010-2011 Joerie de Gram <j.de.gram@gmail.com>
- * Copyright (C) 2011-2012 Paul Kocialkowski <contact@paulk.fr>
+ * Copyright (C) 2011-2013 Paul Kocialkowski <contact@paulk.fr>
  *
  * Samsung-RIL is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,7 +16,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Samsung-RIL.  If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
 #ifndef _SAMSUNG_RIL_IPC_H_
