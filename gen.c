@@ -43,7 +43,7 @@
  * send some data to the modem, just liek this:
  * aseq = ril_request_reg_id(ril_request_get_token(info->aseq));
  *
- * Please use GEN_PHONE_RES engine as often as possible!
+ * Please use the GEN_PHONE_RES engine as often as possible!
  */
 
 /*
@@ -145,10 +145,6 @@ int ipc_gen_phone_res_expect_to_abort(unsigned char aseq, unsigned short command
  * GEN dequeue function
  */
 
-/*
- * In: IPC_GEN_PHONE_RES
- *   Check the ipc_gen_phone_res_expects queue and act accordingly
- */
 void ipc_gen_phone_res(struct ipc_message_info *info)
 {
 	struct ipc_gen_phone_res_expect_info *expect;
@@ -156,7 +152,7 @@ void ipc_gen_phone_res(struct ipc_message_info *info)
 	RIL_Errno e;
 	int rc;
 
-	if (info->data == NULL || info->length < sizeof(struct ipc_gen_phone_res))
+	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_gen_phone_res))
 		return;
 
 	phone_res = (struct ipc_gen_phone_res *) info->data;
