@@ -31,8 +31,8 @@
 
 #include <samsung-ril-socket.h>
 
-#define SRS_CLIENT_LOCK() pthread_mutex_lock(&client_data->mutex)
-#define SRS_CLIENT_UNLOCK() pthread_mutex_unlock(&client_data->mutex)
+#define SRS_CLIENT_LOCK() pthread_mutex_lock(&srs_client_data->mutex)
+#define SRS_CLIENT_UNLOCK() pthread_mutex_unlock(&srs_client_data->mutex)
 
 struct srs_client_info {
 	int fd;
