@@ -23,14 +23,6 @@
 #include "util.h"
 
 /*
- * Samsung-RIL TODO:
- *
- * General:
- * - SIM SMS I/O
- * - Review code with requests that produce GEN_PHONE_RES messages to use the GEN_PHONE_RES engine
- */
-
-/*
  * RIL data
  */
 
