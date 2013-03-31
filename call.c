@@ -24,13 +24,24 @@
 
 #include "samsung-ril.h"
 
-/*
- * Format conversion utils
- */
+unsigned char ril2ipc_call_identity(int clir)
+{
+	switch (clir) {
+		case 0:
+			return IPC_CALL_IDENTITY_DEFAULT;
+		case 1:
+			return IPC_CALL_IDENTITY_SHOW;
+		case 2:
+			return IPC_CALL_IDENTITY_HIDE;
+		default:
+			LOGE("Unknown call identity: 0x%x", clir);
+			return IPC_CALL_IDENTITY_DEFAULT;
+	}
+}
 
 unsigned char ipc2ril_call_list_entry_state(unsigned char call_state)
 {
-	switch(call_state) {
+	switch (call_state) {
 		case IPC_CALL_LIST_ENTRY_STATE_ACTIVE:
 			return RIL_CALL_ACTIVE;
 		case IPC_CALL_LIST_ENTRY_STATE_HOLDING:
@@ -44,223 +55,184 @@ unsigned char ipc2ril_call_list_entry_state(unsigned char call_state)
 		case IPC_CALL_LIST_ENTRY_STATE_WAITING:
 			return RIL_CALL_WAITING;
 		default:
-			LOGE("Unknown IPC_CALL_LIST_ENTRY_STATE!");
+			LOGE("Unknown call list entry state: 0x%x", call_state);
 			return -1;
 	}
 }
 
 RIL_LastCallFailCause ipc2ril_call_fail_cause(unsigned char end_cause)
 {
-	switch(end_cause) {
+	switch (end_cause) {
 		case IPC_CALL_END_CAUSE_NORMAL:
 		case IPC_CALL_END_CAUSE_REJECTED:
 			return CALL_FAIL_NORMAL;
 		case IPC_CALL_END_CAUSE_UNSPECIFIED:
 		default:
+			LOGE("Unknown call fail cause: 0x%x", end_cause);
 			return CALL_FAIL_ERROR_UNSPECIFIED;
 	}
 }
 
-/*
- * In: RIL_UNSOL_CALL_RING
- *   Ring indication for an incoming call (eg, RING or CRING event).
- */
 void ipc_call_incoming(struct ipc_message_info *info)
 {
 	ril_request_unsolicited(RIL_UNSOL_CALL_RING, NULL, 0);
 
-	/* FIXME: Do we really need to send this? */
 	ril_request_unsolicited(RIL_UNSOL_RESPONSE_CALL_STATE_CHANGED, NULL, 0);
 }
 
-/*
- * In: IPC_CALL_STATUS
- *   Indicates that a call's status has changed
- *
- * RIL_UNSOL_RESPONSE_CALL_STATE_CHANGED
- *   Indicate when call state has changed
- */
 void ipc_call_status(struct ipc_message_info *info)
 {
-	struct ipc_call_status *call_status =
-		(struct ipc_call_status *) info->data;
+	struct ipc_call_status *call_status;
 
+	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_call_status))
+		return;
+
+	call_status = (struct ipc_call_status *) info->data;
+
+	LOGD("Updating call status data");
 	memcpy(&(ril_data.state.call_status), call_status, sizeof(struct ipc_call_status));
-
-	LOGD("Updating Call Status data");
 
 	ril_request_unsolicited(RIL_UNSOL_RESPONSE_CALL_STATE_CHANGED, NULL, 0);
 }
 
-/*
- * In: RIL_REQUEST_DIAL
- *   Initiate voice call
- *
- * Out: IPC_CALL_OUTGOING
- */
-void ril_request_dial(RIL_Token t, void *data, size_t datalen)
+void ril_request_dial(RIL_Token t, void *data, size_t length)
 {
-	const RIL_Dial *dial = (const RIL_Dial*)data;
+	RIL_Dial *dial;
 	struct ipc_call_outgoing call;
 	int clir;
 
+	if (data == NULL || length < sizeof(RIL_Dial))
+		goto error;
+
+	dial = (RIL_Dial *) data;
+
 	if (strlen(dial->address) > sizeof(call.number)) {
 		printf("Outgoing call number too long\n");
-		return;
+		goto error;
 	}
 
-	/* FIXME: separate method? */
-	switch(dial->clir) {
-		case 0:
-			clir = IPC_CALL_IDENTITY_DEFAULT;
-			break;
-		case 1:
-			clir = IPC_CALL_IDENTITY_SHOW;
-			break;
-		case 2:
-			clir = IPC_CALL_IDENTITY_HIDE;
-			break;
-		default:
-			clir = IPC_CALL_IDENTITY_DEFAULT;
-			break;
-	}
-
-	memset(&call, 0x00, sizeof(call));
-
+	memset(&call, 0, sizeof(call));
 	call.type = IPC_CALL_TYPE_VOICE;
-	call.identity = clir;
+	call.identity = ril2ipc_call_identity(dial->clir);
 	call.prefix = dial->address[0] == '+' ? IPC_CALL_PREFIX_INTL : IPC_CALL_PREFIX_NONE;
-
 	call.length = strlen(dial->address);
 	memcpy(call.number, dial->address, strlen(dial->address));
 
+	ipc_gen_phone_res_expect_to_complete(ril_request_get_id(t), IPC_CALL_OUTGOING);
+
 	ipc_fmt_send(IPC_CALL_OUTGOING, IPC_TYPE_EXEC, (unsigned char *) &call, sizeof(call), ril_request_get_id(t));
 
-	/* FIXME: This should actually be sent based on the response from baseband */
-	ril_request_complete(t, RIL_E_SUCCESS, NULL, 0);
+	return;
+
+error:
+	ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
-/*
- * In: RIL_REQUEST_GET_CURRENT_CALLS
- *   Requests current call list
- *
- * Out: IPC_CALL_LIST GET
- *   Requests a list of active calls
- */
 void ril_request_get_current_calls(RIL_Token t)
 {
 	ipc_fmt_send_get(IPC_CALL_LIST, ril_request_get_id(t));
 }
 
-/*
- * In: IPC_CALL_LIST GET
- *   Provides a list of active calls
- *
- * Out: RIL_REQUEST_GET_CURRENT_CALLS
- *   Requests current call list
- */
 void ipc_call_list(struct ipc_message_info *info)
 {
 	struct ipc_call_list_entry *entry;
-	unsigned char num_entries;
-	char *number, *number_ril;
+	unsigned char count;
+	char *number;
+	RIL_Call **current_calls = NULL;
 	int i;
 
-	num_entries = *((unsigned char *) info->data);
+	if (info == NULL || info->data == NULL || info->length < sizeof(unsigned char))
+		goto error;
 
-	if (num_entries == 0) {
-		// Don't bother with mem alloc
+	if (info->type != IPC_TYPE_RESP)
+		return;
 
+	count = *((unsigned char *) info->data);
+	if (count == 0) {
 		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_SUCCESS, NULL, 0);
 		return;
 	}
 
-	entry = (struct ipc_call_list_entry *) ((char *) info->data + 1);
+	current_calls = (RIL_Call **) calloc(1, count * sizeof(RIL_Call *));
+	entry = (struct ipc_call_list_entry *) ((char *) info->data + sizeof(unsigned char));
 
-	RIL_Call **calls = (RIL_Call **) malloc(num_entries * sizeof(RIL_Call *));
+	for (i=0 ; i < count ; i++) {
+		if (((int) entry - (int) info->data) >= (int) info->length)
+			goto error;
 
-	for (i = 0; i < num_entries; i++) {
-		RIL_Call *call = (RIL_Call *) malloc(sizeof(RIL_Call));
+		number = ((char *) entry) + sizeof(struct ipc_call_list_entry);
 
-		/* Number is located after call list entry */
-		number = ((char *) entry) + sizeof(*entry);
+		current_calls[i] = (RIL_Call *) calloc(1, sizeof(RIL_Call));
 
-		number_ril = (char *) malloc(entry->number_len + 1);
-		memset(number_ril, 0, (entry->number_len + 1));
-		memcpy(number_ril, number, entry->number_len);
+		current_calls[i]->state = ipc2ril_call_list_entry_state(entry->state);
+		current_calls[i]->index = entry->idx;
+		current_calls[i]->toa = (entry->number_len > 0 && number[0] == '+') ? 145 : 129;
+		current_calls[i]->isMpty = entry->mpty;
+		current_calls[i]->isMT = (entry->term == IPC_CALL_TERM_MT);
+		current_calls[i]->als = 0;
+		current_calls[i]->isVoice  = (entry->type == IPC_CALL_TYPE_VOICE);
+		current_calls[i]->isVoicePrivacy = 0;
+		current_calls[i]->number = strdup(number);
+		current_calls[i]->numberPresentation = (entry->number_len > 0) ? 0 : 2;
+		current_calls[i]->name = NULL;
+		current_calls[i]->namePresentation = 2;
+		current_calls[i]->uusInfo = NULL;
 
-		call->state = ipc2ril_call_list_entry_state(entry->state);
-		call->index = (entry->idx+1);
-		call->toa = (entry->number_len > 0 && number[0] == '+') ? 145 : 129;
-		call->isMpty = entry->mpty;
-		call->isMT = (entry->term == IPC_CALL_TERM_MT);
-		call->als = 0;
-		call->isVoice  = (entry->type == IPC_CALL_TYPE_VOICE);
-		call->isVoicePrivacy = 0;
-		call->number = number_ril;
-		call->numberPresentation = (entry->number_len > 0) ? 0 : 2;
-		call->name = NULL;
-		call->namePresentation = 2;
-		call->uusInfo = NULL;
-
-		calls[i] = call;
-
-		/* Next entry after current number */
 		entry = (struct ipc_call_list_entry *) (number + entry->number_len);
 	}
 
-	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_SUCCESS, calls, (num_entries * sizeof(RIL_Call *)));
+	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_SUCCESS, current_calls, (count * sizeof(RIL_Call *)));
 
-	for (i = 0; i < num_entries; i++) {
-		free(calls[i]);
+	for (i=0 ; i < count ; i++) {
+		if (current_calls[i]->number != NULL)
+			free(current_calls[i]->number);
+
+		free(current_calls[i]);
 	}
 
-	free(calls);
+	free(current_calls);
+
+	return;
+
+error:
+	if (current_calls != NULL) {
+		for (i=0 ; i < count ; i++) {
+			if (current_calls[i]->number != NULL)
+				free(current_calls[i]->number);
+
+			free(current_calls[i]);
+		}
+
+		free(current_calls);
+	}
+
+	if (info != NULL && info->type == IPC_TYPE_RESP)
+		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
-/*
- * In: RIL_REQUEST_HANGUP
- *   Hang up a specific line (like AT+CHLD=1x)
- *
- * Out: IPC_CALL_RELEASE EXEC
- */
 void ril_request_hangup(RIL_Token t)
 {
+	ipc_gen_phone_res_expect_to_complete(ril_request_get_id(t), IPC_CALL_RELEASE);
+
 	ipc_fmt_send_exec(IPC_CALL_RELEASE, ril_request_get_id(t));
 
-	/* FIXME: This should actually be sent based on the response from baseband */
-	ril_request_complete(t, RIL_E_SUCCESS, NULL, 0);
-
-	/* FIXME: Do we really need to send this? */
 	ril_request_unsolicited(RIL_UNSOL_RESPONSE_CALL_STATE_CHANGED, NULL, 0);
 }
 
-/*
- * In: RIL_REQUEST_ANSWER
- *   Answer incoming call
- *
- * Out: IPC_CALL_ANSWER
- */
+
 void ril_request_answer(RIL_Token t)
 {
+	ipc_gen_phone_res_expect_to_complete(ril_request_get_id(t), IPC_CALL_ANSWER);
+
 	ipc_fmt_send_exec(IPC_CALL_ANSWER, ril_request_get_id(t));
 
-	/* FIXME: This should actually be sent based on the response from baseband */
-	ril_request_complete(t, RIL_E_SUCCESS, NULL, 0);
-
-	/* FIXME: Do we really need to send this? */
 	ril_request_unsolicited(RIL_UNSOL_RESPONSE_CALL_STATE_CHANGED, NULL, 0);
 }
 
-/*
- * In: RIL_REQUEST_LAST_CALL_FAIL_CAUSE
- *   Reason why last call was terminated
- */
 void ril_request_last_call_fail_cause(RIL_Token t)
 {
 	RIL_LastCallFailCause fail_cause;
-	struct ipc_call_status *call_status =
-		&(ril_data.state.call_status);
+	struct ipc_call_status *call_status = &(ril_data.state.call_status);
 
 	fail_cause = ipc2ril_call_fail_cause(call_status->end_cause);
 
@@ -270,26 +242,25 @@ void ril_request_last_call_fail_cause(RIL_Token t)
 	ril_request_complete(t, RIL_E_SUCCESS, &fail_cause, sizeof(RIL_LastCallFailCause));
 }
 
-/*
- * In: IPC_CALL_BURST_DTMF
- *   Send DTMF burst. RILJ only sends 1 DTMF tone to send at a time.
- *
- * Out: IPC_CALL_BURST_DTMF
- *   It should be possible to send multiple DTMF tones at once in this message.
- *   First byte should be DTMF tones count.
- */
 void ril_request_dtmf(RIL_Token t, void *data, int length)
 {
 	struct ipc_call_cont_dtmf cont_dtmf;
+	unsigned char tone;
+	unsigned char count;
 
 	unsigned char *burst;
-	int burst_len;
+	int burst_length;
 
-	unsigned char dtmf_count = 1;
 	int i;
 
+	if (data == NULL || length < (int) sizeof(unsigned char))
+		goto error;
+
+	tone = *((unsigned char *) data);
+	count = 1;
+
 	if (ril_data.state.dtmf_tone != 0) {
-		LOGD("Another tone wasn't stopped, stopping that one before anything");
+		LOGD("Another tone wasn't stopped, stopping it before anything");
 
 		cont_dtmf.state = IPC_CALL_DTMF_STATE_STOP;
 		cont_dtmf.tone = 0;
@@ -299,76 +270,101 @@ void ril_request_dtmf(RIL_Token t, void *data, int length)
 		usleep(300);
 	}
 
-	burst_len = sizeof(struct ipc_call_cont_dtmf) * dtmf_count + 1;
-	burst = malloc(burst_len);
-	memset(burst, 0, burst_len);
+	burst_length = sizeof(struct ipc_call_cont_dtmf) * count + 1;
+	burst = calloc(1, burst_length);
 
-	burst[0] = dtmf_count;
+	burst[0] = count;
 
-	for (i=0 ; i < dtmf_count ; i++) {
-		// Apparently, it's possible to set multiple DTMF tones on this message
-
+	// Apparently, it's possible to set multiple DTMF tones on this message
+	for (i=0 ; i < count ; i++) {
 		cont_dtmf.state = IPC_CALL_DTMF_STATE_START;
-		cont_dtmf.tone = ((char *) data)[0];
+		cont_dtmf.tone = tone;
 
 		memcpy(burst + 1 + sizeof(struct ipc_call_cont_dtmf) * i, &cont_dtmf, sizeof(cont_dtmf));
 	}
 
 	ipc_gen_phone_res_expect_to_abort(ril_request_get_id(t), IPC_CALL_BURST_DTMF);
 
-	ipc_fmt_send(IPC_CALL_BURST_DTMF, IPC_TYPE_EXEC, (void *) burst, burst_len, ril_request_get_id(t));
+	ipc_fmt_send(IPC_CALL_BURST_DTMF, IPC_TYPE_EXEC, burst, burst_length, ril_request_get_id(t));
 
 	free(burst);
+
+	return;
+
+error:
+	ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
 void ipc_call_burst_dtmf(struct ipc_message_info *info)
 {
-	unsigned char ret = *((unsigned char *) info->data);
+	unsigned char code;
+
+	if (info == NULL || info->data == NULL || info->length < sizeof(unsigned char))
+		goto error;
+
+	code = *((unsigned char *) info->data);
 
 	// This apparently should return 1, or perhaps that is the DTMF tones count
-	if (ret == 0) {
-		LOGD("Apparently, something went wrong with DTMF burst");
-
-		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
+	if (code == 0) {
+		LOGD("Apparently, something went wrong with DTMF burst (code=0x%x)", code);
+		goto error;
 	}
 
 	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_SUCCESS, NULL, 0);
+
+	return;
+
+error:
+	if (info != NULL)
+		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
 void ril_request_dtmf_start(RIL_Token t, void *data, int length)
 {
 	struct ipc_call_cont_dtmf cont_dtmf;
+	unsigned char tone;
+
+	if (data == NULL || length < (int) sizeof(unsigned char))
+		goto error;
+
+	tone = *((unsigned char *) data);
 
 	if (ril_data.state.dtmf_tone != 0) {
-		LOGD("Another tone wasn't stopped, stopping that one before anything");
+		LOGD("Another tone wasn't stopped, stopping it before anything");
 
 		cont_dtmf.state = IPC_CALL_DTMF_STATE_STOP;
 		cont_dtmf.tone = 0;
 
-		ipc_fmt_send(IPC_CALL_CONT_DTMF, IPC_TYPE_SET, (void *) &cont_dtmf, sizeof(cont_dtmf), ril_request_get_id(t));
+		ipc_fmt_send(IPC_CALL_CONT_DTMF, IPC_TYPE_SET, (unsigned char *) &cont_dtmf, sizeof(cont_dtmf), ril_request_get_id(t));
 
 		usleep(300);
 	}
 
-	cont_dtmf.state = IPC_CALL_DTMF_STATE_START;
-	cont_dtmf.tone = ((unsigned char *)data)[0];
-
 	ril_data.state.dtmf_tone = cont_dtmf.tone;
+
+	cont_dtmf.state = IPC_CALL_DTMF_STATE_START;
+	cont_dtmf.tone = tone;
 
 	ipc_gen_phone_res_expect_to_complete(ril_request_get_id(t), IPC_CALL_CONT_DTMF);
 
-	ipc_fmt_send(IPC_CALL_CONT_DTMF, IPC_TYPE_SET, (void *) &cont_dtmf, sizeof(cont_dtmf), ril_request_get_id(t));
+	ipc_fmt_send(IPC_CALL_CONT_DTMF, IPC_TYPE_SET, (unsigned char *) &cont_dtmf, sizeof(cont_dtmf), ril_request_get_id(t));
+
+	return;
+
+error:
+	ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
 void ril_request_dtmf_stop(RIL_Token t)
 {
 	struct ipc_call_cont_dtmf cont_dtmf;
-	cont_dtmf.state = IPC_CALL_DTMF_STATE_STOP;
-	cont_dtmf.tone = 0;
 
 	ril_data.state.dtmf_tone = 0;
 
+	cont_dtmf.state = IPC_CALL_DTMF_STATE_STOP;
+	cont_dtmf.tone = 0;
+
 	ipc_gen_phone_res_expect_to_complete(ril_request_get_id(t), IPC_CALL_CONT_DTMF);
 
-	ipc_fmt_send(IPC_CALL_CONT_DTMF, IPC_TYPE_SET, (void *) &cont_dtmf, sizeof(cont_dtmf), ril_request_get_id(t));
+	ipc_fmt_send(IPC_CALL_CONT_DTMF, IPC_TYPE_SET, (unsigned char *) &cont_dtmf, sizeof(cont_dtmf), ril_request_get_id(t));
 }

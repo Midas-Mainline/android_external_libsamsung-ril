@@ -383,7 +383,7 @@ void ipc_sms_device_ready(struct ipc_message_info *info);
 
 void ipc_call_incoming(struct ipc_message_info *info);
 void ipc_call_status(struct ipc_message_info *info);
-void ril_request_dial(RIL_Token t, void *data, size_t datalen);
+void ril_request_dial(RIL_Token t, void *data, size_t length);
 void ril_request_get_current_calls(RIL_Token t);
 void ipc_call_list(struct ipc_message_info *info);
 void ril_request_hangup(RIL_Token t);
