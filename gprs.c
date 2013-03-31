@@ -174,13 +174,23 @@ struct ril_gprs_connection *ril_gprs_connection_start(void)
 {
 	struct ipc_client_gprs_capabilities gprs_capabilities;
 	struct ril_gprs_connection *gprs_connection;
+	struct ipc_client_data *ipc_client_data;
 	struct ipc_client *ipc_client;
 	struct list_head *list;
 	int cid, cid_max;
 	int rc;
 	int i;
 
-	ipc_client = ((struct ipc_client_data *) ril_data.ipc_fmt_client->data)->ipc_client;
+	if (ril_data.ipc_fmt_client == NULL || ril_data.ipc_fmt_client->data == NULL)
+		return NULL;
+
+	ipc_client_data = (struct ipc_client_data *) ril_data.ipc_fmt_client->data;
+
+	if (ipc_client_data->ipc_client == NULL)
+		return NULL;
+
+	ipc_client = ipc_client_data->ipc_client;
+
 	ipc_client_gprs_get_capabilities(ipc_client, &gprs_capabilities);
 	cid_max = gprs_capabilities.cid_max;
 
@@ -232,10 +242,11 @@ void ril_gprs_connection_stop(struct ril_gprs_connection *gprs_connection)
 
 void ipc_gprs_pdp_context_enable_complete(struct ipc_message_info *info)
 {
-	struct ipc_gen_phone_res *phone_res = (struct ipc_gen_phone_res *) info->data;
+	struct ipc_gen_phone_res *phone_res;
 	struct ril_gprs_connection *gprs_connection;
 	int rc;
 
+	phone_res = (struct ipc_gen_phone_res *) info->data;
 	gprs_connection = ril_gprs_connection_find_token(ril_request_get_token(info->aseq));
 
 	if (!gprs_connection) {
@@ -264,12 +275,13 @@ void ipc_gprs_pdp_context_enable_complete(struct ipc_message_info *info)
 
 void ipc_gprs_define_pdp_context_complete(struct ipc_message_info *info)
 {
-	struct ipc_gen_phone_res *phone_res = (struct ipc_gen_phone_res *) info->data;
+	struct ipc_gen_phone_res *phone_res;
 	struct ril_gprs_connection *gprs_connection;
 	struct ril_request_info *request;
 	int aseq;
 	int rc;
 
+	phone_res = (struct ipc_gen_phone_res *) info->data;
 	gprs_connection = ril_gprs_connection_find_token(ril_request_get_token(info->aseq));
 
 	if (!gprs_connection) {
@@ -309,12 +321,13 @@ void ipc_gprs_define_pdp_context_complete(struct ipc_message_info *info)
 
 void ipc_gprs_port_list_complete(struct ipc_message_info *info)
 {
-	struct ipc_gen_phone_res *phone_res = (struct ipc_gen_phone_res *) info->data;
+	struct ipc_gen_phone_res *phone_res;
 	struct ril_gprs_connection *gprs_connection;
 	struct ril_request_info *request;
-	int rc;
 	int aseq;
+	int rc;
 
+	phone_res = (struct ipc_gen_phone_res *) info->data;
 	gprs_connection = ril_gprs_connection_find_token(ril_request_get_token(info->aseq));
 
 	if (!gprs_connection) {
@@ -357,13 +370,25 @@ void ril_request_setup_data_call(RIL_Token t, void *data, int length)
 	struct ril_gprs_connection *gprs_connection = NULL;
 	struct ipc_client_gprs_capabilities gprs_capabilities;
 	struct ipc_gprs_port_list port_list;
+	struct ipc_client_data *ipc_client_data;
 	struct ipc_client *ipc_client;
 
 	char *username = NULL;
 	char *password = NULL;
 	char *apn = NULL;
 
-	ipc_client = ((struct ipc_client_data *) ril_data.ipc_fmt_client->data)->ipc_client;
+	if (data == NULL || length < (int) (4 * sizeof(char *)))
+		goto error;
+
+	if (ril_data.ipc_fmt_client == NULL || ril_data.ipc_fmt_client->data == NULL)
+		goto error;
+
+	ipc_client_data = (struct ipc_client_data *) ril_data.ipc_fmt_client->data;
+
+	if (ipc_client_data->ipc_client == NULL)
+		goto error;
+
+	ipc_client = ipc_client_data->ipc_client;
 
 	apn = ((char **) data)[2];
 	username = ((char **) data)[3];
@@ -409,13 +434,22 @@ void ril_request_setup_data_call(RIL_Token t, void *data, int length)
 			(void *) &(gprs_connection->define_context),
 				sizeof(struct ipc_gprs_define_pdp_context), ril_request_get_id(t));
 	}
+
+	return;
+
+error:
+	ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
 void ipc_gprs_ip_configuration(struct ipc_message_info *info)
 {
 	struct ril_gprs_connection *gprs_connection;
-        struct ipc_gprs_ip_configuration *ip_configuration =
-		(struct ipc_gprs_ip_configuration *) info->data;
+	struct ipc_gprs_ip_configuration *ip_configuration;
+
+	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_gprs_ip_configuration))
+		goto error;
+
+	ip_configuration = (struct ipc_gprs_ip_configuration *) info->data;
 
 	gprs_connection = ril_gprs_connection_find_cid(ip_configuration->cid);
 
@@ -434,14 +468,21 @@ void ipc_gprs_ip_configuration(struct ipc_message_info *info)
 		ip_configuration, sizeof(struct ipc_gprs_ip_configuration));
 
 	LOGD("Waiting for GPRS call status");
+
+	return;
+
+error:
+	if (info != NULL)
+		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
 void ipc_gprs_pdp_context_disable_complete(struct ipc_message_info *info)
 {
-	struct ipc_gen_phone_res *phone_res = (struct ipc_gen_phone_res *) info->data;
+	struct ipc_gen_phone_res *phone_res;
 	struct ril_gprs_connection *gprs_connection;
 	int rc;
 
+	phone_res = (struct ipc_gen_phone_res *) info->data;
 	gprs_connection = ril_gprs_connection_find_token(ril_request_get_token(info->aseq));
 
 	if (!gprs_connection) {
@@ -472,8 +513,13 @@ void ril_request_deactivate_data_call(RIL_Token t, void *data, int length)
 	struct ril_gprs_connection *gprs_connection;
 	struct ipc_gprs_pdp_context_set context;
 
-	char *cid = ((char **) data)[0];
+	char *cid;
 	int rc;
+
+	if (data == NULL || length < (int) sizeof(char *))
+		goto error;
+
+	cid = ((char **) data)[0];
 
 	gprs_connection = ril_gprs_connection_find_cid(atoi(cid));
 
@@ -493,6 +539,11 @@ void ril_request_deactivate_data_call(RIL_Token t, void *data, int length)
 
 	ipc_fmt_send(IPC_GPRS_PDP_CONTEXT, IPC_TYPE_SET,
 		(void *) &context, sizeof(struct ipc_gprs_pdp_context_set), ril_request_get_id(t));
+
+	return;
+
+error:
+	ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
 #if RIL_VERSION >= 6
@@ -503,8 +554,9 @@ int ipc_gprs_connection_enable(struct ril_gprs_connection *gprs_connection,
 	char **setup_data_call_response)
 #endif
 {
+	struct ipc_client_data *ipc_client_data;
 	struct ipc_client *ipc_client;
-        struct ipc_gprs_ip_configuration *ip_configuration;
+	struct ipc_gprs_ip_configuration *ip_configuration;
 
 	char *interface = NULL;
 	char *ip;
@@ -518,7 +570,18 @@ int ipc_gprs_connection_enable(struct ril_gprs_connection *gprs_connection,
 
 	int rc;
 
-	ipc_client = ((struct ipc_client_data *) ril_data.ipc_fmt_client->data)->ipc_client;
+	if (gprs_connection == NULL || setup_data_call_response == NULL)
+		return -EINVAL;
+
+	if (ril_data.ipc_fmt_client == NULL || ril_data.ipc_fmt_client->data == NULL)
+		return -EINVAL;
+
+	ipc_client_data = (struct ipc_client_data *) ril_data.ipc_fmt_client->data;
+
+	if (ipc_client_data->ipc_client == NULL)
+		return -EINVAL;
+
+	ipc_client = ipc_client_data->ipc_client;
 
 	ip_configuration = &(gprs_connection->ip_configuration);
 
@@ -570,7 +633,7 @@ int ipc_gprs_connection_enable(struct ril_gprs_connection *gprs_connection,
 
 	LOGD("Using net interface: %s\n", interface);
 
-        LOGD("GPRS configuration: iface: %s, ip:%s, "
+	LOGD("GPRS configuration: iface: %s, ip:%s, "
 			"gateway:%s, subnet_mask:%s, dns1:%s, dns2:%s",
 		interface, ip, gateway, subnet_mask, dns1, dns2);
 
@@ -629,12 +692,24 @@ int ipc_gprs_connection_enable(struct ril_gprs_connection *gprs_connection,
 
 int ipc_gprs_connection_disable(struct ril_gprs_connection *gprs_connection)
 {
+	struct ipc_client_data *ipc_client_data;
 	struct ipc_client *ipc_client;
 
 	char *interface;
 	int rc;
 
-	ipc_client = ((struct ipc_client_data *) ril_data.ipc_fmt_client->data)->ipc_client;
+	if (gprs_connection == NULL)
+		return -EINVAL;
+
+	if (ril_data.ipc_fmt_client == NULL || ril_data.ipc_fmt_client->data == NULL)
+		return -EINVAL;
+
+	ipc_client_data = (struct ipc_client_data *) ril_data.ipc_fmt_client->data;
+
+	if (ipc_client_data->ipc_client == NULL)
+		return -EINVAL;
+
+	ipc_client = ipc_client_data->ipc_client;
 
 	if (gprs_connection->interface == NULL) {
 		interface = ipc_client_gprs_get_iface(ipc_client, gprs_connection->cid);
@@ -701,17 +776,22 @@ void ril_data_call_response_free(RIL_Data_Call_Response *response)
 void ipc_gprs_call_status(struct ipc_message_info *info)
 {
 	struct ril_gprs_connection *gprs_connection;
-	struct ipc_gprs_call_status *call_status =
-		(struct ipc_gprs_call_status *) info->data;
+	struct ipc_gprs_call_status *call_status;
 
 #if RIL_VERSION >= 6
 	RIL_Data_Call_Response_v6 setup_data_call_response;
-	memset(&setup_data_call_response, 0, sizeof(setup_data_call_response));
 #else
 	char *setup_data_call_response[3] = { NULL, NULL, NULL };
 #endif
 
 	int rc;
+
+	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_gprs_call_status))
+		goto error;
+
+	call_status = (struct ipc_gprs_call_status *) info->data;
+
+	memset(&setup_data_call_response, 0, sizeof(setup_data_call_response));
 
 	gprs_connection = ril_gprs_connection_find_cid(call_status->cid);
 
@@ -834,6 +914,12 @@ void ipc_gprs_call_status(struct ipc_message_info *info)
 			ril_unsol_data_call_list_changed();
 		}
 	}
+
+	return;
+
+error:
+	if (info != NULL)
+		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
 void ril_request_last_data_call_fail_cause(RIL_Token t)
@@ -870,6 +956,7 @@ fail_cause_unspecified:
 
 fail_cause_return:
 	ril_data.state.gprs_last_failed_cid = 0;
+
 	ril_request_complete(t, RIL_E_SUCCESS, &fail_cause, sizeof(fail_cause));
 }
 
@@ -906,9 +993,8 @@ void ipc_gprs_pdp_context_fix(RIL_Data_Call_Response *data_call_list, int c)
 void ipc_gprs_pdp_context(struct ipc_message_info *info)
 {
 	struct ril_gprs_connection *gprs_connection;
-        struct ipc_gprs_ip_configuration *ip_configuration;
-	struct ipc_gprs_pdp_context_get *context =
-		(struct ipc_gprs_pdp_context_get *) info->data;
+	struct ipc_gprs_ip_configuration *ip_configuration;
+	struct ipc_gprs_pdp_context_get *context;
 
 #if RIL_VERSION >= 6
 	RIL_Data_Call_Response_v6 data_call_list[IPC_GPRS_PDP_CONTEXT_GET_DESC_COUNT];
@@ -919,6 +1005,11 @@ void ipc_gprs_pdp_context(struct ipc_message_info *info)
 	memset(data_call_list, 0, sizeof(data_call_list));
 
 	int i;
+
+	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_gprs_pdp_context_get))
+		goto error;
+
+	context = (struct ipc_gprs_pdp_context_get *) info->data;
 
 	for (i=0 ; i < IPC_GPRS_PDP_CONTEXT_GET_DESC_COUNT ; i++) {
 		data_call_list[i].cid = context->desc[i].cid;
@@ -985,6 +1076,12 @@ void ipc_gprs_pdp_context(struct ipc_message_info *info)
 	for (i = 0; i < IPC_GPRS_PDP_CONTEXT_GET_DESC_COUNT; i++) {
 		ril_data_call_response_free(data_call_list + i);
 	}
+
+	return;
+
+error:
+	if (info != NULL)
+		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
 void ril_unsol_data_call_list_changed(void)
