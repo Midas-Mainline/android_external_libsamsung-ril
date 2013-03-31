@@ -57,7 +57,7 @@ void ril_request_send_ussd(RIL_Token t, void *data, size_t length)
 	if (data == NULL || length < (int) sizeof(char *))
 		goto error;
 
-	switch(ril_data.state.ussd_state) {
+	switch (ril_data.state.ussd_state) {
 		case 0:
 		case IPC_SS_USSD_NO_ACTION_REQUIRE:
 		case IPC_SS_USSD_TERMINATED_BY_NET:
@@ -156,7 +156,7 @@ void ipc2ril_ussd_state(struct ipc_ss_ussd *ussd, char *message[2])
 	if (ussd == NULL || message == NULL)
 		return;
 
-	switch(ussd->state) {
+	switch (ussd->state) {
 		case IPC_SS_USSD_NO_ACTION_REQUIRE:
 			asprintf(&message[0], "%d", 0);
 			break;
@@ -202,7 +202,7 @@ void ipc_ss_ussd(struct ipc_message_info *info)
 
 	if (ussd->length > 0 && info->length > 0 && info->data != NULL) {
 		codingScheme = sms_get_coding_scheme(ussd->dcs);
-		switch(codingScheme) {
+		switch (codingScheme) {
 			case SMS_CODING_SCHEME_GSM7:
 				LOGD("USSD Rx encoding is GSM7");
 

@@ -26,7 +26,7 @@
 
 unsigned char srs2ipc_call_type(int type)
 {
-	switch(type) {
+	switch (type) {
 		case SRS_SND_TYPE_VOICE:
 			return IPC_SND_VOLUME_TYPE_VOICE;
 		case SRS_SND_TYPE_SPEAKER:
@@ -43,7 +43,7 @@ unsigned char srs2ipc_call_type(int type)
 
 unsigned char srs2ipc_audio_path(int path)
 {
-	switch(path) {
+	switch (path) {
 		case SRS_SND_PATH_HANDSET:
 			return IPC_SND_AUDIO_PATH_HANDSET;
 		case SRS_SND_PATH_HEADSET:

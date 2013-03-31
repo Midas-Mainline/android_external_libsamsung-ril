@@ -30,7 +30,7 @@ unsigned short ril2ipc_sms_ack_error(int success, int failcause)
 	if (success) {
 		return IPC_SMS_ACK_NO_ERROR;
 	} else {
-		switch(failcause) {
+		switch (failcause) {
 			case 0xD3:
 				return IPC_SMS_ACK_PDA_FULL_ERROR;
 			default:
@@ -46,7 +46,7 @@ RIL_Errno ipc2ril_sms_ack_error(unsigned short error, int *error_code)
 	if (error_code == NULL)
 		return RIL_E_GENERIC_FAILURE;
 
-	switch(error) {
+	switch (error) {
 		case IPC_SMS_ACK_NO_ERROR:
 			*error_code = -1;
 			return RIL_E_SUCCESS;

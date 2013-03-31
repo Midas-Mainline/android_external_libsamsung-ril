@@ -39,7 +39,7 @@ RIL_DataCallFailCause ipc2ril_gprs_fail_cause(unsigned short fail_cause)
 RIL_LastDataCallActivateFailCause ipc2ril_gprs_fail_cause(unsigned short fail_cause)
 #endif
 {
-	switch(fail_cause) {
+	switch (fail_cause) {
 
 		case IPC_GPRS_FAIL_INSUFFICIENT_RESOURCES:
 			return PDP_FAIL_INSUFFICIENT_RESOURCES;
@@ -68,7 +68,7 @@ RIL_LastDataCallActivateFailCause ipc2ril_gprs_fail_cause(unsigned short fail_ca
 
 int ipc2ril_gprs_connection_active(unsigned char state)
 {
-	switch(state) {
+	switch (state) {
 		case IPC_GPRS_STATE_DISABLED:
 			return 1;
 		case IPC_GPRS_STATE_ENABLED:

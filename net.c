@@ -29,7 +29,7 @@
 
 unsigned char ipc2ril_reg_state(unsigned char reg_state)
 {
-	switch(reg_state) {
+	switch (reg_state) {
 		case IPC_NET_REGISTRATION_STATE_NONE:
 			return 0;
 		case IPC_NET_REGISTRATION_STATE_HOME:
@@ -50,7 +50,7 @@ unsigned char ipc2ril_reg_state(unsigned char reg_state)
 
 unsigned char ipc2ril_act(unsigned char act)
 {
-	switch(act) {
+	switch (act) {
 		case IPC_NET_ACCESS_TECHNOLOGY_GPRS:
 			return 1;
 		case IPC_NET_ACCESS_TECHNOLOGY_EDGE:
@@ -66,7 +66,7 @@ unsigned char ipc2ril_act(unsigned char act)
 
 unsigned char ipc2ril_gprs_act(unsigned char act)
 {
-	switch(act) {
+	switch (act) {
 		case IPC_NET_ACCESS_TECHNOLOGY_GPRS:
 			return 1;
 		case IPC_NET_ACCESS_TECHNOLOGY_EDGE:
@@ -82,7 +82,7 @@ unsigned char ipc2ril_gprs_act(unsigned char act)
 
 int ipc2ril_mode_sel(unsigned char mode)
 {
-	switch(mode) {
+	switch (mode) {
 		case 0:
 			return 7; // auto mode
 		case IPC_NET_MODE_SEL_GSM_UMTS:
@@ -98,7 +98,7 @@ int ipc2ril_mode_sel(unsigned char mode)
 
 unsigned char ril2ipc_mode_sel(int mode)
 {
-	switch(mode) {
+	switch (mode) {
 		case 1: // GSM only
 			return IPC_NET_MODE_SEL_GSM_ONLY;
 		case 2: // WCDMA only
@@ -111,7 +111,7 @@ unsigned char ril2ipc_mode_sel(int mode)
 
 int ipc2ril_plmn_sel(unsigned char mode)
 {
-	switch(mode) {
+	switch (mode) {
 		case IPC_NET_PLMN_SEL_MANUAL:
 			return 1;
 		case IPC_NET_PLMN_SEL_AUTO:
@@ -123,7 +123,7 @@ int ipc2ril_plmn_sel(unsigned char mode)
 
 unsigned char ril2ipc_plmn_sel(int mode)
 {
-	switch(mode) {
+	switch (mode) {
 		case 0:
 			return IPC_NET_PLMN_SEL_AUTO;
 		case 1:
@@ -553,7 +553,7 @@ void ipc_net_regist_unsol(struct ipc_message_info *info)
 
 	LOGD("Got UNSOL NetRegist message");
 
-	switch(netinfo->domain) {
+	switch (netinfo->domain) {
 		case IPC_NET_SERVICE_DOMAIN_GSM:
 			if (ril_data.tokens.registration_state != RIL_TOKEN_NULL && ril_data.tokens.registration_state != RIL_TOKEN_DATA_WAITING) {
 				LOGE("Another NetRegist Req is in progress, skipping");
@@ -625,7 +625,7 @@ void ipc_net_regist_sol(struct ipc_message_info *info)
 
 	LOGD("Got SOL NetRegist message");
 
-	switch(netinfo->domain) {
+	switch (netinfo->domain) {
 		case IPC_NET_SERVICE_DOMAIN_GSM:
 			if (ril_data.tokens.registration_state != t)
 				LOGE("Registration state tokens mismatch");
@@ -686,7 +686,7 @@ void ipc_net_regist(struct ipc_message_info *info)
 	if (ril_data.state.power_state != IPC_PWR_PHONE_STATE_NORMAL)
 		return;
 
-	switch(info->type) {
+	switch (info->type) {
 		case IPC_TYPE_NOTI:
 			ipc_net_regist_unsol(info);
 			break;

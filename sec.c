@@ -32,9 +32,9 @@ ril_sim_state ipc2ril_sim_state(struct ipc_sec_sim_status_response *pin_status)
 	if (pin_status == NULL)
 		return -EINVAL;
 
-	switch(pin_status->status) {
+	switch (pin_status->status) {
 		case IPC_SEC_SIM_STATUS_LOCK_SC:
-			switch(pin_status->facility_lock) {
+			switch (pin_status->facility_lock) {
 				case IPC_SEC_FACILITY_LOCK_TYPE_SC_UNLOCKED:
 					return SIM_STATE_READY;
 				case IPC_SEC_FACILITY_LOCK_TYPE_SC_PIN1_REQ:
@@ -83,7 +83,7 @@ void ril_state_update(ril_sim_state sim_state)
 
 	ril_data.state.sim_state = sim_state;
 
-	switch(sim_state) {
+	switch (sim_state) {
 		case SIM_STATE_READY:
 #if RIL_VERSION >= 7
 			radio_state = RADIO_STATE_ON;
@@ -220,7 +220,7 @@ void ipc_sec_sim_status(struct ipc_message_info *info)
 	pin_status = (struct ipc_sec_sim_status_response *) info->data;
 	t = ril_request_get_token(info->aseq);
 
-	switch(info->type) {
+	switch (info->type) {
 		case IPC_TYPE_NOTI:
 			// Don't consider this if modem isn't in normal power mode
 			if (ril_data.state.power_state != IPC_PWR_PHONE_STATE_NORMAL)

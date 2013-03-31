@@ -145,7 +145,7 @@ void ipc_misc_me_sn(struct ipc_message_info *info)
 
 	me_sn_info = (struct ipc_misc_me_sn *) info->data;
 
-	switch(me_sn_info->type) {
+	switch (me_sn_info->type) {
 		case IPC_MISC_ME_SN_SERIAL_NUM:
 			ipc_misc_me_sn_imei(info);
 			break;

@@ -279,7 +279,7 @@ void ipc_fmt_dispatch(struct ipc_message_info *info)
 
 	ril_request_id_set(info->aseq);
 
-	switch(IPC_COMMAND(info)) {
+	switch (IPC_COMMAND(info)) {
 		/* GEN */
 		case IPC_GEN_PHONE_RES:
 			ipc_gen_phone_res(info);
@@ -413,7 +413,7 @@ void ipc_rfs_dispatch(struct ipc_message_info *info)
 
 	RIL_LOCK();
 
-	switch(IPC_COMMAND(info)) {
+	switch (IPC_COMMAND(info)) {
 		case IPC_RFS_NV_READ_ITEM:
 			ipc_rfs_nv_read_item(info);
 			break;
@@ -435,7 +435,7 @@ void srs_dispatch(struct srs_message *message)
 
 	RIL_LOCK();
 
-	switch(message->command) {
+	switch (message->command) {
 		case SRS_CONTROL_PING:
 			srs_control_ping(message);
 			break;
@@ -464,7 +464,7 @@ void ril_on_request(int request, void *data, size_t length, RIL_Token t)
 {
 	RIL_LOCK();
 
-	switch(request) {
+	switch (request) {
 		/* PWR */
 		case RIL_REQUEST_RADIO_POWER:
 			ril_request_radio_power(t, data, length);
