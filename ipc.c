@@ -22,13 +22,12 @@
 #include <utils/Log.h>
 
 #include "samsung-ril.h"
-#include <radio.h>
 
 /*
  * IPC shared 
  */
 
-void ipc_log_handler(const char *message, void *user_data)
+void ipc_log_handler(void *log_data, const char *message)
 {
 	LOGD("ipc: %s", message);
 }
@@ -39,18 +38,12 @@ void ipc_log_handler(const char *message, void *user_data)
 
 void ipc_fmt_send(const unsigned short command, const char type, unsigned char *data, const int length, unsigned char mseq)
 {
-	struct ipc_client_data *ipc_client_data;
 	struct ipc_client *ipc_client;
 
 	if (ril_data.ipc_fmt_client == NULL || ril_data.ipc_fmt_client->data == NULL)
 		return;
 
-	ipc_client_data = (struct ipc_client_data *) ril_data.ipc_fmt_client->data;
-
-	if (ipc_client_data->ipc_client == NULL)
-		return;
-
-	ipc_client = ipc_client_data->ipc_client;
+	ipc_client = (struct ipc_client *) ril_data.ipc_fmt_client->data;
 
 	RIL_CLIENT_LOCK(ril_data.ipc_fmt_client);
 	ipc_client_send(ipc_client, command, type, data, length, mseq);
@@ -59,51 +52,36 @@ void ipc_fmt_send(const unsigned short command, const char type, unsigned char *
 
 int ipc_fmt_read_loop(struct ril_client *client)
 {
-	struct ipc_client_data *ipc_client_data;
 	struct ipc_client *ipc_client;
-
 	struct ipc_message_info info;
-	int ipc_client_fd;
-	fd_set fds;
+
+	int rc;
 
 	if (client == NULL || client->data == NULL)
 		return -EINVAL;
 
-	ipc_client_data = (struct ipc_client_data *) client->data;
-
-	if (ipc_client_data->ipc_client == NULL)
-		return -EINVAL;
-
-	ipc_client = ipc_client_data->ipc_client;
-	ipc_client_fd = ipc_client_data->ipc_client_fd;
+	ipc_client = (struct ipc_client *) client->data;
 
 	while (1) {
-		if (ipc_client_fd < 0) {
-			LOGE("IPC FMT client fd is negative, aborting");
+		rc = ipc_client_poll(ipc_client, NULL);
+		if (rc < 0) {
+			LOGE("IPC FMT client poll failed, aborting");
 			return -1;
 		}
 
-		FD_ZERO(&fds);
-		FD_SET(ipc_client_fd, &fds);
+		memset(&info, 0, sizeof(info));
 
-		select(FD_SETSIZE, &fds, NULL, NULL, NULL);
-
-		if (FD_ISSET(ipc_client_fd, &fds)) {
-			memset(&info, 0, sizeof(info));
-
-			RIL_CLIENT_LOCK(client);
-			if (ipc_client_recv(ipc_client, &info) < 0) {
-				RIL_CLIENT_UNLOCK(client);
-				LOGE("IPC FMT recv failed, aborting");
-				return -1;
-			}
+		RIL_CLIENT_LOCK(client);
+		if (ipc_client_recv(ipc_client, &info) < 0) {
 			RIL_CLIENT_UNLOCK(client);
-
-			ipc_fmt_dispatch(&info);
-
-			if (info.data != NULL && info.length > 0)
-				free(info.data);
+			LOGE("IPC FMT recv failed, aborting");
+			return -1;
 		}
+		RIL_CLIENT_UNLOCK(client);
+
+		ipc_fmt_dispatch(&info);
+
+		ipc_client_response_free(ipc_client, &info);
 	}
 
 	return 0;
@@ -111,10 +89,8 @@ int ipc_fmt_read_loop(struct ril_client *client)
 
 int ipc_fmt_create(struct ril_client *client)
 {
-	struct ipc_client_data *ipc_client_data;
 	struct ipc_client *ipc_client;
 
-	int ipc_client_fd;
 	int rc;
 
 	if (client == NULL)
@@ -122,40 +98,33 @@ int ipc_fmt_create(struct ril_client *client)
 
 	LOGD("Creating new FMT client");
 
-	ipc_client_data = (struct ipc_client_data *) calloc(1, sizeof(struct ipc_client_data));
-	ipc_client_data->ipc_client_fd = -1;
-
-	client->data = (void *) ipc_client_data;
-
-	ipc_client = ipc_client_new(IPC_CLIENT_TYPE_FMT);
+	ipc_client = ipc_client_create(IPC_CLIENT_TYPE_FMT);
 	if (ipc_client == NULL) {
 		LOGE("FMT client creation failed");
 		goto error_client_create;
 	}
 
-	ipc_client_data->ipc_client = ipc_client;
+	client->data = (void *) ipc_client;
 
 	LOGD("Setting log handler");
 
-	rc = ipc_client_set_log_handler(ipc_client, ipc_log_handler, NULL);
+	rc = ipc_client_set_log_callback(ipc_client, ipc_log_handler, NULL);
 	if (rc < 0) {
 		LOGE("Setting log handler failed");
-		goto error_log_handler;
+		goto error_log_callback;
 	}
 
-	// ipc_client_set_handlers
+	LOGD("Creating data");
 
-	LOGD("Creating handlers common data");
-
-	rc = ipc_client_create_handlers_common_data(ipc_client);
+	rc = ipc_client_data_create(ipc_client);
 	if (rc < 0) {
-		LOGE("Creating handlers common data failed");
-		goto error_handlers_create;
+		LOGE("Creating data failed");
+		goto error_data_create;
 	}
 
-	LOGD("Starting modem bootstrap");
+	LOGD("Starting bootstrap");
 
-	rc = ipc_client_bootstrap_modem(ipc_client);
+	rc = ipc_client_bootstrap(ipc_client);
 	if (rc < 0) {
 		LOGE("Modem bootstrap failed");
 		goto error_bootstrap;
@@ -168,16 +137,6 @@ int ipc_fmt_create(struct ril_client *client)
 		LOGE("%s: failed to open ipc client", __func__);
 		goto error_open;
 	}
-
-	LOGD("Obtaining ipc_client_fd");
-
-	ipc_client_fd = ipc_client_get_handlers_common_data_fd(ipc_client);
-	if (ipc_client_fd < 0) {
-		LOGE("%s: client_fmt_fd is negative, aborting", __func__);
-		goto error_get_fd;
-	}
-
-	ipc_client_data->ipc_client_fd = ipc_client_fd;
 
 	LOGD("Client power on...");
 
@@ -200,17 +159,13 @@ error_get_fd:
 
 error_open:
 error_bootstrap:
-	ipc_client_destroy_handlers_common_data(ipc_client);
+	ipc_client_data_destroy(ipc_client);
 
-error_handlers_create:
-error_log_handler:
-	ipc_client_free(ipc_client);
+error_data_create:
+error_log_callback:
+	ipc_client_destroy(ipc_client);
 
 error_client_create:
-	ipc_client_data->ipc_client = NULL;
-	ipc_client_data->ipc_client_fd = -1;
-
-	free(ipc_client_data);
 	client->data = NULL;
 
 	return -1;
@@ -218,7 +173,6 @@ error_client_create:
 
 int ipc_fmt_destroy(struct ril_client *client)
 {
-	struct ipc_client_data *ipc_client_data;
 	struct ipc_client *ipc_client;
 
 	int rc;
@@ -228,22 +182,17 @@ int ipc_fmt_destroy(struct ril_client *client)
 		return 0;
 	}
 
-	ipc_client_data = (struct ipc_client_data *) client->data;
-	ipc_client = ipc_client_data->ipc_client;
+	ipc_client = (struct ipc_client *) client->data;
 
 	LOGD("Destroying ipc fmt client");
 
 	if (ipc_client != NULL) {
 		ipc_client_power_off(ipc_client);
 		ipc_client_close(ipc_client);
-		ipc_client_destroy_handlers_common_data(ipc_client);
-		ipc_client_free(ipc_client);
+		ipc_client_data_destroy(ipc_client);
+		ipc_client_destroy(ipc_client);
 	}
 
-	ipc_client_data->ipc_client = NULL;
-	ipc_client_data->ipc_client_fd = -1;
-
-	free(ipc_client_data);
 	client->data = NULL;
 
 	return 0;
@@ -255,18 +204,12 @@ int ipc_fmt_destroy(struct ril_client *client)
 
 void ipc_rfs_send(const unsigned short command, unsigned char *data, const int length, unsigned char mseq)
 {
-	struct ipc_client_data *ipc_client_data;
 	struct ipc_client *ipc_client;
 
 	if (ril_data.ipc_rfs_client == NULL || ril_data.ipc_rfs_client->data == NULL)
 		return;
 
-	ipc_client_data = (struct ipc_client_data *) ril_data.ipc_rfs_client->data;
-
-	if (ipc_client_data->ipc_client == NULL)
-		return;
-
-	ipc_client = ipc_client_data->ipc_client;
+	ipc_client = (struct ipc_client *) ril_data.ipc_rfs_client->data;
 
 	RIL_CLIENT_LOCK(ril_data.ipc_rfs_client);
 	ipc_client_send(ipc_client, command, 0, data, length, mseq);
@@ -275,51 +218,36 @@ void ipc_rfs_send(const unsigned short command, unsigned char *data, const int l
 
 int ipc_rfs_read_loop(struct ril_client *client)
 {
-	struct ipc_client_data *ipc_client_data;
 	struct ipc_client *ipc_client;
-
 	struct ipc_message_info info;
-	int ipc_client_fd;
-	fd_set fds;
+
+	int rc;
 
 	if (client == NULL || client->data == NULL)
 		return -EINVAL;
 
-	ipc_client_data = (struct ipc_client_data *) client->data;
-
-	if (ipc_client_data->ipc_client == NULL)
-		return -EINVAL;
-
-	ipc_client = ipc_client_data->ipc_client;
-	ipc_client_fd = ipc_client_data->ipc_client_fd;
+	ipc_client = (struct ipc_client *) client->data;
 
 	while (1) {
-		if (ipc_client_fd < 0) {
-			LOGE("IPC RFS client fd is negative, aborting");
+		rc = ipc_client_poll(ipc_client, NULL);
+		if (rc < 0) {
+			LOGE("IPC RFS client poll failed, aborting");
 			return -1;
 		}
 
-		FD_ZERO(&fds);
-		FD_SET(ipc_client_fd, &fds);
+		memset(&info, 0, sizeof(info));
 
-		select(FD_SETSIZE, &fds, NULL, NULL, NULL);
-
-		if (FD_ISSET(ipc_client_fd, &fds)) {
-			memset(&info, 0, sizeof(info));
-
-			RIL_CLIENT_LOCK(client);
-			if (ipc_client_recv(ipc_client, &info) < 0) {
-				RIL_CLIENT_UNLOCK(client);
-				LOGE("IPC RFS recv failed, aborting");
-				return -1;
-			}
+		RIL_CLIENT_LOCK(client);
+		if (ipc_client_recv(ipc_client, &info) < 0) {
 			RIL_CLIENT_UNLOCK(client);
-
-			ipc_rfs_dispatch(&info);
-
-			if (info.data != NULL && info.length > 0)
-				free(info.data);
+			LOGE("IPC RFS recv failed, aborting");
+			return -1;
 		}
+		RIL_CLIENT_UNLOCK(client);
+
+		ipc_rfs_dispatch(&info);
+
+		ipc_client_response_free(ipc_client, &info);
 	}
 
 	return 0;
@@ -327,10 +255,8 @@ int ipc_rfs_read_loop(struct ril_client *client)
 
 int ipc_rfs_create(struct ril_client *client)
 {
-	struct ipc_client_data *ipc_client_data;
 	struct ipc_client *ipc_client;
 
-	int ipc_client_fd;
 	int rc;
 
 	if (client == NULL)
@@ -338,35 +264,28 @@ int ipc_rfs_create(struct ril_client *client)
 
 	LOGD("Creating new RFS client");
 
-	ipc_client_data = (struct ipc_client_data *) calloc(1, sizeof(struct ipc_client_data));
-	ipc_client_data->ipc_client_fd = -1;
-
-	client->data = (void *) ipc_client_data;
-
-	ipc_client = ipc_client_new(IPC_CLIENT_TYPE_RFS);
+	ipc_client = ipc_client_create(IPC_CLIENT_TYPE_RFS);
 	if (ipc_client == NULL) {
 		LOGE("RFS client creation failed");
 		goto error_client_create;
 	}
 
-	ipc_client_data->ipc_client = ipc_client;
+	client->data = (void *) ipc_client;
 
 	LOGD("Setting log handler");
 
-	rc = ipc_client_set_log_handler(ipc_client, ipc_log_handler, NULL);
+	rc = ipc_client_set_log_callback(ipc_client, ipc_log_handler, NULL);
 	if (rc < 0) {
 		LOGE("Setting log handler failed");
-		goto error_log_handler;
+		goto error_log_callback;
 	}
 
-	// ipc_client_set_handlers
+	LOGD("Creating data");
 
-	LOGD("Creating handlers common data");
-
-	rc = ipc_client_create_handlers_common_data(ipc_client);
+	rc = ipc_client_data_create(ipc_client);
 	if (rc < 0) {
-		LOGE("Creating handlers common data failed");
-		goto error_handlers_create;
+		LOGE("Creating data failed");
+		goto error_data_create;
 	}
 
 	LOGD("Client open...");
@@ -377,16 +296,6 @@ int ipc_rfs_create(struct ril_client *client)
 		goto error_open;
 	}
 
-	LOGD("Obtaining ipc_client_fd");
-
-	ipc_client_fd = ipc_client_get_handlers_common_data_fd(ipc_client);
-	if (ipc_client_fd < 0) {
-		LOGE("%s: client_rfs_fd is negative, aborting", __func__);
-		goto error_get_fd;
-	}
-
-	ipc_client_data->ipc_client_fd = ipc_client_fd;
-
 	LOGD("IPC RFS client done");
 
 	return 0;
@@ -396,17 +305,13 @@ error_get_fd:
 	ipc_client_close(ipc_client);
 
 error_open:
-	ipc_client_destroy_handlers_common_data(ipc_client);
+	ipc_client_data_destroy(ipc_client);
 
-error_handlers_create:
-error_log_handler:
-	ipc_client_free(ipc_client);
+error_data_create:
+error_log_callback:
+	ipc_client_destroy(ipc_client);
 
 error_client_create:
-	ipc_client_data->ipc_client = NULL;
-	ipc_client_data->ipc_client_fd = -1;
-
-	free(ipc_client_data);
 	client->data = NULL;
 
 	return -1;
@@ -415,7 +320,6 @@ error_client_create:
 
 int ipc_rfs_destroy(struct ril_client *client)
 {
-	struct ipc_client_data *ipc_client_data;
 	struct ipc_client *ipc_client;
 
 	int rc;
@@ -425,21 +329,16 @@ int ipc_rfs_destroy(struct ril_client *client)
 		return 0;
 	}
 
-	ipc_client_data = (struct ipc_client_data *) client->data;
-	ipc_client = ipc_client_data->ipc_client;
+	ipc_client = (struct ipc_client *) client->data;
 
 	LOGD("Destroying ipc rfs client");
 
 	if (ipc_client != NULL) {
 		ipc_client_close(ipc_client);
-		ipc_client_destroy_handlers_common_data(ipc_client);
-		ipc_client_free(ipc_client);
+		ipc_client_data_destroy(ipc_client);
+		ipc_client_destroy(ipc_client);
 	}
 
-	ipc_client_data->ipc_client = NULL;
-	ipc_client_data->ipc_client_fd = -1;
-
-	free(ipc_client_data);
 	client->data = NULL;
 
 	return 0;

@@ -173,7 +173,6 @@ struct ril_gprs_connection *ril_gprs_connection_start(void)
 {
 	struct ipc_client_gprs_capabilities gprs_capabilities;
 	struct ril_gprs_connection *gprs_connection;
-	struct ipc_client_data *ipc_client_data;
 	struct ipc_client *ipc_client;
 	struct list_head *list;
 	int cid, cid_max;
@@ -183,12 +182,7 @@ struct ril_gprs_connection *ril_gprs_connection_start(void)
 	if (ril_data.ipc_fmt_client == NULL || ril_data.ipc_fmt_client->data == NULL)
 		return NULL;
 
-	ipc_client_data = (struct ipc_client_data *) ril_data.ipc_fmt_client->data;
-
-	if (ipc_client_data->ipc_client == NULL)
-		return NULL;
-
-	ipc_client = ipc_client_data->ipc_client;
+	ipc_client = (struct ipc_client *) ril_data.ipc_fmt_client->data;
 
 	ipc_client_gprs_get_capabilities(ipc_client, &gprs_capabilities);
 	cid_max = gprs_capabilities.cid_max;
@@ -369,7 +363,6 @@ void ril_request_setup_data_call(RIL_Token t, void *data, int length)
 	struct ril_gprs_connection *gprs_connection = NULL;
 	struct ipc_client_gprs_capabilities gprs_capabilities;
 	struct ipc_gprs_port_list port_list;
-	struct ipc_client_data *ipc_client_data;
 	struct ipc_client *ipc_client;
 
 	char *username = NULL;
@@ -382,12 +375,7 @@ void ril_request_setup_data_call(RIL_Token t, void *data, int length)
 	if (ril_data.ipc_fmt_client == NULL || ril_data.ipc_fmt_client->data == NULL)
 		goto error;
 
-	ipc_client_data = (struct ipc_client_data *) ril_data.ipc_fmt_client->data;
-
-	if (ipc_client_data->ipc_client == NULL)
-		goto error;
-
-	ipc_client = ipc_client_data->ipc_client;
+	ipc_client = (struct ipc_client *) ril_data.ipc_fmt_client->data;
 
 	apn = ((char **) data)[2];
 	username = ((char **) data)[3];
@@ -552,7 +540,6 @@ int ipc_gprs_connection_enable(struct ril_gprs_connection *gprs_connection,
 	char **setup_data_call_response)
 #endif
 {
-	struct ipc_client_data *ipc_client_data;
 	struct ipc_client *ipc_client;
 	struct ipc_gprs_ip_configuration *ip_configuration;
 
@@ -574,12 +561,7 @@ int ipc_gprs_connection_enable(struct ril_gprs_connection *gprs_connection,
 	if (ril_data.ipc_fmt_client == NULL || ril_data.ipc_fmt_client->data == NULL)
 		return -EINVAL;
 
-	ipc_client_data = (struct ipc_client_data *) ril_data.ipc_fmt_client->data;
-
-	if (ipc_client_data->ipc_client == NULL)
-		return -EINVAL;
-
-	ipc_client = ipc_client_data->ipc_client;
+	ipc_client = (struct ipc_client *) ril_data.ipc_fmt_client->data;
 
 	ip_configuration = &(gprs_connection->ip_configuration);
 
@@ -610,12 +592,10 @@ int ipc_gprs_connection_enable(struct ril_gprs_connection *gprs_connection,
 		(ip_configuration->dns2)[2],
 		(ip_configuration->dns2)[3]);	
 
-	if (ipc_client_gprs_handlers_available(ipc_client)) {
-		rc = ipc_client_gprs_activate(ipc_client, gprs_connection->cid);
-		if (rc < 0) {
-			// This is not a critical issue
-			LOGE("Failed to activate interface!");
-		}
+	rc = ipc_client_gprs_activate(ipc_client, gprs_connection->cid);
+	if (rc < 0) {
+		// This is not a critical issue
+		LOGE("Failed to activate interface!");
 	}
 
 	interface = ipc_client_gprs_get_iface(ipc_client, gprs_connection->cid);
@@ -690,7 +670,6 @@ int ipc_gprs_connection_enable(struct ril_gprs_connection *gprs_connection,
 
 int ipc_gprs_connection_disable(struct ril_gprs_connection *gprs_connection)
 {
-	struct ipc_client_data *ipc_client_data;
 	struct ipc_client *ipc_client;
 
 	char *interface;
@@ -702,12 +681,7 @@ int ipc_gprs_connection_disable(struct ril_gprs_connection *gprs_connection)
 	if (ril_data.ipc_fmt_client == NULL || ril_data.ipc_fmt_client->data == NULL)
 		return -EINVAL;
 
-	ipc_client_data = (struct ipc_client_data *) ril_data.ipc_fmt_client->data;
-
-	if (ipc_client_data->ipc_client == NULL)
-		return -EINVAL;
-
-	ipc_client = ipc_client_data->ipc_client;
+	ipc_client = (struct ipc_client *) ril_data.ipc_fmt_client->data;
 
 	if (gprs_connection->interface == NULL) {
 		interface = ipc_client_gprs_get_iface(ipc_client, gprs_connection->cid);
@@ -731,12 +705,10 @@ int ipc_gprs_connection_disable(struct ril_gprs_connection *gprs_connection)
 		LOGE("ifc_down failed");
 	}
 
-	if (ipc_client_gprs_handlers_available(ipc_client)) {
-		rc = ipc_client_gprs_deactivate(ipc_client, gprs_connection->cid);
-		if (rc < 0) {
-			// This is not a critical issue
-			LOGE("Failed to deactivate interface!");
-		}
+	rc = ipc_client_gprs_deactivate(ipc_client, gprs_connection->cid);
+	if (rc < 0) {
+		// This is not a critical issue
+		LOGE("Could not deactivate interface!");
 	}
 
 	return 0;

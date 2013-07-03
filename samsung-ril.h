@@ -28,7 +28,7 @@
 #include <utils/Log.h>
 #include <telephony/ril.h>
 
-#include <radio.h>
+#include <samsung-ipc.h>
 
 #include "ipc.h"
 #include "srs.h"

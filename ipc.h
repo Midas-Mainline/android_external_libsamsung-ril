@@ -32,11 +32,6 @@
 #define ipc_fmt_send_exec(command, mseq) \
 	ipc_fmt_send(command, IPC_TYPE_EXEC, NULL, 0, mseq)
 
-struct ipc_client_data {
-	struct ipc_client *ipc_client;
-	int ipc_client_fd;
-};
-
 extern struct ril_client_funcs ipc_fmt_client_funcs;
 extern struct ril_client_funcs ipc_rfs_client_funcs;
 

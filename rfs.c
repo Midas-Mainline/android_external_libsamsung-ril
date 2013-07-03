@@ -25,7 +25,6 @@
 
 void ipc_rfs_nv_read_item(struct ipc_message_info *info)
 {
-	struct ipc_client_data *ipc_client_data;
 	struct ipc_client *ipc_client;
 
 	struct ipc_rfs_io *rfs_io;
@@ -42,12 +41,7 @@ void ipc_rfs_nv_read_item(struct ipc_message_info *info)
 	if (ril_data.ipc_rfs_client == NULL || ril_data.ipc_rfs_client->data == NULL)
 		return;
 
-	ipc_client_data = (struct ipc_client_data *) ril_data.ipc_rfs_client->data;
-
-	if (ipc_client_data->ipc_client == NULL)
-		return;
-
-	ipc_client = ipc_client_data->ipc_client;
+	ipc_client = (struct ipc_client *) ril_data.ipc_rfs_client->data;
 
 	rfs_io_conf = calloc(1, rfs_io->length + sizeof(struct ipc_rfs_io_confirm));
 	rfs_data = rfs_io_conf + sizeof(struct ipc_rfs_io_confirm);
@@ -70,7 +64,6 @@ void ipc_rfs_nv_read_item(struct ipc_message_info *info)
 
 void ipc_rfs_nv_write_item(struct ipc_message_info *info)
 {
-	struct ipc_client_data *ipc_client_data;
 	struct ipc_client *ipc_client;
 
 	struct ipc_rfs_io *rfs_io;
@@ -87,12 +80,7 @@ void ipc_rfs_nv_write_item(struct ipc_message_info *info)
 	if (ril_data.ipc_rfs_client == NULL || ril_data.ipc_rfs_client->data == NULL)
 		return;
 
-	ipc_client_data = (struct ipc_client_data *) ril_data.ipc_rfs_client->data;
-
-	if (ipc_client_data->ipc_client == NULL)
-		return;
-
-	ipc_client = ipc_client_data->ipc_client;
+	ipc_client = (struct ipc_client *) ril_data.ipc_rfs_client->data;
 
 	memset(&rfs_io_conf, 0, sizeof(rfs_io_conf));
 	rfs_data = info->data + sizeof(struct ipc_rfs_io);
