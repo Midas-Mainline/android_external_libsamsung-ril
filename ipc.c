@@ -130,20 +130,20 @@ int ipc_fmt_create(struct ril_client *client)
 		goto error_bootstrap;
 	}
 
-	LOGD("Client open...");
-
-	rc = ipc_client_open(ipc_client);
-	if (rc < 0) {
-		LOGE("%s: failed to open ipc client", __func__);
-		goto error_open;
-	}
-
 	LOGD("Client power on...");
 
 	rc = ipc_client_power_on(ipc_client);
 	if (rc < 0) {
 		LOGE("%s: failed to power on ipc client", __func__);
 		goto error_power_on;
+	}
+
+	LOGD("Client open...");
+
+	rc = ipc_client_open(ipc_client);
+	if (rc < 0) {
+		LOGE("%s: failed to open ipc client", __func__);
+		goto error_open;
 	}
 
 	LOGD("IPC FMT client done");
