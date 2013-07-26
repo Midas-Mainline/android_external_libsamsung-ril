@@ -1,7 +1,7 @@
 /**
  * This list was generated from http://en.wikipedia.org/wiki/Mobile_Network_Code
  * 
- * Date: 31/03/2013 23:00:50
+ * Date: 26/07/2013 16:36:48
  * Copyright: Wikipedia Contributors, Creative Commons Attribution-ShareAlike License
  */
 
@@ -82,7 +82,7 @@ struct plmn_list_entry plmn_list[] = {
 	// Aruba (Kingdom of the Netherlands) - AW
 
 	{ 363, 1, "SETAR", "SETAR" },
-	{ 363, 20, "Digicel", "Digicel" },
+	{ 363, 2, "Digicel", "Digicel" },
 
 	// Australia - AU
 
@@ -118,20 +118,17 @@ struct plmn_list_entry plmn_list[] = {
 	// Austria - AT
 
 	{ 232, 1, "A1 TA", "A1 TA" },
-	{ 232, 2, "A1 TA", "A1 TA" },
+	{ 232, 2, "A1 Telekom Austria", "A1 Telekom Austria" },
 	{ 232, 3, "T-Mobile AT", "T-Mobile AT" },
 	{ 232, 5, "Orange AT", "Orange AT" },
-	{ 232, 6, "Orange AT", "Orange AT" },
 	{ 232, 7, "tele.ring", "tele.ring" },
-	{ 232, 8, "Telefonica", "Telefonica" },
-	{ 232, 9, "A1 TA", "A1 TA" },
+	{ 232, 9, "Tele2Mobil", "Tele2Mobil" },
 	{ 232, 10, "3AT", "3AT" },
 	{ 232, 11, "bob", "bob" },
 	{ 232, 12, "yesss!", "yesss!" },
-	{ 232, 14, "3AT", "3AT" },
-	{ 232, 15, "Barablu", "Barablu" },
-	{ 232, 16, "3", "3" },
-	{ 232, 91, "GSM-R A", "GSM-R A" },
+	{ 232, 14, "Hutchison Drei Austria", "Hutchison Drei Austria" },
+	{ 232, 15, "A1 Telekom Austria", "A1 Telekom Austria" },
+	{ 232, 16, "Hutchison Drei Austria", "Hutchison Drei Austria" },
 
 	// Azerbaijan - AZ
 
@@ -158,8 +155,7 @@ struct plmn_list_entry plmn_list[] = {
 	{ 470, 3, "Banglalink Sheba", "Banglalink Sheba" },
 	{ 470, 4, "TeleTalk", "TeleTalk" },
 	{ 470, 5, "Citycell", "Citycell" },
-	{ 470, 6, "Beeong3G", "Beeong3G" },
-	{ 470, 7, "Airtel formerly Warid Telcom", "Airtel formerly Warid Telcom" },
+	{ 470, 7, "Airtel", "Airtel" },
 
 	// Barbados - BB
 
@@ -193,7 +189,7 @@ struct plmn_list_entry plmn_list[] = {
 	{ 616, 2, "Moov", "Moov" },
 	{ 616, 3, "MTN", "MTN" },
 	{ 616, 4, "BBCOM", "BBCOM" },
-	{ 616, 4, "Glo", "Glo" },
+	{ 616, 5, "Glo", "Glo" },
 	{ 616, 4, "BLK", "BLK" },
 
 	// Bermuda - BM
@@ -508,11 +504,10 @@ struct plmn_list_entry plmn_list[] = {
 
 	// El Salvador - SV
 
-	{ 706, 1, "CTE Telecom Personal", "CTE Telecom Personal" },
+	{ 706, 1, "CTE Telecom Personal, Claro", "CTE Telecom Personal, Claro" },
 	{ 706, 2, "digicel", "digicel" },
 	{ 706, 3, "Tigo", "Tigo" },
 	{ 706, 4, "movistar", "movistar" },
-	{ 706, 1, "Claro", "Claro" },
 
 	// Equatorial Guinea - GQ
 
@@ -567,7 +562,7 @@ struct plmn_list_entry plmn_list[] = {
 
 	{ 208, 1, "Orange", "Orange" },
 	{ 208, 2, "Orange", "Orange" },
-	{ 208, 4, "Sisteer (MVNE)", "Sisteer (MVNE)" },
+	{ 208, 4, "Sisteer ", "Sisteer " },
 	{ 208, 5, "Globalstar Europe", "Globalstar Europe" },
 	{ 208, 6, "Globalstar Europe", "Globalstar Europe" },
 	{ 208, 7, "Globalstar Europe", "Globalstar Europe" },
@@ -576,10 +571,12 @@ struct plmn_list_entry plmn_list[] = {
 	{ 208, 13, "SFR", "SFR" },
 	{ 208, 14, "RFF", "RFF" },
 	{ 208, 15, "Free Mobile", "Free Mobile" },
+	{ 208, 16, "Free Mobile", "Free Mobile" },
 	{ 208, 20, "Bouygues", "Bouygues" },
 	{ 208, 21, "Bouygues", "Bouygues" },
 	{ 208, 22, "Transatel Mobile", "Transatel Mobile" },
 	{ 208, 23, "Virgin Mobile (MVNO)", "Virgin Mobile (MVNO)" },
+	{ 208, 25, "LycaMobile", "LycaMobile" },
 	{ 208, 26, "NRJ Mobile (MVNO)", "NRJ Mobile (MVNO)" },
 
 	// French Guiana (France) - GF
@@ -627,7 +624,7 @@ struct plmn_list_entry plmn_list[] = {
 	{ 262, 9, "Vodafone", "Vodafone" },
 	{ 262, 10, "Arcor AG & Co", "Arcor AG & Co" },
 	{ 262, 11, "O2", "O2" },
-	{ 262, 12, "Dolphin Telecom", "Dolphin Telecom" },
+	{ 262, 12, "Dolphin Telecom / sipgate", "Dolphin Telecom / sipgate" },
 	{ 262, 13, "Mobilcom Multimedia", "Mobilcom Multimedia" },
 	{ 262, 14, "Group 3G UMTS", "Group 3G UMTS" },
 	{ 262, 15, "Airdata", "Airdata" },
@@ -692,10 +689,10 @@ struct plmn_list_entry plmn_list[] = {
 	// Guatemala - GT
 
 	{ 704, 1, "Claro", "Claro" },
-	{ 704, 2, "Tigo", "Tigo" },
+	{ 704, 201, "Tigo", "Tigo" },
 	{ 704, 3, "movistar", "movistar" },
 
-	// Guernsey (United Kingdom) - GB
+	// Guernsey (United Kingdom) - GG
 
 	{ 234, 55, "Sure Mobile", "Sure Mobile" },
 	{ 234, 50, "Wave Telecom", "Wave Telecom" },
@@ -713,6 +710,7 @@ struct plmn_list_entry plmn_list[] = {
 
 	{ 632, 2, "Areeba", "Areeba" },
 	{ 632, 3, "Orange", "Orange" },
+	{ 632, 7, "Guinetel", "Guinetel" },
 
 	// Guyana - GY
 
@@ -732,7 +730,7 @@ struct plmn_list_entry plmn_list[] = {
 	{ 708, 30, "Hondutel", "Hondutel" },
 	{ 708, 40, "DIGICEL ", "DIGICEL " },
 
-	// Hong Kong (Special Administrative Region of People's Republic of China) - HK
+	// Hong Kong - HK
 
 	{ 454, 1, "CITIC Telecom 1616", "CITIC Telecom 1616" },
 	{ 454, 2, "CSL Limited ", "CSL Limited " },
@@ -753,6 +751,7 @@ struct plmn_list_entry plmn_list[] = {
 	{ 454, 17, "SmarTone Mobile Communications Limited", "SmarTone Mobile Communications Limited" },
 	{ 454, 18, "CSL Limited ", "CSL Limited " },
 	{ 454, 19, "PCCW Mobile (3G)", "PCCW Mobile (3G)" },
+	{ 454, 22, "P Plus", "P Plus" },
 	{ 454, 29, "PCCW Mobile (CDMA)", "PCCW Mobile (CDMA)" },
 
 	// Hungary - HU
@@ -791,6 +790,7 @@ struct plmn_list_entry plmn_list[] = {
 	{ 404, 15, "Vodafone IN", "Vodafone IN" },
 	{ 404, 16, "Airtel", "Airtel" },
 	{ 404, 17, "AIRCEL", "AIRCEL" },
+	{ 404, 18, "Reliance", "Reliance" },
 	{ 404, 19, "IDEA", "IDEA" },
 	{ 404, 20, "Vodafone IN", "Vodafone IN" },
 	{ 404, 21, "Loop Mobile", "Loop Mobile" },
@@ -809,11 +809,13 @@ struct plmn_list_entry plmn_list[] = {
 	{ 404, 40, "AirTel", "AirTel" },
 	{ 404, 41, "Aircel", "Aircel" },
 	{ 404, 42, "Aircel", "Aircel" },
+	{ 404, 43, "Vodafone IN", "Vodafone IN" },
 	{ 404, 44, "IDEA", "IDEA" },
 	{ 404, 45, "Airtel", "Airtel" },
 	{ 404, 46, "Vodafone IN", "Vodafone IN" },
 	{ 404, 48, "Dishnet Wireless", "Dishnet Wireless" },
 	{ 404, 49, "Airtel", "Airtel" },
+	{ 404, 50, "Reliance", "Reliance" },
 	{ 404, 51, "CellOne", "CellOne" },
 	{ 404, 52, "Reliance", "Reliance" },
 	{ 404, 53, "CellOne", "CellOne" },
@@ -827,7 +829,7 @@ struct plmn_list_entry plmn_list[] = {
 	{ 404, 62, "CellOne", "CellOne" },
 	{ 404, 64, "CellOne", "CellOne" },
 	{ 404, 66, "CellOne", "CellOne" },
-	{ 404, 67, "Reliance GSM", "Reliance GSM" },
+	{ 404, 67, "Reliance", "Reliance" },
 	{ 404, 68, "DOLPHIN", "DOLPHIN" },
 	{ 404, 69, "DOLPHIN", "DOLPHIN" },
 	{ 404, 70, "AirTel", "AirTel" },
@@ -835,17 +837,19 @@ struct plmn_list_entry plmn_list[] = {
 	{ 404, 72, "CellOne", "CellOne" },
 	{ 404, 73, "CellOne", "CellOne" },
 	{ 404, 74, "CellOne", "CellOne" },
+	{ 404, 75, "CellOne", "CellOne" },
 	{ 404, 76, "CellOne", "CellOne" },
 	{ 404, 77, "CellOne", "CellOne" },
 	{ 404, 78, "Idea Cellular Ltd", "Idea Cellular Ltd" },
+	{ 404, 79, "CellOne", "CellOne" },
 	{ 404, 80, "CellOne", "CellOne" },
 	{ 404, 81, "CellOne", "CellOne" },
 	{ 404, 82, "Idea", "Idea" },
-	{ 404, 83, "Reliance Smart GSM", "Reliance Smart GSM" },
+	{ 404, 83, "Reliance", "Reliance" },
 	{ 404, 84, "Vodafone IN", "Vodafone IN" },
 	{ 404, 85, "Reliance", "Reliance" },
 	{ 404, 86, "Vodafone IN", "Vodafone IN" },
-	{ 404, 87, "Idea", "Idea" },
+	{ 404, 87, "IDEA", "IDEA" },
 	{ 404, 88, "Vodafone IN", "Vodafone IN" },
 	{ 404, 89, "Idea", "Idea" },
 	{ 404, 90, "AirTel", "AirTel" },
@@ -862,32 +866,47 @@ struct plmn_list_entry plmn_list[] = {
 	{ 405, 4, "Reliance", "Reliance" },
 	{ 405, 5, "Reliance", "Reliance" },
 	{ 405, 6, "Reliance", "Reliance" },
+	{ 405, 7, "Reliance", "Reliance" },
+	{ 405, 8, "Reliance", "Reliance" },
 	{ 405, 9, "Reliance", "Reliance" },
 	{ 405, 10, "Reliance", "Reliance" },
+	{ 405, 11, "Reliance", "Reliance" },
+	{ 405, 12, "Reliance", "Reliance" },
 	{ 405, 13, "Reliance", "Reliance" },
-	{ 405, 25, "TATA Teleservice", "TATA Teleservice" },
-	{ 405, 26, "TATA Teleservice", "TATA Teleservice" },
-	{ 405, 27, "TATA Teleservice", "TATA Teleservice" },
-	{ 405, 29, "TATA Teleservice", "TATA Teleservice" },
-	{ 405, 30, "TATA Teleservice", "TATA Teleservice" },
-	{ 405, 31, "TATA Teleservice", "TATA Teleservice" },
-	{ 405, 32, "TATA Teleservice", "TATA Teleservice" },
-	{ 405, 33, "TATA Teleservice", "TATA Teleservice" },
-	{ 405, 34, "TATA Teleservice", "TATA Teleservice" },
-	{ 405, 35, "TATA Teleservice", "TATA Teleservice" },
-	{ 405, 36, "TATA Teleservice", "TATA Teleservice" },
-	{ 405, 37, "TATA Teleservice", "TATA Teleservice" },
-	{ 405, 38, "TATA Teleservice", "TATA Teleservice" },
-	{ 405, 39, "TATA Teleservice", "TATA Teleservice" },
-	{ 405, 41, "TATA Teleservice", "TATA Teleservice" },
-	{ 405, 42, "TATA Teleservice", "TATA Teleservice" },
-	{ 405, 43, "TATA Teleservice", "TATA Teleservice" },
-	{ 405, 44, "TATA Teleservice", "TATA Teleservice" },
-	{ 405, 45, "TATA Teleservice", "TATA Teleservice" },
-	{ 405, 46, "TATA Teleservice", "TATA Teleservice" },
-	{ 405, 47, "TATA Teleservice", "TATA Teleservice" },
+	{ 405, 14, "Reliance", "Reliance" },
+	{ 405, 15, "Reliance", "Reliance" },
+	{ 405, 17, "Reliance", "Reliance" },
+	{ 405, 18, "Reliance", "Reliance" },
+	{ 405, 19, "Reliance", "Reliance" },
+	{ 405, 20, "Reliance", "Reliance" },
+	{ 405, 21, "Reliance", "Reliance" },
+	{ 405, 22, "Reliance", "Reliance" },
+	{ 405, 23, "Reliance", "Reliance" },
+	{ 405, 25, "TATA DOCOMO", "TATA DOCOMO" },
+	{ 405, 26, "TATA DOCOMO", "TATA DOCOMO" },
+	{ 405, 27, "TATA DOCOMO", "TATA DOCOMO" },
+	{ 405, 28, "TATA DOCOMO", "TATA DOCOMO" },
+	{ 405, 29, "TATA DOCOMO", "TATA DOCOMO" },
+	{ 405, 30, "TATA DOCOMO", "TATA DOCOMO" },
+	{ 405, 31, "TATA DOCOMO", "TATA DOCOMO" },
+	{ 405, 32, "TATA DOCOMO", "TATA DOCOMO" },
+	{ 405, 33, "TATA DOCOMO", "TATA DOCOMO" },
+	{ 405, 34, "TATA DOCOMO", "TATA DOCOMO" },
+	{ 405, 35, "TATA DOCOMO", "TATA DOCOMO" },
+	{ 405, 36, "TATA DOCOMO", "TATA DOCOMO" },
+	{ 405, 37, "TATA DOCOMO", "TATA DOCOMO" },
+	{ 405, 38, "TATA DOCOMO", "TATA DOCOMO" },
+	{ 405, 39, "TATA DOCOMO", "TATA DOCOMO" },
+	{ 405, 41, "TATA DOCOMO", "TATA DOCOMO" },
+	{ 405, 42, "TATA DOCOMO", "TATA DOCOMO" },
+	{ 405, 43, "TATA DOCOMO", "TATA DOCOMO" },
+	{ 405, 44, "TATA DOCOMO", "TATA DOCOMO" },
+	{ 405, 45, "TATA DOCOMO", "TATA DOCOMO" },
+	{ 405, 46, "TATA DOCOMO", "TATA DOCOMO" },
+	{ 405, 47, "TATA DOCOMO", "TATA DOCOMO" },
 	{ 405, 51, "AirTel", "AirTel" },
 	{ 405, 52, "AirTel", "AirTel" },
+	{ 405, 53, "AirTel", "AirTel" },
 	{ 405, 54, "AirTel", "AirTel" },
 	{ 405, 55, "Airtel", "Airtel" },
 	{ 405, 56, "AirTel", "AirTel" },
@@ -925,14 +944,41 @@ struct plmn_list_entry plmn_list[] = {
 	{ 405, 844, "Uninor", "Uninor" },
 	{ 405, 845, "IDEA", "IDEA" },
 	{ 405, 846, "IDEA", "IDEA" },
+	{ 405, 847, "IDEA", "IDEA" },
 	{ 405, 848, "IDEA", "IDEA" },
+	{ 405, 849, "IDEA", "IDEA" },
 	{ 405, 850, "IDEA", "IDEA" },
+	{ 405, 851, "IDEA", "IDEA" },
+	{ 405, 852, "IDEA", "IDEA" },
+	{ 405, 853, "IDEA", "IDEA" },
+	{ 405, 854, "Loop Mobile", "Loop Mobile" },
 	{ 405, 855, "Loop Mobile", "Loop Mobile" },
+	{ 405, 856, "Loop Mobile", "Loop Mobile" },
+	{ 405, 857, "Loop Mobile", "Loop Mobile" },
+	{ 405, 858, "Loop Mobile", "Loop Mobile" },
+	{ 405, 859, "Loop Mobile", "Loop Mobile" },
+	{ 405, 860, "Loop Mobile", "Loop Mobile" },
+	{ 405, 861, "Loop Mobile", "Loop Mobile" },
+	{ 405, 862, "Loop Mobile", "Loop Mobile" },
+	{ 405, 863, "Loop Mobile", "Loop Mobile" },
 	{ 405, 864, "Loop Mobile", "Loop Mobile" },
 	{ 405, 865, "Loop Mobile", "Loop Mobile" },
+	{ 405, 866, "Loop Mobile", "Loop Mobile" },
+	{ 405, 867, "Loop Mobile", "Loop Mobile" },
+	{ 405, 868, "Loop Mobile", "Loop Mobile" },
+	{ 405, 869, "Loop Mobile", "Loop Mobile" },
+	{ 405, 870, "Loop Mobile", "Loop Mobile" },
+	{ 405, 871, "Loop Mobile", "Loop Mobile" },
+	{ 405, 872, "Loop Mobile", "Loop Mobile" },
+	{ 405, 873, "Loop Mobile", "Loop Mobile" },
+	{ 405, 874, "Loop Mobile", "Loop Mobile" },
 	{ 405, 875, "Uninor", "Uninor" },
 	{ 405, 880, "Uninor", "Uninor" },
 	{ 405, 881, "S Tel", "S Tel" },
+	{ 405, 908, "IDEA", "IDEA" },
+	{ 405, 909, "IDEA", "IDEA" },
+	{ 405, 910, "IDEA", "IDEA" },
+	{ 405, 911, "IDEA", "IDEA" },
 	{ 405, 912, "Etisalat DB(cheers)", "Etisalat DB(cheers)" },
 	{ 405, 913, "Etisalat DB(cheers)", "Etisalat DB(cheers)" },
 	{ 405, 914, "Etisalat DB(cheers)", "Etisalat DB(cheers)" },
@@ -955,6 +1001,7 @@ struct plmn_list_entry plmn_list[] = {
 	{ 510, 28, "Fren/Hepi", "Fren/Hepi" },
 	{ 510, 89, "3", "3" },
 	{ 510, 99, "Esia", "Esia" },
+	{ 510, 995, "Komselindo", "Komselindo" },
 
 	// Iran - IR
 
@@ -1159,14 +1206,15 @@ struct plmn_list_entry plmn_list[] = {
 
 	// Kenya - KE
 
-	{ 639, 72, "Safaricom", "Safaricom" },
-	{ 639, 73, "Airtel", "Airtel" },
-	{ 639, 77, "Orange Kenya", "Orange Kenya" },
-	{ 639, 75, "yu", "yu" },
+	{ 639, 2, "Safaricom", "Safaricom" },
+	{ 639, 3, "Airtel", "Airtel" },
+	{ 639, 7, "Orange Kenya", "Orange Kenya" },
+	{ 639, 5, "yu", "yu" },
 
 	// Kiribati - KI
 
-	{ 545, 9, "Kiribati Frigate", "Kiribati Frigate" },
+	{ 545, 1, "Kiribati - Frigate Net", "Kiribati - Frigate Net" },
+	{ 545, 9, "Kiribati - Frigate Net", "Kiribati - Frigate Net" },
 
 	// North Korea - KP
 
@@ -1230,7 +1278,7 @@ struct plmn_list_entry plmn_list[] = {
 	// Lesotho - LS
 
 	{ 651, 1, "Vodacom", "Vodacom" },
-	{ 651, 2, "Econet Ezin-cel", "Econet Ezin-cel" },
+	{ 651, 2, "Econet Ezi-cel", "Econet Ezi-cel" },
 
 	// Liberia - LR
 
@@ -1253,7 +1301,7 @@ struct plmn_list_entry plmn_list[] = {
 	{ 295, 2, "Orange", "Orange" },
 	{ 295, 5, "FL1", "FL1" },
 	{ 295, 77, "Alpmobil", "Alpmobil" },
-	{ 295, 4, "Cubic Telecom", "Cubic Telecom" },
+	{ 295, 6, "Cubic Telecom", "Cubic Telecom" },
 
 	// Lithuania - LT
 
@@ -1331,6 +1379,7 @@ struct plmn_list_entry plmn_list[] = {
 
 	// Marshall Islands - MH
 
+	{ 551, 1, "Marshall Islands National Telecommunications Authority (MINTA) ", "Marshall Islands National Telecommunications Authority (MINTA) " },
 
 	// Martinique (France) - MQ
 
@@ -1355,7 +1404,7 @@ struct plmn_list_entry plmn_list[] = {
 
 	// Mexico - MX
 
-	{ 334, 10, "Nextal", "Nextal" },
+	{ 334, 10, "Nextel", "Nextel" },
 	{ 334, 20, "Telcel", "Telcel" },
 	{ 334, 30, "movistar", "movistar" },
 	{ 334, 40, "Iusacell / Unefon", "Iusacell / Unefon" },
@@ -1489,7 +1538,7 @@ struct plmn_list_entry plmn_list[] = {
 	// Nicaragua - NI
 
 	{ 710, 21, "Claro", "Claro" },
-	{ 710, 300, "movistar", "movistar" },
+	{ 710, 30, "movistar", "movistar" },
 	{ 710, 73, "SERCOM", "SERCOM" },
 
 	// Niger - NE
@@ -1551,7 +1600,7 @@ struct plmn_list_entry plmn_list[] = {
 	{ 552, 1, "PNCC", "PNCC" },
 	{ 552, 80, "Palau Mobile", "Palau Mobile" },
 
-	// Palestinian Authority - PS
+	// State of Palestine - PS
 
 	{ 425, 5, "Jawwal", "Jawwal" },
 	{ 425, 6, "Wataniya", "Wataniya" },
@@ -1616,13 +1665,15 @@ struct plmn_list_entry plmn_list[] = {
 	{ 260, 15, "CenterNet", "CenterNet" },
 	{ 260, 16, "Mobyland", "Mobyland" },
 	{ 260, 17, "Aero2", "Aero2" },
-	{ 260, 34, "Polska Telefonia Cyfrowa Sp. z o.o.", "Polska Telefonia Cyfrowa Sp. z o.o." },
+	{ 260, 34, "T-Mobile Polska S.A.", "T-Mobile Polska S.A." },
 	{ 260, 98, "P4 Sp. z o.o.", "P4 Sp. z o.o." },
 
 	// Portugal - PT
 
 	{ 268, 1, "Vodafone", "Vodafone" },
 	{ 268, 3, "Optimus", "Optimus" },
+	{ 268, 7, "Vectonemobile - Delightmobile", "Vectonemobile - Delightmobile" },
+	{ 268, 4, "LycaMobile", "LycaMobile" },
 	{ 268, 6, "TMN", "TMN" },
 	{ 268, 21, "Zapp", "Zapp" },
 
@@ -1633,7 +1684,7 @@ struct plmn_list_entry plmn_list[] = {
 
 	// Qatar - QA
 
-	{ 427, 1, "Qtel", "Qtel" },
+	{ 427, 1, "ooredoo", "ooredoo" },
 	{ 427, 2, "Vodafone", "Vodafone" },
 	{ 427, 5, "Ministry of Interior", "Ministry of Interior" },
 
@@ -1676,7 +1727,7 @@ struct plmn_list_entry plmn_list[] = {
 	{ 250, 28, "Beeline", "Beeline" },
 	{ 250, 35, "MOTIV", "MOTIV" },
 	{ 250, 38, "Tambov GSM", "Tambov GSM" },
-	{ 250, 39, "Utel", "Utel" },
+	{ 250, 39, "Rostelecom", "Rostelecom" },
 	{ 250, 44, "Stavtelesot / North Caucasian GSM", "Stavtelesot / North Caucasian GSM" },
 	{ 250, 50, "MTS", "MTS" },
 	{ 250, 91, "Sonic Duo", "Sonic Duo" },
@@ -1705,6 +1756,7 @@ struct plmn_list_entry plmn_list[] = {
 	// Saint Pierre and Miquelon (France) - PM
 
 	{ 308, 1, "Ameris", "Ameris" },
+	{ 308, 2, "GLOBALTEL", "GLOBALTEL" },
 
 	// Saint Vincent and the Grenadines - VC
 
@@ -1730,6 +1782,7 @@ struct plmn_list_entry plmn_list[] = {
 	{ 420, 1, "Al Jawal (STC )", "Al Jawal (STC )" },
 	{ 420, 3, "Mobily", "Mobily" },
 	{ 420, 4, "Zain SA", "Zain SA" },
+	{ 420, 21, "RGSM", "RGSM" },
 
 	// Senegal - SN
 
@@ -1962,13 +2015,14 @@ struct plmn_list_entry plmn_list[] = {
 	{ 520, 1, "AIS ", "AIS " },
 	{ 520, 2, "CAT CDMA", "CAT CDMA" },
 	{ 520, 3, "AIS 3G", "AIS 3G" },
-	{ 520, 4, "True Move H 4G", "True Move H 4G" },
+	{ 520, 4, "True Move H 4G LTE", "True Move H 4G LTE" },
 	{ 520, 5, "dtac 3G", "dtac 3G" },
 	{ 520, 10, "?", "?" },
 	{ 520, 15, "TOT 3G", "TOT 3G" },
 	{ 520, 18, "dtac", "dtac" },
 	{ 520, 23, "AIS GSM 1800", "AIS GSM 1800" },
 	{ 520, 99, "True Move", "True Move" },
+	{ 520, 25, "WE PCT", "WE PCT" },
 
 	// Togo - TG
 
@@ -2001,7 +2055,7 @@ struct plmn_list_entry plmn_list[] = {
 
 	// Turkmenistan - TM
 
-	{ 438, 1, "MTS", "MTS" },
+	{ 438, 1, "MTS (BARASH Communication) ", "MTS (BARASH Communication) " },
 	{ 438, 2, "TM-Cell", "TM-Cell" },
 
 	// Turks and Caicos Islands - TC
@@ -2065,6 +2119,7 @@ struct plmn_list_entry plmn_list[] = {
 	{ 234, 22, "RoutoMessaging", "RoutoMessaging" },
 	{ 234, 24, "Greenfone", "Greenfone" },
 	{ 234, 25, "Truphone", "Truphone" },
+	{ 234, 27, "United Kingdom of Great Britain and Northern Ireland", "United Kingdom of Great Britain and Northern Ireland" },
 	{ 234, 30, "T-Mobile (UK)", "T-Mobile (UK)" },
 	{ 234, 31, "Virgin Mobile UK", "Virgin Mobile UK" },
 	{ 234, 32, "Virgin Mobile UK", "Virgin Mobile UK" },
@@ -2102,7 +2157,7 @@ struct plmn_list_entry plmn_list[] = {
 	{ 310, 17, "North Sight Communications Inc.", "North Sight Communications Inc." },
 	{ 310, 20, "Union Telephone Company", "Union Telephone Company" },
 	{ 310, 26, "T-Mobile", "T-Mobile" },
-	{ 310, 30, "Centennial", "Centennial" },
+	{ 310, 30, "AT&T", "AT&T" },
 	{ 310, 34, "Airpeak", "Airpeak" },
 	{ 310, 40, "Concho", "Concho" },
 	{ 310, 46, "SIMMETRY", "SIMMETRY" },
@@ -2115,7 +2170,7 @@ struct plmn_list_entry plmn_list[] = {
 	{ 310, 120, "Sprint", "Sprint" },
 	{ 310, 150, "AT&T", "AT&T" },
 	{ 310, 160, "T-Mobile", "T-Mobile" },
-	{ 310, 170, "T-Mobile", "T-Mobile" },
+	{ 310, 170, "AT&T", "AT&T" },
 	{ 310, 180, "West Central", "West Central" },
 	{ 310, 190, "Dutch Harbor", "Dutch Harbor" },
 	{ 310, 200, "T-Mobile", "T-Mobile" },
@@ -2126,7 +2181,7 @@ struct plmn_list_entry plmn_list[] = {
 	{ 310, 250, "T-Mobile", "T-Mobile" },
 	{ 310, 260, "T-Mobile", "T-Mobile" },
 	{ 310, 270, "T-Mobile", "T-Mobile" },
-	{ 310, 280, "T-Mobile", "T-Mobile" },
+	{ 310, 280, "AT&T", "AT&T" },
 	{ 310, 290, "T-Mobile", "T-Mobile" },
 	{ 310, 300, "Big Sky Mobile", "Big Sky Mobile" },
 	{ 310, 310, "T-Mobile", "T-Mobile" },
@@ -2167,6 +2222,7 @@ struct plmn_list_entry plmn_list[] = {
 	{ 310, 690, "Immix", "Immix" },
 	{ 310, 730, "SeaMobile", "SeaMobile" },
 	{ 310, 740, "Convey", "Convey" },
+	{ 310, 750, "Appalachian Wireless", "Appalachian Wireless" },
 	{ 310, 760, "Panhandle", "Panhandle" },
 	{ 310, 770, "i wireless", "i wireless" },
 	{ 310, 780, "Airlink PCS", "Airlink PCS" },
@@ -2207,11 +2263,12 @@ struct plmn_list_entry plmn_list[] = {
 	{ 311, 190, "Cellular Properties", "Cellular Properties" },
 	{ 311, 210, "Emery Telcom Wireless", "Emery Telcom Wireless" },
 	{ 311, 220, "U.S. Cellular", "U.S. Cellular" },
-	{ 311, 230, "does not work", "does not work" },
+	{ 311, 230, "C Spire Wireless", "C Spire Wireless" },
 	{ 311, 330, "Bug Tussel Wireless", "Bug Tussel Wireless" },
 	{ 311, 480, "Verizon", "Verizon" },
 	{ 311, 481, "Verizon", "Verizon" },
 	{ 311, 660, "metroPCS ", "metroPCS " },
+	{ 311, 960, "Lycamobile", "Lycamobile" },
 	{ 311, 970, "Big River Broadband", "Big River Broadband" },
 	{ 313, 100, "700&nbsp;MHz Public Safety Broadband", "700&nbsp;MHz Public Safety Broadband" },
 	{ 313, 101, "700&nbsp;MHz Public Safety Broadband", "700&nbsp;MHz Public Safety Broadband" },
@@ -2222,7 +2279,7 @@ struct plmn_list_entry plmn_list[] = {
 
 	{ 748, 1, "Antel", "Antel" },
 	{ 748, 7, "Movistar", "Movistar" },
-	{ 748, 10, "AM Wireless Uruguay S.A.", "AM Wireless Uruguay S.A." },
+	{ 748, 10, "Claro", "Claro" },
 
 	// Uzbekistan - UZ
 
@@ -2255,7 +2312,7 @@ struct plmn_list_entry plmn_list[] = {
 	{ 452, 2, "Vinaphone", "Vinaphone" },
 	{ 452, 3, "S-Fone", "S-Fone" },
 	{ 452, 4, "Viettel Mobile", "Viettel Mobile" },
-	{ 452, 5, "Vietnamobile", "Vietnamobile" },
+	{ 452, 5, "Vietnamobile (HT Mobile )", "Vietnamobile (HT Mobile )" },
 	{ 452, 6, "EVNTelecom", "EVNTelecom" },
 	{ 452, 8, "3G EVNTelecom", "3G EVNTelecom" },
 	{ 452, 7, "G-Mobile", "G-Mobile" },
@@ -2295,7 +2352,7 @@ struct plmn_list_entry plmn_list[] = {
 	{ 901, 15, "OnAir", "OnAir" },
 	{ 901, 16, "Jasper Systems", "Jasper Systems" },
 	{ 901, 17, "Navitas", "Navitas" },
-	{ 901, 18, "Cellular @Sea ", "Cellular @Sea " },
+	{ 901, 18, "Cellular @Sea", "Cellular @Sea" },
 	{ 901, 19, "Vodafone Malta Maritime", "Vodafone Malta Maritime" },
 	{ 901, 20, "Intermatica", "Intermatica" },
 	{ 901, 21, "''Unassigned''", "''Unassigned''" },
