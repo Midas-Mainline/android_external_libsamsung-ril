@@ -366,6 +366,10 @@ void ipc_fmt_dispatch(struct ipc_message_info *info)
 		case IPC_SMS_DEVICE_READY:
 			ipc_sms_device_ready(info);
 			break;
+		/* SVC */
+		case IPC_SVC_DISPLAY_SCREEN:
+			ipc_svc_display_screen(info);
+			break;
 		/* CALL */
 		case IPC_CALL_INCOMING:
 			ipc_call_incoming(info);
@@ -520,6 +524,10 @@ void ril_on_request(int request, void *data, size_t length, RIL_Token t)
 			break;
 		case RIL_REQUEST_SET_FACILITY_LOCK:
 			ril_request_set_facility_lock(t, data, length);
+			break;
+		/* SVC */
+		case RIL_REQUEST_OEM_HOOK_RAW:
+			ril_request_oem_hook_raw(t, data, length);
 			break;
 		/* NET */
 		case RIL_REQUEST_OPERATOR:

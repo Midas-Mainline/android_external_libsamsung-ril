@@ -33,6 +33,7 @@ LOCAL_SRC_FILES := \
 	sat.c \
 	ss.c \
 	sec.c \
+	svc.c \
 	net.c \
 	sms.c \
 	call.c \

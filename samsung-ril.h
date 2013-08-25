@@ -193,6 +193,7 @@ struct ril_data {
 
 	struct ril_state state;
 	struct ril_tokens tokens;
+	struct ril_oem_hook_svc_session *oem_hook_svc_session;
 	struct list_head *gprs_connections;
 	struct list_head *incoming_sms;
 	struct list_head *outgoing_sms;
@@ -310,6 +311,48 @@ void ril_request_query_facility_lock(RIL_Token t, void *data, size_t length);
 void ipc_sec_phone_lock(struct ipc_message_info *info);
 void ipc_sec_phone_lock_complete(struct ipc_message_info *info);
 void ril_request_set_facility_lock(RIL_Token t, void *data, size_t length);
+
+/* SVC */
+
+typedef enum {
+	RIL_OEM_HOOK_TAG_SVC	= 1,
+} RIL_OEMHookTag;
+
+typedef enum {
+	RIL_OEM_COMMAND_SVC_ENTER_MODE	= 1,
+	RIL_OEM_COMMAND_SVC_END_MODE	= 2,
+	RIL_OEM_COMMAND_SVC_KEY		= 3,
+} RIL_OEMCommandSvc;
+
+typedef struct {
+	unsigned char tag;
+	unsigned char command;
+	unsigned short length;
+} RIL_OEMHookHeader;
+
+typedef struct {
+	unsigned char mode;
+	unsigned char type;
+	unsigned char query;
+} RIL_OEMHookSvcEnterMode;
+
+typedef struct {
+	unsigned char mode;
+} RIL_OEMHookSvcEndMode;
+
+typedef struct {
+	unsigned char key;
+	unsigned char query;
+} RIL_OEMHookSvcKey;
+
+struct ril_oem_hook_svc_session {
+	RIL_Token token;
+	void *display_screen;
+	size_t display_screen_length;
+};
+
+void ipc_svc_display_screen(struct ipc_message_info *info);
+void ril_request_oem_hook_raw(RIL_Token t, void *data, int length);
 
 /* NET */
 
