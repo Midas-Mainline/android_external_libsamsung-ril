@@ -56,6 +56,22 @@ RIL_Errno ipc2ril_sms_ack_error(unsigned short error, int *error_code)
 	}
 }
 
+unsigned char ril2ipc_sms_save_msg_status(int status)
+{
+	switch (status) {
+		case 0:
+			return IPC_SMS_STATUS_REC_UNREAD;
+		case 1:
+			return IPC_SMS_STATUS_REC_READ;
+		case 2:
+			return IPC_SMS_STATUS_STO_UNSENT;
+		case 3:
+			return IPC_SMS_STATUS_STO_SENT;
+		default:
+			return IPC_SMS_STATUS_REC_READ;
+	}
+}
+
 /*
  * Outgoing SMS functions
  */
@@ -698,6 +714,132 @@ void ipc_sms_deliver_report(struct ipc_message_info *info)
 error:
 	if (info != NULL)
 		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
+}
+
+void ril_request_write_sms_to_sim(RIL_Token token, void *data, size_t size)
+{
+	struct ipc_sms_save_msg_request_data *sms_save_msg_request_data;
+	RIL_SMS_WriteArgs *args;
+	void *buffer = NULL;
+	size_t length;
+	size_t data_length;
+	size_t pdu_length = 0;
+	size_t pdu_hex_length = 0;
+	size_t smsc_length = 0;
+	size_t smsc_hex_length = 0;
+	unsigned char *p;
+
+	if (data == NULL || size < sizeof(RIL_SMS_WriteArgs))
+		goto error;
+
+	args = (RIL_SMS_WriteArgs *) data;
+
+	if (args->pdu != NULL) {
+		pdu_length = strlen(args->pdu);
+		pdu_hex_length = pdu_length % 2 == 0 ? pdu_length / 2 : (pdu_length ^ 1) / 2;
+	}
+
+	if (args->smsc != NULL) {
+		smsc_length = strlen(args->smsc);
+		smsc_hex_length = smsc_length % 2 == 0 ? smsc_length / 2 : (smsc_length ^ 1) / 2;
+	}
+
+	data_length = pdu_hex_length + smsc_hex_length;
+	if (data_length == 0 || data_length > 0xff)
+		goto error;
+
+	length = sizeof(struct ipc_sms_save_msg_request_data) + data_length;
+	buffer = malloc(length);
+
+	sms_save_msg_request_data = (struct ipc_sms_save_msg_request_data *) buffer;
+
+	memset(sms_save_msg_request_data, 0, sizeof(struct ipc_sms_save_msg_request_data));
+	sms_save_msg_request_data->unknown = 0x02;
+	sms_save_msg_request_data->index = 12 - 1;
+	sms_save_msg_request_data->status = ril2ipc_sms_save_msg_status(args->status);
+	sms_save_msg_request_data->length = (unsigned char) (data_length & 0xff);
+
+	p = (unsigned char *) buffer + sizeof(struct ipc_sms_save_msg_request_data);
+
+	if (args->smsc != NULL && smsc_length > 0) {
+		hex2bin(args->smsc, smsc_length, p);
+		p += smsc_hex_length;
+	}
+
+	if (args->pdu != NULL && pdu_length > 0) {
+		hex2bin(args->pdu, pdu_length, p);
+		p += pdu_hex_length;
+	}
+
+	ipc_gen_phone_res_expect_to_abort(ril_request_get_id(token), IPC_SMS_SAVE_MSG);
+
+	ipc_fmt_send(IPC_SMS_SAVE_MSG, IPC_TYPE_EXEC, buffer, length, ril_request_get_id(token));
+
+	goto complete;
+
+error:
+	ril_request_complete(token, RIL_E_GENERIC_FAILURE, NULL, 0);
+
+complete:
+	if (buffer != NULL)
+		free(buffer);
+}
+
+void ipc_sms_save_msg(struct ipc_message_info *info)
+{
+	struct ipc_sms_save_msg_response_data *sms_save_msg_response_data;
+
+	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_sms_save_msg_response_data))
+		return;
+
+	sms_save_msg_response_data = (struct ipc_sms_save_msg_response_data *) info->data;
+
+	if (sms_save_msg_response_data->error)
+		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
+	else
+		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_SUCCESS, NULL, 0);
+}
+
+void ril_request_delete_sms_on_sim(RIL_Token token, void *data, size_t size)
+{
+	struct ipc_sms_del_msg_request_data sms_del_msg_request_data;
+	int index = 0;
+
+	if (data == NULL || size < sizeof(index))
+		goto error;
+
+	index = *((int *) data);
+
+	if (index <= 0 || index > 0xffff)
+		goto error;
+
+	memset(&sms_del_msg_request_data, 0, sizeof(sms_del_msg_request_data));
+	sms_del_msg_request_data.unknown = 0x02;
+	sms_del_msg_request_data.index = (short) index - 1;
+
+	ipc_gen_phone_res_expect_to_abort(ril_request_get_id(token), IPC_SMS_DEL_MSG);
+
+	ipc_fmt_send(IPC_SMS_DEL_MSG, IPC_TYPE_EXEC, (unsigned char *) &sms_del_msg_request_data, sizeof(sms_del_msg_request_data), ril_request_get_id(token));
+
+	return;
+
+error:
+	ril_request_complete(token, RIL_E_GENERIC_FAILURE, NULL, 0);
+}
+
+void ipc_sms_del_msg(struct ipc_message_info *info)
+{
+	struct ipc_sms_del_msg_response_data *sms_del_msg_response_data;
+
+	if (info == NULL || info->data == NULL || info->length < sizeof(struct ipc_sms_del_msg_response_data))
+		return;
+
+	sms_del_msg_response_data = (struct ipc_sms_del_msg_response_data *) info->data;
+
+	if (sms_del_msg_response_data->error)
+		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
+	else
+		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_SUCCESS, NULL, 0);
 }
 
 /*

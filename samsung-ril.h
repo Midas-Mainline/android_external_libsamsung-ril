@@ -420,6 +420,11 @@ void ipc_sms_incoming_msg(struct ipc_message_info *info);
 void ril_request_sms_acknowledge(RIL_Token t, void *data, size_t length);
 void ipc_sms_deliver_report(struct ipc_message_info *info);
 
+void ril_request_write_sms_to_sim(RIL_Token token, void *data, size_t size);
+void ipc_sms_save_msg(struct ipc_message_info *info);
+void ril_request_delete_sms_on_sim(RIL_Token token, void *data, size_t size);
+void ipc_sms_del_msg(struct ipc_message_info *info);
+
 void ipc_sms_device_ready(struct ipc_message_info *info);
 
 /* Call */

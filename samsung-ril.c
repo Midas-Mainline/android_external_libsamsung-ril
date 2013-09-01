@@ -366,6 +366,12 @@ void ipc_fmt_dispatch(struct ipc_message_info *info)
 		case IPC_SMS_DEVICE_READY:
 			ipc_sms_device_ready(info);
 			break;
+		case IPC_SMS_SAVE_MSG:
+			ipc_sms_save_msg(info);
+			break;
+		case IPC_SMS_DEL_MSG:
+			ipc_sms_del_msg(info);
+			break;
 		/* SVC */
 		case IPC_SVC_DISPLAY_SCREEN:
 			ipc_svc_display_screen(info);
@@ -575,6 +581,12 @@ void ril_on_request(int request, void *data, size_t length, RIL_Token t)
 			break;
 		case RIL_REQUEST_SMS_ACKNOWLEDGE:
 			ril_request_sms_acknowledge(t, data, length);
+			break;
+		case RIL_REQUEST_WRITE_SMS_TO_SIM:
+			ril_request_write_sms_to_sim(t, data, length);
+			break;
+		case RIL_REQUEST_DELETE_SMS_ON_SIM:
+			ril_request_delete_sms_on_sim(t, data, length);
 			break;
 		/* CALL */
 		case RIL_REQUEST_DIAL:
