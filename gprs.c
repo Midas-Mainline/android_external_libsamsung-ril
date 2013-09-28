@@ -372,6 +372,9 @@ void ril_request_setup_data_call(RIL_Token t, void *data, int length)
 	if (data == NULL || length < (int) (4 * sizeof(char *)))
 		goto error;
 
+	if (ril_radio_state_complete(RADIO_STATE_OFF, t))
+		return;
+
 	if (ril_data.ipc_fmt_client == NULL || ril_data.ipc_fmt_client->data == NULL)
 		goto error;
 
@@ -504,6 +507,9 @@ void ril_request_deactivate_data_call(RIL_Token t, void *data, int length)
 
 	if (data == NULL || length < (int) sizeof(char *))
 		goto error;
+
+	if (ril_radio_state_complete(RADIO_STATE_OFF, t))
+		return;
 
 	cid = ((char **) data)[0];
 
@@ -897,6 +903,9 @@ void ril_request_last_data_call_fail_cause(RIL_Token t)
 	int last_failed_cid;
 	int fail_cause;
 
+	if (ril_radio_state_complete(RADIO_STATE_OFF, t))
+		return;
+
 	last_failed_cid = ril_data.state.gprs_last_failed_cid;
 
 	if (!last_failed_cid) {
@@ -1059,5 +1068,8 @@ void ril_unsol_data_call_list_changed(void)
 
 void ril_request_data_call_list(RIL_Token t)
 {
+	if (ril_radio_state_complete(RADIO_STATE_OFF, t))
+		return;
+
 	ipc_fmt_send_get(IPC_GPRS_PDP_CONTEXT, ril_request_get_id(t));
 }

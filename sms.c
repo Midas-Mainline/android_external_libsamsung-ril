@@ -361,6 +361,9 @@ void ril_request_send_sms(RIL_Token t, void *data, size_t length)
 	if (data == NULL || length < (int) (2 * sizeof(char *)))
 		goto error;
 
+	if (ril_radio_state_complete(RADIO_STATE_OFF, t))
+		return;
+
 	pdu = ((char **) data)[1];
 	smsc = ((unsigned char **) data)[0];
 	pdu_length = 0;
@@ -668,6 +671,9 @@ void ril_request_sms_acknowledge(RIL_Token t, void *data, size_t length)
 	if (data == NULL || length < 2 * sizeof(int))
 		goto error;
 
+	if (ril_radio_state_complete(RADIO_STATE_OFF, t))
+		return;
+
 	success = ((int *) data)[0];
 	fail_cause = ((int *) data)[1];
 
@@ -731,6 +737,9 @@ void ril_request_write_sms_to_sim(RIL_Token token, void *data, size_t size)
 
 	if (data == NULL || size < sizeof(RIL_SMS_WriteArgs))
 		goto error;
+
+	if (ril_radio_state_complete(RADIO_STATE_OFF, token))
+		return;
 
 	args = (RIL_SMS_WriteArgs *) data;
 
@@ -807,6 +816,9 @@ void ril_request_delete_sms_on_sim(RIL_Token token, void *data, size_t size)
 
 	if (data == NULL || size < sizeof(index))
 		goto error;
+
+	if (ril_radio_state_complete(RADIO_STATE_OFF, token))
+		return;
 
 	index = *((int *) data);
 

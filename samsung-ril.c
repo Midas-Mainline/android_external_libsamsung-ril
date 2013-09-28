@@ -233,6 +233,52 @@ void ril_request_timed_callback(RIL_TimedCallback callback, void *data, const st
 }
 
 /*
+ * RIL radio state
+ */
+
+int ril_radio_state_complete(RIL_RadioState radio_state, RIL_Token token)
+{
+	RIL_Errno error = RIL_E_SUCCESS;
+
+	// This goes from best case of failure to worst case of failure
+	switch (radio_state) {
+		case RADIO_STATE_SIM_NOT_READY:
+			if (ril_data.state.radio_state == RADIO_STATE_SIM_NOT_READY)
+				error = RIL_E_GENERIC_FAILURE;
+		case RADIO_STATE_SIM_LOCKED_OR_ABSENT:
+			if (ril_data.state.radio_state == RADIO_STATE_SIM_LOCKED_OR_ABSENT)
+				error = RIL_E_GENERIC_FAILURE;
+		case RADIO_STATE_OFF:
+			if (ril_data.state.radio_state == RADIO_STATE_OFF)
+				error = RIL_E_RADIO_NOT_AVAILABLE;
+		case RADIO_STATE_UNAVAILABLE:
+		default:
+			if (ril_data.state.radio_state == RADIO_STATE_UNAVAILABLE)
+				error = RIL_E_RADIO_NOT_AVAILABLE;
+			break;
+	}
+
+	if (error  != RIL_E_SUCCESS) {
+		if (token != RIL_TOKEN_NULL)
+			ril_request_complete(token, error, NULL, 0);
+
+		return 1;
+	}
+
+	return 0;
+}
+
+void ril_radio_state_update(RIL_RadioState radio_state)
+{
+	LOGD("Setting radio state to %d", radio_state);
+	ril_data.state.radio_state = radio_state;
+
+	ril_request_unsolicited(RIL_UNSOL_RESPONSE_RADIO_STATE_CHANGED, NULL, 0);
+
+	ril_tokens_check();
+}
+
+/*
  * RIL tokens
  */
 
@@ -675,6 +721,8 @@ void ril_data_init(void)
 	memset(&ril_data, 0, sizeof(ril_data));
 
 	pthread_mutex_init(&ril_data.mutex, NULL);
+
+	ril_data.state.radio_state = RADIO_STATE_UNAVAILABLE;
 }
 
 /*
@@ -768,14 +816,7 @@ srs:
 	LOGD("SRS client ready");
 
 end:
-	ril_data.state.radio_state = RADIO_STATE_OFF;
-	ril_data.state.power_state = IPC_PWR_PHONE_STATE_LPM;
-
 	RIL_UNLOCK();
-
-	// Wait for power up
-	RIL_START_LOCK();
-	RIL_START_LOCK();
 
 	return &ril_ops;
 }

@@ -56,6 +56,9 @@ void ril_request_send_ussd(RIL_Token t, void *data, size_t length)
 	if (data == NULL || length < (int) sizeof(char *))
 		goto error;
 
+	if (ril_radio_state_complete(RADIO_STATE_OFF, t))
+		return;
+
 	switch (ril_data.state.ussd_state) {
 		case 0:
 		case IPC_SS_USSD_NO_ACTION_REQUIRE:
@@ -139,6 +142,9 @@ error:
 void ril_request_cancel_ussd(RIL_Token t, void *data, size_t length)
 {
 	struct ipc_ss_ussd ussd;
+
+	if (ril_radio_state_complete(RADIO_STATE_OFF, t))
+		return;
 
 	memset(&ussd, 0, sizeof(ussd));
 

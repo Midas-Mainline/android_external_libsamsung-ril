@@ -298,6 +298,9 @@ void ril_request_operator(RIL_Token t)
 	char *response[3];
 	size_t i;
 
+	if (ril_radio_state_complete(RADIO_STATE_OFF, t))
+		return;
+
 	// IPC_NET_REGISTRATION_STATE_ROAMING is the biggest valid value
 	if (ril_data.state.netinfo.reg_state == IPC_NET_REGISTRATION_STATE_NONE ||
 	ril_data.state.netinfo.reg_state == IPC_NET_REGISTRATION_STATE_SEARCHING ||
@@ -454,6 +457,9 @@ void ril_request_registration_state(RIL_Token t)
 	char *response[4];
 	int i;
 
+	if (ril_radio_state_complete(RADIO_STATE_OFF, t))
+		return;
+
 	if (ril_data.tokens.registration_state == RIL_TOKEN_DATA_WAITING) {
 		LOGD("Got RILJ request for UNSOL data");
 
@@ -501,6 +507,9 @@ void ril_request_gprs_registration_state(RIL_Token t)
 	struct ipc_net_regist_get regist_req;
 	char *response[4];
 	size_t i;
+
+	if (ril_radio_state_complete(RADIO_STATE_OFF, t))
+		return;
 
 	if (ril_data.tokens.gprs_registration_state == RIL_TOKEN_DATA_WAITING) {
 		LOGD("Got RILJ request for UNSOL data");
@@ -681,8 +690,7 @@ void ipc_net_regist(struct ipc_message_info *info)
 	if (info == NULL)
 		return;
 
-	/* Don't consider this if modem isn't in normal power mode. */
-	if (ril_data.state.power_state != IPC_PWR_PHONE_STATE_NORMAL)
+	if (ril_radio_state_complete(RADIO_STATE_OFF, RIL_TOKEN_NULL))
 		return;
 
 	switch (info->type) {
@@ -701,6 +709,9 @@ void ipc_net_regist(struct ipc_message_info *info)
 
 void ril_request_query_available_networks(RIL_Token t)
 {
+	if (ril_radio_state_complete(RADIO_STATE_OFF, t))
+		return;
+
 	ipc_fmt_send_get(IPC_NET_PLMN_LIST, ril_request_get_id(t));
 }
 
@@ -772,6 +783,9 @@ error:
 
 void ril_request_get_preferred_network_type(RIL_Token t)
 {
+	if (ril_radio_state_complete(RADIO_STATE_OFF, t))
+		return;
+
 	ipc_fmt_send_get(IPC_NET_MODE_SEL, ril_request_get_id(t));
 }
 
@@ -782,6 +796,9 @@ void ril_request_set_preferred_network_type(RIL_Token t, void *data, size_t leng
 
 	if (data == NULL || length < (int) sizeof(int))
 		goto error;
+
+	if (ril_radio_state_complete(RADIO_STATE_OFF, t))
+		return;
 
 	ril_mode = *((int *) data);
 
@@ -819,6 +836,9 @@ error:
 
 void ril_request_query_network_selection_mode(RIL_Token t)
 {
+	if (ril_radio_state_complete(RADIO_STATE_OFF, t))
+		return;
+
 	ipc_fmt_send_get(IPC_NET_PLMN_SEL, ril_request_get_id(t));
 }
 
@@ -867,6 +887,9 @@ void ril_request_set_network_selection_automatic(RIL_Token t)
 {
 	struct ipc_net_plmn_sel_set plmn_sel;
 
+	if (ril_radio_state_complete(RADIO_STATE_OFF, t))
+		return;
+
 	ipc_net_plmn_sel_set_setup(&plmn_sel, IPC_NET_PLMN_SEL_AUTO, NULL, IPC_NET_ACCESS_TECHNOLOGY_UNKNOWN);
 
 	ipc_gen_phone_res_expect_to_func(ril_request_get_id(t), IPC_NET_PLMN_SEL, ipc_net_plmn_sel_complete);
@@ -879,6 +902,9 @@ void ril_request_set_network_selection_manual(RIL_Token t, void *data, size_t le
 	struct ipc_net_plmn_sel_set plmn_sel;
 
 	if (data == NULL || length < (int) sizeof(char *))
+		return;
+
+	if (ril_radio_state_complete(RADIO_STATE_OFF, t))
 		return;
 
 	// FIXME: We always assume UMTS capability

@@ -53,8 +53,6 @@
 
 #define RIL_LOCK() pthread_mutex_lock(&ril_data.mutex)
 #define RIL_UNLOCK() pthread_mutex_unlock(&ril_data.mutex)
-#define RIL_START_LOCK() pthread_mutex_lock(&ril_data.start_mutex)
-#define RIL_START_UNLOCK() pthread_mutex_unlock(&ril_data.start_mutex)
 #define RIL_CLIENT_LOCK(client) pthread_mutex_lock(&(client->mutex))
 #define RIL_CLIENT_UNLOCK(client) pthread_mutex_unlock(&(client->mutex))
 
@@ -125,6 +123,13 @@ void ril_request_unsolicited(int request, void *data, size_t length);
 void ril_request_timed_callback(RIL_TimedCallback callback, void *data, const struct timeval *time);
 
 /*
+ * RIL radio state
+ */
+
+int ril_radio_state_complete(RIL_RadioState radio_state, RIL_Token token);
+void ril_radio_state_update(RIL_RadioState radio_state);
+
+/*
  * RIL tokens
  */
 
@@ -165,7 +170,6 @@ typedef enum {
 struct ril_state {
 	RIL_RadioState radio_state;
 	ril_sim_state sim_state;
-	int power_state;
 
 	struct ipc_sec_sim_status_response sim_pin_status;
 	struct ipc_sec_sim_icc_type sim_icc_type;
@@ -207,7 +211,6 @@ struct ril_data {
 	struct ril_client *srs_client;
 
 	pthread_mutex_t mutex;
-	pthread_mutex_t start_mutex;
 };
 
 extern struct ril_data ril_data;

@@ -147,6 +147,9 @@ void ril_request_oem_hook_raw(RIL_Token token, void *data, int length)
 	if (data == NULL || length < (int) sizeof(RIL_OEMHookHeader))
 		goto error;
 
+	if (ril_radio_state_complete(RADIO_STATE_OFF, token))
+		return;
+
 	header = (RIL_OEMHookHeader *) data;
 
 	// Only SVC is supported

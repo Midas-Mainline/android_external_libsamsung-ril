@@ -66,7 +66,7 @@ int ipc_fmt_read_loop(struct ril_client *client)
 		rc = ipc_client_poll(ipc_client, NULL);
 		if (rc < 0) {
 			LOGE("IPC FMT client poll failed, aborting");
-			return -1;
+			goto error;
 		}
 
 		memset(&info, 0, sizeof(info));
@@ -75,7 +75,7 @@ int ipc_fmt_read_loop(struct ril_client *client)
 		if (ipc_client_recv(ipc_client, &info) < 0) {
 			RIL_CLIENT_UNLOCK(client);
 			LOGE("IPC FMT recv failed, aborting");
-			return -1;
+			goto error;
 		}
 		RIL_CLIENT_UNLOCK(client);
 
@@ -84,7 +84,16 @@ int ipc_fmt_read_loop(struct ril_client *client)
 		ipc_client_response_free(ipc_client, &info);
 	}
 
-	return 0;
+	rc = 0;
+	goto complete;
+
+error:
+	ril_radio_state_update(RADIO_STATE_UNAVAILABLE);
+
+	rc = -1;
+
+complete:
+	return rc;
 }
 
 int ipc_fmt_create(struct ril_client *client)
@@ -232,7 +241,7 @@ int ipc_rfs_read_loop(struct ril_client *client)
 		rc = ipc_client_poll(ipc_client, NULL);
 		if (rc < 0) {
 			LOGE("IPC RFS client poll failed, aborting");
-			return -1;
+			goto error;
 		}
 
 		memset(&info, 0, sizeof(info));
@@ -241,7 +250,7 @@ int ipc_rfs_read_loop(struct ril_client *client)
 		if (ipc_client_recv(ipc_client, &info) < 0) {
 			RIL_CLIENT_UNLOCK(client);
 			LOGE("IPC RFS recv failed, aborting");
-			return -1;
+			goto error;
 		}
 		RIL_CLIENT_UNLOCK(client);
 
@@ -250,7 +259,16 @@ int ipc_rfs_read_loop(struct ril_client *client)
 		ipc_client_response_free(ipc_client, &info);
 	}
 
-	return 0;
+	rc = 0;
+	goto complete;
+
+error:
+	ril_radio_state_update(RADIO_STATE_UNAVAILABLE);
+
+	rc = -1;
+
+complete:
+	return rc;
 }
 
 int ipc_rfs_create(struct ril_client *client)

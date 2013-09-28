@@ -76,10 +76,6 @@ void ril_state_update(ril_sim_state sim_state)
 {
 	RIL_RadioState radio_state;
 
-	/* If power mode isn't at least normal, don't update RIL state */
-	if (ril_data.state.power_state != IPC_PWR_PHONE_STATE_NORMAL)
-		return;
-
 	ril_data.state.sim_state = sim_state;
 
 	switch (sim_state) {
@@ -108,12 +104,7 @@ void ril_state_update(ril_sim_state sim_state)
 			break;
 	}
 
-	LOGD("Setting radio state to %x", radio_state);
-	ril_data.state.radio_state = radio_state;
-
-	ril_tokens_check();
-
-	ril_request_unsolicited(RIL_UNSOL_RESPONSE_RADIO_STATE_CHANGED, NULL, 0);
+	ril_radio_state_update(radio_state);
 }
 
 #if RIL_VERSION >= 6
@@ -221,8 +212,7 @@ void ipc_sec_sim_status(struct ipc_message_info *info)
 
 	switch (info->type) {
 		case IPC_TYPE_NOTI:
-			// Don't consider this if modem isn't in normal power mode
-			if (ril_data.state.power_state != IPC_PWR_PHONE_STATE_NORMAL)
+			if (ril_radio_state_complete(RADIO_STATE_OFF, RIL_TOKEN_NULL))
 				return;
 
 			LOGD("Got UNSOL PIN status message");
@@ -280,6 +270,9 @@ void ril_request_get_sim_status(RIL_Token t)
 #else
 	RIL_CardStatus card_status;
 #endif
+
+	if (ril_radio_state_complete(RADIO_STATE_OFF, t))
+		return;
 
 	if (ril_data.tokens.pin_status == RIL_TOKEN_DATA_WAITING) {
 		LOGD("Got RILJ request for UNSOL data");
@@ -510,6 +503,9 @@ void ril_request_sim_io(RIL_Token t, void *data, int length)
 
 	if (data == NULL || length < (int) sizeof(*sim_io))
 		goto error;
+
+	if (ril_radio_state_complete(RADIO_STATE_SIM_NOT_READY, t))
+		return;
 
 #if RIL_VERSION >= 6
 	sim_io = (RIL_SIM_IO_v6 *) data;
@@ -768,6 +764,9 @@ void ril_request_enter_sim_pin(RIL_Token t, void *data, size_t length)
 	if (data == NULL || length < (int) sizeof(char *))
 		goto error;
 
+	if (ril_radio_state_complete(RADIO_STATE_OFF, t))
+		return;
+
 	// 1. Send PIN
 	if (strlen(data) > 16) {
 		LOGE("%s: pin exceeds maximum length", __func__);
@@ -802,6 +801,9 @@ void ril_request_change_sim_pin(RIL_Token t, void *data, size_t length)
 
 	if (data == NULL || length < (int) (2 * sizeof(char *)))
 		goto error;
+
+	if (ril_radio_state_complete(RADIO_STATE_SIM_NOT_READY, t))
+		return;
 
 	password_old = ((char **) data)[0];
 	password_new = ((char **) data)[1];
@@ -841,6 +843,9 @@ void ril_request_enter_sim_puk(RIL_Token t, void *data, size_t length)
 
 	if (data == NULL || length < (int) (2 * sizeof(char *)))
 		goto error;
+
+	if (ril_radio_state_complete(RADIO_STATE_OFF, t))
+		return;
 
 	puk = ((char **) data)[0];
 	pin = ((char **) data)[1];
@@ -885,6 +890,9 @@ void ril_request_query_facility_lock(RIL_Token t, void *data, size_t length)
 	if (data == NULL || length < sizeof(char *))
 		goto error;
 
+	if (ril_radio_state_complete(RADIO_STATE_SIM_NOT_READY, t))
+		return;
+
 	facility = ((char **) data)[0];
 
 	if (!strcmp(facility, "SC")) {
@@ -926,6 +934,9 @@ void ril_request_set_facility_lock(RIL_Token t, void *data, size_t length)
 
 	if (data == NULL || length < (int) (4 * sizeof(char *)))
 		goto error;
+
+	if (ril_radio_state_complete(RADIO_STATE_SIM_NOT_READY, t))
+		return;
 
 	facility = ((char **) data)[0];
 	lock = ((char **) data)[1];

@@ -69,6 +69,9 @@ void ril_request_set_mute(RIL_Token t, void *data, int length)
 	if (data == NULL || length < (int) sizeof(int))
 		return;
 
+	if (ril_radio_state_complete(RADIO_STATE_OFF, t))
+		return;
+
 	value = (int *) data;
 	mute = *value ? 1 : 0;
 

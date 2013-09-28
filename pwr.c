@@ -32,16 +32,12 @@
 
 void ipc_pwr_phone_pwr_up(void)
 {
-	ril_data.state.radio_state = RADIO_STATE_OFF;
-	ril_data.state.power_state = IPC_PWR_PHONE_STATE_LPM;
-
-	RIL_START_UNLOCK();
+	ril_radio_state_update(RADIO_STATE_OFF);
 }
 
 void ipc_pwr_phone_reset(void)
 {
-	ril_data.state.radio_state = RADIO_STATE_OFF;
-	ril_request_unsolicited(RIL_UNSOL_RESPONSE_RADIO_STATE_CHANGED, NULL, 0);
+	ril_radio_state_update(RADIO_STATE_OFF);
 }
 
 void ipc_pwr_phone_state(struct ipc_message_info *info)
@@ -62,9 +58,7 @@ void ipc_pwr_phone_state(struct ipc_message_info *info)
 				ril_data.tokens.radio_power = RIL_TOKEN_NULL;
 			}
 
-			ril_data.state.radio_state = RADIO_STATE_OFF;
-			ril_data.state.power_state = IPC_PWR_PHONE_STATE_LPM;
-			ril_request_unsolicited(RIL_UNSOL_RESPONSE_RADIO_STATE_CHANGED, NULL, 0);
+			ril_radio_state_update(RADIO_STATE_OFF);
 			break;
 		case IPC_PWR_R(IPC_PWR_PHONE_STATE_NORMAL):
 			LOGD("Got power to NORMAL");
@@ -74,9 +68,7 @@ void ipc_pwr_phone_state(struct ipc_message_info *info)
 				ril_data.tokens.radio_power = RIL_TOKEN_NULL;
 			}
 
-			ril_data.state.radio_state = RADIO_STATE_SIM_NOT_READY;
-			ril_data.state.power_state = IPC_PWR_PHONE_STATE_NORMAL;
-			ril_request_unsolicited(RIL_UNSOL_RESPONSE_RADIO_STATE_CHANGED, NULL, 0);
+			ril_radio_state_update(RADIO_STATE_SIM_NOT_READY);
 			break;
 	}
 
@@ -89,6 +81,9 @@ void ril_request_radio_power(RIL_Token t, void *data, int length)
 	unsigned short power_data;
 
 	if (data == NULL || length < (int) sizeof(int))
+		return;
+
+	if (ril_radio_state_complete(RADIO_STATE_UNAVAILABLE, t))
 		return;
 
 	power_state = *((int *) data);

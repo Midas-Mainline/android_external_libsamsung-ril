@@ -97,6 +97,9 @@ void ril_request_signal_strength(RIL_Token t)
 {
 	unsigned char request = 1;
 
+	if (ril_radio_state_complete(RADIO_STATE_OFF, t))
+		return;
+
 	ipc_fmt_send(IPC_DISP_ICON_INFO, IPC_TYPE_GET, &request, sizeof(request), ril_request_get_id(t));
 }
 
@@ -112,11 +115,10 @@ void ipc_disp_icon_info(struct ipc_message_info *info)
 	if (info->data == NULL || info->length < sizeof(struct ipc_disp_icon_info))
 		goto error;
 
-	icon_info = (struct ipc_disp_icon_info *) info->data;
-
-	/* Don't consider this if modem isn't in normal power mode. */
-	if (ril_data.state.power_state != IPC_PWR_PHONE_STATE_NORMAL)
+	if (ril_radio_state_complete(RADIO_STATE_OFF, RIL_TOKEN_NULL))
 		return;
+
+	icon_info = (struct ipc_disp_icon_info *) info->data;
 
 	if (info->type == IPC_TYPE_RESP) {
 		ipc2ril_rssi(icon_info->rssi, &ss);
@@ -147,11 +149,10 @@ void ipc_disp_rssi_info(struct ipc_message_info *info)
 	if (info->data == NULL || info->length < sizeof(struct ipc_disp_rssi_info))
 		return;
 
-	rssi_info = (struct ipc_disp_rssi_info *) info->data;
-
-	/* Don't consider this if modem isn't in normal power mode. */
-	if (ril_data.state.power_state != IPC_PWR_PHONE_STATE_NORMAL)
+	if (ril_radio_state_complete(RADIO_STATE_OFF, RIL_TOKEN_NULL))
 		return;
+
+	rssi_info = (struct ipc_disp_rssi_info *) info->data;
 
 	ipc2ril_rssi(rssi_info->rssi, &ss);
 

@@ -34,6 +34,9 @@ void ril_request_get_imei_send(RIL_Token t)
 
 void ril_request_get_imei(RIL_Token t)
 {
+	if (ril_radio_state_complete(RADIO_STATE_OFF, t))
+		return;
+
 	if (ril_data.tokens.get_imei) {
 		LOGD("Another IMEI request is waiting, aborting");
 		ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
@@ -45,11 +48,7 @@ void ril_request_get_imei(RIL_Token t)
 	if (ril_data.tokens.get_imeisv) {
 		LOGD("IMEISV token found: %p", ril_data.tokens.get_imeisv);
 
-		if (ril_data.state.radio_state != RADIO_STATE_OFF) {
-			ril_request_get_imei_send(ril_data.tokens.get_imei);
-		} else {
-			LOGD("Radio is off, waiting");
-		}
+		ril_request_get_imei_send(ril_data.tokens.get_imei);
 	} else {
 		LOGD("Waiting for IMEISV token");
 	}
@@ -57,6 +56,9 @@ void ril_request_get_imei(RIL_Token t)
 
 void ril_request_get_imeisv(RIL_Token t)
 {
+	if (ril_radio_state_complete(RADIO_STATE_OFF, t))
+		return;
+
 	if (ril_data.tokens.get_imeisv) {
 		LOGD("Another IMEISV request is waiting, aborting");
 		ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
@@ -68,11 +70,7 @@ void ril_request_get_imeisv(RIL_Token t)
 	if (ril_data.tokens.get_imei) {
 		LOGD("IMEI token found: %p", ril_data.tokens.get_imei);
 
-		if (ril_data.state.radio_state != RADIO_STATE_OFF) {
-			ril_request_get_imei_send(ril_data.tokens.get_imei);
-		} else {
-			LOGD("Radio is off, waiting");
-		}
+		ril_request_get_imei_send(ril_data.tokens.get_imei);
 	} else {
 		LOGD("Waiting for IMEI token");
 	}
@@ -165,6 +163,9 @@ void ril_request_baseband_version(RIL_Token t)
 {
 	unsigned char data;
 
+	if (ril_radio_state_complete(RADIO_STATE_OFF, t))
+		return;
+
 	if (ril_data.tokens.baseband_version) {
 		LOGD("Another Baseband version request is waiting, aborting");
 		ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
@@ -173,12 +174,9 @@ void ril_request_baseband_version(RIL_Token t)
 
 	ril_data.tokens.baseband_version = t;
 
-	if (ril_data.state.radio_state != RADIO_STATE_OFF) {
-		data = 0xff;
+	data = 0xff;
 
-		ipc_fmt_send(IPC_MISC_ME_VERSION, IPC_TYPE_GET,
-			(unsigned char *) &data, sizeof(data), ril_request_get_id(t));
-	}
+	ipc_fmt_send(IPC_MISC_ME_VERSION, IPC_TYPE_GET, (unsigned char *) &data, sizeof(data), ril_request_get_id(t));
 }
 
 void ipc_misc_me_version(struct ipc_message_info *info)
@@ -215,6 +213,9 @@ error:
 
 void ril_request_get_imsi(RIL_Token t)
 {
+	if (ril_radio_state_complete(RADIO_STATE_OFF, t))
+		return;
+
 	ipc_fmt_send_get(IPC_MISC_ME_IMSI, ril_request_get_id(t));
 }
 
@@ -225,10 +226,6 @@ void ipc_misc_me_imsi(struct ipc_message_info *info)
 
 	if (info->data == NULL || info->length < sizeof(unsigned char))
 		goto error;
-
-	/* Don't consider this if modem isn't in normal power mode. */
-	if (ril_data.state.power_state != IPC_PWR_PHONE_STATE_NORMAL)
-		return;
 
 	imsi_length = *((unsigned char *) info->data);
 
