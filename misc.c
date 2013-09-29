@@ -266,7 +266,7 @@ void ipc_misc_time_info(struct ipc_message_info *info)
 	sprintf(str, "%02u/%02u/%02u,%02u:%02u:%02u%c%02d,%02d",
 		nitz->year, nitz->mon, nitz->day, nitz->hour,
 		nitz->min, nitz->sec, nitz->tz < 0 ? '-' : '+',
-		nitz->tz < 0 ? -nitz->tz : nitz->tz, 0);
+		nitz->tz < 0 ? -nitz->tz : nitz->tz, nitz->dl);
 
 	ril_request_unsolicited(RIL_UNSOL_NITZ_TIME_RECEIVED,
 		str, strlen(str) + 1);
