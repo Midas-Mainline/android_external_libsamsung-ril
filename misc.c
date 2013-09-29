@@ -83,6 +83,9 @@ void ipc_misc_me_sn_imei(struct ipc_message_info *info)
 	char imei[33];
 	char imeisv[3];
 
+	if (info->type != IPC_TYPE_RESP)
+		goto error;
+
 	if (info->data == NULL || info->length < sizeof(struct ipc_misc_me_sn))
 		goto error;
 
@@ -126,18 +129,17 @@ void ipc_misc_me_sn_imei(struct ipc_message_info *info)
 	return;
 
 error:
-	if (info->type == IPC_TYPE_RESP)
-		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
+	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
 void ipc_misc_me_sn(struct ipc_message_info *info)
 {
 	struct ipc_misc_me_sn *me_sn_info;
 
-	if (info->data == NULL || info->length < sizeof(struct ipc_misc_me_sn))
-		goto error;
-
 	if (info->type != IPC_TYPE_RESP)
+		return;
+
+	if (info->data == NULL || info->length < sizeof(struct ipc_misc_me_sn))
 		goto error;
 
 	me_sn_info = (struct ipc_misc_me_sn *) info->data;
@@ -155,8 +157,7 @@ void ipc_misc_me_sn(struct ipc_message_info *info)
 	return;
 
 error:
-	if (info->type == IPC_TYPE_RESP)
-		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
+	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
 void ril_request_baseband_version(RIL_Token t)
@@ -185,10 +186,10 @@ void ipc_misc_me_version(struct ipc_message_info *info)
 	struct ipc_misc_me_version *version;
 	RIL_Token t;
 
-	if (info->data == NULL || info->length < sizeof(struct ipc_misc_me_version))
-		goto error;
-
 	if (info->type != IPC_TYPE_RESP)
+		return;
+
+	if (info->data == NULL || info->length < sizeof(struct ipc_misc_me_version))
 		goto error;
 
 	version = (struct ipc_misc_me_version *) info->data;
@@ -207,8 +208,7 @@ void ipc_misc_me_version(struct ipc_message_info *info)
 	return;
 
 error:
-	if (info->type == IPC_TYPE_RESP)
-		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
+	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
 void ril_request_get_imsi(RIL_Token t)
@@ -223,6 +223,9 @@ void ipc_misc_me_imsi(struct ipc_message_info *info)
 {
 	unsigned char imsi_length;
 	char *imsi;
+
+	if (info->type != IPC_TYPE_RESP)
+		return;
 
 	if (info->data == NULL || info->length < sizeof(unsigned char))
 		goto error;
@@ -247,8 +250,7 @@ void ipc_misc_me_imsi(struct ipc_message_info *info)
 	return;
 
 error:
-	if (info->type == IPC_TYPE_RESP)
-		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
+	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 }
 
 void ipc_misc_time_info(struct ipc_message_info *info)
