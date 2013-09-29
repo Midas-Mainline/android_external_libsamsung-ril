@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <time.h>
 
 #define LOG_TAG "RIL-UTIL"
 #include <utils/Log.h>
@@ -165,7 +166,7 @@ int gsm72ascii(unsigned char *data, char **data_dec, int length)
 /*
  * Converts ASCII (7 bits) data to GSM7 (8 bits)
  */
-int ascii2gsm7(char *data, unsigned char **data_enc, int length)
+int ascii2gsm7_ussd(char *data, unsigned char **data_enc, int length)
 {
 	int d_off, d_pos, a_off, a_pos = 0;
 	int i;
@@ -210,6 +211,50 @@ int ascii2gsm7(char *data, unsigned char **data_enc, int length)
 	enc[enc_length - 1] = 0x02;
 
 	return enc_length;
+}
+
+size_t ascii2gsm7(char *ascii, unsigned char *gsm7)
+{
+	int ascii_length;
+	int gsm7_length;
+	int offset;
+
+	unsigned char *p;
+	int i;
+
+	if (ascii == NULL)
+		return -1;
+
+	ascii_length = strlen(ascii);
+
+	gsm7_length = ((ascii_length * 7) - (ascii_length * 7) % 8) / 8;
+	gsm7_length = (ascii_length * 7) % 8 > 0 ? gsm7_length + 1 : gsm7_length;
+
+	if (gsm7 == NULL)
+		return gsm7_length;
+
+	memset(gsm7, 0, gsm7_length);
+
+	offset = 0;
+	p = gsm7;
+
+	for (i = 0; i < ascii_length; i++) {
+		*p |= ((ascii[i] & 0x7f) >> offset) & 0xff;
+
+		if (offset) {
+			p--;
+			*p |= ((ascii[i] & ((1 << (offset + 1)) - 1)) << (8 - offset)) & 0xff;
+			p++;
+		}
+
+		if (offset < 7)
+			p++;
+
+		offset++;
+		offset %= 8;
+	}
+
+	return gsm7_length;
 }
 
 void hex_dump(void *data, int size)
@@ -335,3 +380,107 @@ SmsCodingScheme sms_get_coding_scheme(int dataCoding)
 	return SMS_CODING_SCHEME_UNKNOWN;
 }
 
+char *pdu_create(char *number, char *message)
+{
+	unsigned char pdu_first[] = { 0x00, 0x04 };
+	unsigned char pdu_toa[] = { 0x91 };
+	unsigned char pdu_tp[] = { 0x00, 0x00 };
+	unsigned char timestamp[7] = { 0 };
+	time_t t;
+	struct tm *tm;
+
+	unsigned char number_length;
+	unsigned char message_length;
+
+	unsigned char *buffer = NULL;
+	char *pdu = NULL;
+	size_t length = 0;
+
+	unsigned char *p;
+	unsigned char a;
+	char c;
+	int i;
+
+	if (number == NULL || message == NULL || strlen(message) > 0xff)
+		return NULL;
+
+	number_length = strlen(number) & 0xff;
+	if (number_length % 2 != 0)
+		number_length++;
+	number_length /= 2;
+
+	message_length = ascii2gsm7(message, NULL) & 0xff;
+
+	length = sizeof(pdu_first) + sizeof(number_length) + sizeof(pdu_toa) + number_length + sizeof(pdu_tp) + sizeof(timestamp) + sizeof(message_length) + message_length;
+	buffer = calloc(1, length);
+
+	p = (unsigned char *) buffer;
+
+	memcpy(p, &pdu_first, sizeof(pdu_first));
+	p += sizeof(pdu_first);
+
+	number_length = strlen(number) & 0xff;
+
+	memcpy(p, &number_length, sizeof(number_length));
+	p += sizeof(number_length);
+	memcpy(p, &pdu_toa, sizeof(pdu_toa));
+	p += sizeof(pdu_toa);
+
+	i = 0;
+	while (i < number_length) {
+		c = number[i++];
+
+		if (isdigit(c))
+			*p = (c - '0') & 0x0f;
+
+		if (i < number_length) {
+			c = number[i++];
+			if (isdigit(c))
+				*p |= ((c - '0') & 0x0f) << 4;
+		} else {
+			*p |= 0xf << 4;
+		}
+
+		p++;
+	}
+
+	memcpy(p, &pdu_tp, sizeof(pdu_tp));
+	p += sizeof(pdu_tp);
+
+	t = time(NULL);
+	tm = localtime(&t);
+
+	a = (tm->tm_year - 100);
+	timestamp[0] = ((a - (a % 10)) / 10) | ((a % 10) * 0x10);
+	a = (tm->tm_mon + 1);
+	timestamp[1] = ((a - (a % 10)) / 10) | ((a % 10) * 0x10);
+	a = tm->tm_mday;
+	timestamp[2] = ((a - (a % 10)) / 10) | ((a % 10) * 0x10);
+	a = tm->tm_hour;
+	timestamp[3] = ((a - (a % 10)) / 10) | ((a % 10) * 0x10);
+	a = tm->tm_min;
+	timestamp[4] = ((a - (a % 10)) / 10) | ((a % 10) * 0x10);
+	a = tm->tm_sec;
+	timestamp[5] = ((a - (a % 10)) / 10) | ((a % 10) * 0x10);
+	a = (unsigned char) (-timezone / 900);
+	timestamp[6] = ((a - (a % 10)) / 10) | ((a % 10) * 0x10);
+
+	memcpy(p, &timestamp, sizeof(timestamp));
+	p += sizeof(timestamp);
+
+	message_length = strlen(message) & 0xff;
+
+	memcpy(p, &message_length, sizeof(message_length));
+	p += sizeof(message_length);
+
+	ascii2gsm7(message, p);
+	p += message_length;
+
+	pdu = (char *) calloc(1, length * 2 + 1);
+
+	bin2hex(buffer, length, pdu);
+
+	free(buffer);
+
+	return pdu;
+}

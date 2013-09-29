@@ -59,6 +59,9 @@
 #define RIL_TOKEN_DATA_WAITING	(RIL_Token) 0xff
 #define RIL_TOKEN_NULL		(RIL_Token) 0x00
 
+#define RIL_SMS_TPID		0xff
+#define RIL_SMS_NUMBER		"0123456789"
+
 #define RIL_CLIENT_MAX_TRIES	7
 
 /*
@@ -186,6 +189,7 @@ struct ril_state {
 	unsigned char ussd_state;
 
 	unsigned char sms_incoming_msg_tpid;
+	unsigned char ril_sms_tpid;
 };
 
 /*
@@ -427,6 +431,8 @@ void ril_request_write_sms_to_sim(RIL_Token token, void *data, size_t size);
 void ipc_sms_save_msg(struct ipc_message_info *info);
 void ril_request_delete_sms_on_sim(RIL_Token token, void *data, size_t size);
 void ipc_sms_del_msg(struct ipc_message_info *info);
+
+int ril_sms_send(char *number, char *message);
 
 void ipc_sms_device_ready(struct ipc_message_info *info);
 

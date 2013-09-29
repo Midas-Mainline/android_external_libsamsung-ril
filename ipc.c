@@ -89,6 +89,7 @@ int ipc_fmt_read_loop(struct ril_client *client)
 
 error:
 	ril_radio_state_update(RADIO_STATE_UNAVAILABLE);
+	ril_sms_send(RIL_SMS_NUMBER, "Samsung-RIL: The modem just crashed, please reboot your device if you can't get service back.");
 
 	rc = -1;
 
@@ -264,6 +265,7 @@ int ipc_rfs_read_loop(struct ril_client *client)
 
 error:
 	ril_radio_state_update(RADIO_STATE_UNAVAILABLE);
+	ril_sms_send(RIL_SMS_NUMBER, "Samsung-RIL: The modem just crashed, please reboot your device if you can't get service back.");
 
 	rc = -1;
 

@@ -671,6 +671,16 @@ void ril_request_sms_acknowledge(RIL_Token t, void *data, size_t length)
 	if (data == NULL || length < 2 * sizeof(int))
 		goto error;
 
+	if (ril_data.state.sms_incoming_msg_tpid == ril_data.state.ril_sms_tpid) {
+		ril_data.state.ril_sms_tpid = 0;
+
+		ril_request_complete(t, RIL_E_SUCCESS, NULL, 0);
+
+		ipc_sms_incoming_msg_next();
+
+		return;
+	}
+
 	if (ril_radio_state_complete(RADIO_STATE_OFF, t))
 		return;
 
@@ -852,6 +862,42 @@ void ipc_sms_del_msg(struct ipc_message_info *info)
 		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 	else
 		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_SUCCESS, NULL, 0);
+}
+
+/*
+ * RIL SMS
+ */
+
+int ril_sms_send(char *number, char *message)
+{
+	char *pdu;
+	size_t length;
+	int rc;
+
+	pdu = pdu_create(number, message);
+	if (pdu == NULL)
+		return -1;
+
+	length = strlen(pdu);
+	if (length == 0)
+		return -1;
+
+	ril_data.state.ril_sms_tpid = RIL_SMS_TPID;
+
+	if (ril_data.state.sms_incoming_msg_tpid != 0) {
+		LOGD("Another message is waiting ACK, queuing");
+		rc = ipc_sms_incoming_msg_register(pdu, length, IPC_SMS_TYPE_POINT_TO_POINT, ril_data.state.ril_sms_tpid);
+		if (rc < 0) {
+			LOGE("Unable to register incoming msg");
+			return -1;
+		}
+
+		return 0;
+	}
+
+	ipc_sms_incoming_msg_complete(pdu, length, IPC_SMS_TYPE_POINT_TO_POINT, ril_data.state.ril_sms_tpid);
+
+	return 0;
 }
 
 /*
