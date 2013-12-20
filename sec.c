@@ -43,7 +43,7 @@ ril_sim_state ipc2ril_sim_state(struct ipc_sec_sim_status_response *pin_status)
 				case IPC_SEC_FACILITY_LOCK_TYPE_SC_CARD_BLOCKED:
 					return SIM_STATE_BLOCKED;
 				default:
-					LOGE("Unknown SIM facility lock: 0x%x", pin_status->facility_lock);
+					RIL_LOGE("Unknown SIM facility lock: 0x%x", pin_status->facility_lock);
 					return SIM_STATE_ABSENT;
 			}
 			break;
@@ -67,7 +67,7 @@ ril_sim_state ipc2ril_sim_state(struct ipc_sec_sim_status_response *pin_status)
 		case IPC_SEC_SIM_STATUS_CARD_ERROR:
 			return SIM_STATE_ABSENT;
 		default:
-			LOGE("Unknown SIM status: 0x%x", pin_status->status);
+			RIL_LOGE("Unknown SIM status: 0x%x", pin_status->status);
 			return SIM_STATE_ABSENT;
 	}
 }
@@ -184,12 +184,12 @@ void ipc2ril_card_status(struct ipc_sec_sim_status_response *pin_status, RIL_Car
 	card_status->cdma_subscription_app_index = (int) sim_state;
 	card_status->num_applications = app_status_array_length;
 
-	LOGD("Selecting application #%d on %d", (int) sim_state, app_status_array_length);
+	RIL_LOGD("Selecting application #%d on %d", (int) sim_state, app_status_array_length);
 }
 
 void ril_tokens_pin_status_dump(void)
 {
-	LOGD("ril_tokens_pin_status_dump:\n\
+	RIL_LOGD("ril_tokens_pin_status_dump:\n\
 	\tril_data.tokens.pin_status = %p\n", ril_data.tokens.pin_status);
 }
 
@@ -215,10 +215,10 @@ void ipc_sec_sim_status(struct ipc_message_info *info)
 			if (ril_radio_state_complete(RADIO_STATE_OFF, RIL_TOKEN_NULL))
 				return;
 
-			LOGD("Got UNSOL PIN status message");
+			RIL_LOGD("Got UNSOL PIN status message");
 
 			if (ril_data.tokens.pin_status != RIL_TOKEN_NULL && ril_data.tokens.pin_status != RIL_TOKEN_DATA_WAITING) {
-				LOGE("Another PIN status Req is in progress, skipping");
+				RIL_LOGE("Another PIN status Req is in progress, skipping");
 				return;
 			}
 
@@ -231,10 +231,10 @@ void ipc_sec_sim_status(struct ipc_message_info *info)
 			ril_request_unsolicited(RIL_UNSOL_RESPONSE_SIM_STATUS_CHANGED, NULL, 0);
 			break;
 		case IPC_TYPE_RESP:
-			LOGD("Got SOL PIN status message");
+			RIL_LOGD("Got SOL PIN status message");
 
 			if (ril_data.tokens.pin_status != t)
-				LOGE("PIN status tokens mismatch");
+				RIL_LOGE("PIN status tokens mismatch");
 
 			sim_state = ipc2ril_sim_state(pin_status);
 			ril_state_update(sim_state);
@@ -249,7 +249,7 @@ void ipc_sec_sim_status(struct ipc_message_info *info)
 				ril_data.tokens.pin_status = RIL_TOKEN_NULL;
 			break;
 		default:
-			LOGE("%s: unhandled ipc method: %d", __func__, info->type);
+			RIL_LOGE("%s: unhandled ipc method: %d", __func__, info->type);
 			break;
 	}
 
@@ -275,7 +275,7 @@ void ril_request_get_sim_status(RIL_Token t)
 		return;
 
 	if (ril_data.tokens.pin_status == RIL_TOKEN_DATA_WAITING) {
-		LOGD("Got RILJ request for UNSOL data");
+		RIL_LOGD("Got RILJ request for UNSOL data");
 		hex_dump(&(ril_data.state.sim_pin_status), sizeof(struct ipc_sec_sim_status_response));
 		pin_status = &(ril_data.state.sim_pin_status);
 
@@ -285,14 +285,14 @@ void ril_request_get_sim_status(RIL_Token t)
 
 		ril_data.tokens.pin_status = RIL_TOKEN_NULL;
 	} else if (ril_data.tokens.pin_status == RIL_TOKEN_NULL) {
-		LOGD("Got RILJ request for SOL data");
+		RIL_LOGD("Got RILJ request for SOL data");
 
 		/* Request data to the modem */
 		ril_data.tokens.pin_status = t;
 
 		ipc_fmt_send_get(IPC_SEC_SIM_STATUS, ril_request_get_id(t));
 	} else {
-		LOGE("Another request is going on, returning UNSOL data");
+		RIL_LOGE("Another request is going on, returning UNSOL data");
 
 		pin_status = &(ril_data.state.sim_pin_status);
 
@@ -526,7 +526,7 @@ void ril_request_sim_io(RIL_Token t, void *data, int length)
 		sim_io->p1, sim_io->p2, sim_io->p3, sim_io_data, sim_io_data_length,
 		&sim_io_info);
 	if (rc < 0 || sim_io_info == NULL) {
-		LOGE("Unable to add the request to the list");
+		RIL_LOGE("Unable to add the request to the list");
 
 		ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 		if (sim_io_data != NULL)
@@ -537,7 +537,7 @@ void ril_request_sim_io(RIL_Token t, void *data, int length)
 	}
 
 	if (ril_data.tokens.sim_io != RIL_TOKEN_NULL) {
-		LOGD("Another SIM I/O is being processed, adding to the list");
+		RIL_LOGD("Another SIM I/O is being processed, adding to the list");
 		return;
 	}
 
@@ -576,7 +576,7 @@ void ipc_sec_rsim_access(struct ipc_message_info *info)
 
 	sim_io_info = ril_request_sim_io_info_find_token(ril_request_get_token(info->aseq));
 	if (sim_io_info == NULL) {
-		LOGE("Unable to find SIM I/O in the list!");
+		RIL_LOGE("Unable to find SIM I/O in the list!");
 
 		// Send the next SIM I/O in the list
 		ril_request_sim_io_next();
@@ -687,7 +687,7 @@ void ipc_sec_rsim_access(struct ipc_message_info *info)
 	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_SUCCESS, &sim_io_response, sizeof(sim_io_response));
 
 	if (sim_io_response.simResponse != NULL) {
-		LOGD("SIM response: %s", sim_io_response.simResponse);
+		RIL_LOGD("SIM response: %s", sim_io_response.simResponse);
 		free(sim_io_response.simResponse);
 	}
 
@@ -713,17 +713,17 @@ void ipc_sec_sim_status_complete(struct ipc_message_info *info)
 	rc = ipc_gen_phone_res_check(phone_res);
 	if (rc < 0) {
 		if ((phone_res->code & 0x00ff) == 0x10) {
-			LOGE("Wrong password!");
+			RIL_LOGE("Wrong password!");
 			ril_request_complete(ril_request_get_token(info->aseq), RIL_E_PASSWORD_INCORRECT, &attempts, sizeof(attempts));
 		} else if ((phone_res->code & 0x00ff) == 0x0c) {
-			LOGE("Wrong password and no attempts left!");
+			RIL_LOGE("Wrong password and no attempts left!");
 
 			attempts = 0;
 			ril_request_complete(ril_request_get_token(info->aseq), RIL_E_PASSWORD_INCORRECT, &attempts, sizeof(attempts));
 
 			ril_request_unsolicited(RIL_UNSOL_RESPONSE_SIM_STATUS_CHANGED, NULL, 0);
 		} else {
-			LOGE("There was an error during pin status complete!");
+			RIL_LOGE("There was an error during pin status complete!");
 			ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 		}
 		return;
@@ -749,9 +749,9 @@ void ipc_sec_lock_info(struct ipc_message_info *info)
 
 	if (lock_info->type == IPC_SEC_PIN_TYPE_PIN1) {
 		attempts = lock_info->attempts;
-		LOGD("%s: PIN1 %d attempts left", __func__, attempts);
+		RIL_LOGD("%s: PIN1 %d attempts left", __func__, attempts);
 	} else {
-		LOGE("%s: unhandled lock type %d", __func__, lock_info->type);
+		RIL_LOGE("%s: unhandled lock type %d", __func__, lock_info->type);
 	}
 }
 
@@ -769,7 +769,7 @@ void ril_request_enter_sim_pin(RIL_Token t, void *data, size_t length)
 
 	// 1. Send PIN
 	if (strlen(data) > 16) {
-		LOGE("%s: pin exceeds maximum length", __func__);
+		RIL_LOGE("%s: pin exceeds maximum length", __func__);
 		ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 	}
 
@@ -908,7 +908,7 @@ void ril_request_query_facility_lock(RIL_Token t, void *data, size_t length)
 	} else if (!strcmp(facility, "PC")) {
 		lock_request.facility = IPC_SEC_FACILITY_TYPE_PC;
 	} else {
-		LOGE("%s: unsupported facility: %s", __func__, facility);
+		RIL_LOGE("%s: unsupported facility: %s", __func__, facility);
 		ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 	}
 
@@ -958,7 +958,7 @@ void ril_request_set_facility_lock(RIL_Token t, void *data, size_t length)
 	} else if (!strcmp(facility, "PC")) {
 		lock_request.type = IPC_SEC_SIM_STATUS_LOCK_PC;
 	} else {
-		LOGE("%s: unsupported facility: %s", __func__, facility);
+		RIL_LOGE("%s: unsupported facility: %s", __func__, facility);
 		ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 	}
 

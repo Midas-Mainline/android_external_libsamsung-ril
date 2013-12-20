@@ -46,13 +46,13 @@ void ipc_rfs_nv_read_item(struct ipc_message_info *info)
 	rfs_io_conf = calloc(1, rfs_io->length + sizeof(struct ipc_rfs_io_confirm));
 	rfs_data = rfs_io_conf + sizeof(struct ipc_rfs_io_confirm);
 
-	LOGD("Asked to read 0x%x bytes at offset 0x%x", rfs_io->length, rfs_io->offset);
+	RIL_LOGD("Asked to read 0x%x bytes at offset 0x%x", rfs_io->length, rfs_io->offset);
 	rc = nv_data_read(ipc_client, rfs_io->offset, rfs_io->length, rfs_data);
 
-	LOGD("Read rfs_data dump:");
+	RIL_LOGD("Read rfs_data dump:");
 	hex_dump(rfs_data, rfs_io->length > 0x100 ? 0x100 : rfs_io->length);
 
-	LOGD("Sending RFS IO Confirm message (rc is %d)", rc);
+	RIL_LOGD("Sending RFS IO Confirm message (rc is %d)", rc);
 	rfs_io_conf->confirm = rc < 0 ? 0 : 1;
 	rfs_io_conf->offset = rfs_io->offset;
 	rfs_io_conf->length = rfs_io->length;
@@ -85,13 +85,13 @@ void ipc_rfs_nv_write_item(struct ipc_message_info *info)
 	memset(&rfs_io_conf, 0, sizeof(rfs_io_conf));
 	rfs_data = info->data + sizeof(struct ipc_rfs_io);
 
-	LOGD("Write rfs_data dump:");
+	RIL_LOGD("Write rfs_data dump:");
 	hex_dump(rfs_data, rfs_io->length > 0x100 ? 0x100 : rfs_io->length);
 
-	LOGD("Asked to write 0x%x bytes at offset 0x%x", rfs_io->length, rfs_io->offset);
+	RIL_LOGD("Asked to write 0x%x bytes at offset 0x%x", rfs_io->length, rfs_io->offset);
 	rc = nv_data_write(ipc_client, rfs_io->offset, rfs_io->length, rfs_data);
 
-	LOGD("Sending RFS IO Confirm message (rc is %d)", rc);
+	RIL_LOGD("Sending RFS IO Confirm message (rc is %d)", rc);
 	rfs_io_conf.confirm = rc < 0 ? 0 : 1;
 	rfs_io_conf.offset = rfs_io->offset;
 	rfs_io_conf.length = rfs_io->length;

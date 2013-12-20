@@ -32,7 +32,7 @@ void ipc_ss_ussd_complete(struct ipc_message_info *info)
 
 	rc = ipc_gen_phone_res_check(phone_res);
 	if (rc < 0) {
-		LOGE("There was an error, aborting USSD request");
+		RIL_LOGE("There was an error, aborting USSD request");
 
 		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 		ril_data.state.ussd_state = 0;
@@ -66,11 +66,11 @@ void ril_request_send_ussd(RIL_Token t, void *data, size_t length)
 		case IPC_SS_USSD_OTHER_CLIENT:
 		case IPC_SS_USSD_NOT_SUPPORT:
 		case IPC_SS_USSD_TIME_OUT:
-			LOGD("USSD Tx encoding is GSM7");
+			RIL_LOGD("USSD Tx encoding is GSM7");
 
 			data_enc_len = ascii2gsm7_ussd(data, (unsigned char**)&data_enc, length);
 			if (data_enc_len > message_size) {
-				LOGE("USSD message size is too long, aborting");
+				RIL_LOGE("USSD message size is too long, aborting");
 				ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 
 				free(data_enc);
@@ -93,12 +93,12 @@ void ril_request_send_ussd(RIL_Token t, void *data, size_t length)
 			break;
 		case IPC_SS_USSD_ACTION_REQUIRE:
 		default:
-			LOGD("USSD Tx encoding is ASCII");
+			RIL_LOGD("USSD Tx encoding is ASCII");
 
 			data_enc_len = asprintf(&data_enc, "%s", (char*)data);
 
 			if (data_enc_len > message_size) {
-				LOGE("USSD message size is too long, aborting");
+				RIL_LOGE("USSD message size is too long, aborting");
 				ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 
 				free(data_enc);
@@ -122,7 +122,7 @@ void ril_request_send_ussd(RIL_Token t, void *data, size_t length)
 	}
 
 	if (message == NULL) {
-		LOGE("USSD message is empty, aborting");
+		RIL_LOGE("USSD message is empty, aborting");
 
 		ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 		return;
@@ -209,7 +209,7 @@ void ipc_ss_ussd(struct ipc_message_info *info)
 		codingScheme = sms_get_coding_scheme(ussd->dcs);
 		switch (codingScheme) {
 			case SMS_CODING_SCHEME_GSM7:
-				LOGD("USSD Rx encoding is GSM7");
+				RIL_LOGD("USSD Rx encoding is GSM7");
 
 				data_dec_len = gsm72ascii(info->data
 					+ sizeof(struct ipc_ss_ussd), &data_dec, info->length - sizeof(struct ipc_ss_ussd));
@@ -218,7 +218,7 @@ void ipc_ss_ussd(struct ipc_message_info *info)
 
 				break;
 			case SMS_CODING_SCHEME_UCS2:
-				LOGD("USSD Rx encoding %x is UCS2", ussd->dcs);
+				RIL_LOGD("USSD Rx encoding %x is UCS2", ussd->dcs);
 
 				data_dec_len = info->length - sizeof(struct ipc_ss_ussd);
 				message[1] = malloc(data_dec_len * 4 + 1);
@@ -232,7 +232,7 @@ void ipc_ss_ussd(struct ipc_message_info *info)
 				message[1][result] = '\0';
 				break;
 			default:
-				LOGD("USSD Rx encoding %x is unknown, assuming ASCII",
+				RIL_LOGD("USSD Rx encoding %x is unknown, assuming ASCII",
 					ussd->dcs);
 
 				data_dec_len = info->length - sizeof(struct ipc_ss_ussd);

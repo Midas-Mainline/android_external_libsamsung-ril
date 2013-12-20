@@ -158,18 +158,18 @@ void ipc_gen_phone_res(struct ipc_message_info *info)
 	expect = ipc_gen_phone_res_expect_info_find_aseq(info->aseq);
 
 	if (expect == NULL) {
-		LOGD("aseq: 0x%x not found in the IPC_GEN_PHONE_RES queue", info->aseq);
+		RIL_LOGD("aseq: 0x%x not found in the IPC_GEN_PHONE_RES queue", info->aseq);
 		return;
 	}
 
-	LOGD("aseq: 0x%x found in the IPC_GEN_PHONE_RES queue!", info->aseq);
+	RIL_LOGD("aseq: 0x%x found in the IPC_GEN_PHONE_RES queue!", info->aseq);
 
 	if (expect->command != IPC_COMMAND(phone_res)) {
-		LOGE("IPC_GEN_PHONE_RES aseq (0x%x) doesn't match the queued one with command (0x%x)", 
+		RIL_LOGE("IPC_GEN_PHONE_RES aseq (0x%x) doesn't match the queued one with command (0x%x)", 
 			expect->aseq, expect->command);
 
 		if (expect->func != NULL) {
-			LOGE("Not safe to run the custom function, reporting generic failure");
+			RIL_LOGE("Not safe to run the custom function, reporting generic failure");
 			ril_request_complete(ril_request_get_token(expect->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 			goto unregister;
 		}

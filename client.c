@@ -63,11 +63,11 @@ int ril_client_create(struct ril_client *client)
 		return -1;
 
 	for (c = RIL_CLIENT_MAX_TRIES ; c > 0 ; c--) {
-		LOGD("Creating RIL client inners, try #%d", RIL_CLIENT_MAX_TRIES - c + 1);
+		RIL_LOGD("Creating RIL client inners, try #%d", RIL_CLIENT_MAX_TRIES - c + 1);
 
 		rc = client->funcs.create(client);
 		if (rc < 0)
-			LOGE("RIL client inners creation failed");
+			RIL_LOGE("RIL client inners creation failed");
 		else
 			break;
 
@@ -75,7 +75,7 @@ int ril_client_create(struct ril_client *client)
 	}
 
 	if (c == 0) {
-		LOGE("RIL client inners creation failed too many times");
+		RIL_LOGE("RIL client inners creation failed too many times");
 		client->state = RIL_CLIENT_ERROR;
 		return -1;
 	}
@@ -94,11 +94,11 @@ int ril_client_destroy(struct ril_client *client)
 		return -1;
 
 	for (c = RIL_CLIENT_MAX_TRIES ; c > 0 ; c--) {
-		LOGD("Destroying RIL client inners, try #%d", RIL_CLIENT_MAX_TRIES - c + 1);
+		RIL_LOGD("Destroying RIL client inners, try #%d", RIL_CLIENT_MAX_TRIES - c + 1);
 
 		rc = client->funcs.destroy(client);
 		if (rc < 0)
-			LOGE("RIL client inners destroying failed");
+			RIL_LOGE("RIL client inners destroying failed");
 		else
 			break;
 
@@ -106,7 +106,7 @@ int ril_client_destroy(struct ril_client *client)
 	}
 
 	if (c == 0) {
-		LOGE("RIL client inners destroying failed too many times");
+		RIL_LOGE("RIL client inners destroying failed too many times");
 		client->state = RIL_CLIENT_ERROR;
 		return -1;
 	}
@@ -137,7 +137,7 @@ void *ril_client_thread(void *data)
 		if (rc < 0) {
 			client->state = RIL_CLIENT_ERROR;
 
-			LOGE("RIL client read loop failed");
+			RIL_LOGE("RIL client read loop failed");
 
 			ril_client_destroy(client);
 			ril_client_create(client);
@@ -146,13 +146,13 @@ void *ril_client_thread(void *data)
 		} else {
 			client->state = RIL_CLIENT_CREATED;
 
-			LOGD("RIL client read loop ended");
+			RIL_LOGD("RIL client read loop ended");
 			break;
 		}
 	}
 
 	if (c == 0) {
-		LOGE("RIL client read loop failed too many times");
+		RIL_LOGE("RIL client read loop failed too many times");
 		client->state = RIL_CLIENT_ERROR;
 	}
 
@@ -160,11 +160,11 @@ void *ril_client_thread(void *data)
 
 	rc = ril_client_destroy(client);
 	if (rc < 0)
-		LOGE("RIL client destroy failed");
+		RIL_LOGE("RIL client destroy failed");
 
 	rc = ril_client_free(client);
 	if (rc < 0)
-		LOGE("RIL client free failed");
+		RIL_LOGE("RIL client free failed");
 
 	return 0;
 }
@@ -180,7 +180,7 @@ int ril_client_thread_start(struct ril_client *client)
 	rc = pthread_create(&(client->thread), &attr, ril_client_thread, (void *) client);
 
 	if (rc != 0) {
-		LOGE("RIL client thread creation failed");
+		RIL_LOGE("RIL client thread creation failed");
 		return -1;
 	}
 

@@ -37,16 +37,22 @@
  * Defines
  */
 
-#ifndef LOGE
-	#define LOGE ALOGE
+#ifdef ALOGI
+#define RIL_LOGI ALOGI
+#else
+#define RIL_LOGI LOGI
 #endif
 
-#ifndef LOGI
-	#define LOGI ALOGI
+#ifdef ALOGD
+#define RIL_LOGD ALOGD
+#else
+#define RIL_LOGD LOGD
 #endif
 
-#ifndef LOGD
-	#define LOGD ALOGD
+#ifdef ALOGE
+#define RIL_LOGE ALOGE
+#else
+#define RIL_LOGE LOGE
 #endif
 
 #define RIL_VERSION_STRING "Samsung RIL"

@@ -29,7 +29,7 @@
 
 void ipc_log_handler(void *log_data, const char *message)
 {
-	LOGD("ipc: %s", message);
+	RIL_LOGD("ipc: %s", message);
 }
 
 /*
@@ -65,7 +65,7 @@ int ipc_fmt_read_loop(struct ril_client *client)
 	while (1) {
 		rc = ipc_client_poll(ipc_client, NULL);
 		if (rc < 0) {
-			LOGE("IPC FMT client poll failed, aborting");
+			RIL_LOGE("IPC FMT client poll failed, aborting");
 			goto error;
 		}
 
@@ -74,7 +74,7 @@ int ipc_fmt_read_loop(struct ril_client *client)
 		RIL_CLIENT_LOCK(client);
 		if (ipc_client_recv(ipc_client, &info) < 0) {
 			RIL_CLIENT_UNLOCK(client);
-			LOGE("IPC FMT recv failed, aborting");
+			RIL_LOGE("IPC FMT recv failed, aborting");
 			goto error;
 		}
 		RIL_CLIENT_UNLOCK(client);
@@ -106,57 +106,57 @@ int ipc_fmt_create(struct ril_client *client)
 	if (client == NULL)
 		return -EINVAL;
 
-	LOGD("Creating new FMT client");
+	RIL_LOGD("Creating new FMT client");
 
 	ipc_client = ipc_client_create(IPC_CLIENT_TYPE_FMT);
 	if (ipc_client == NULL) {
-		LOGE("FMT client creation failed");
+		RIL_LOGE("FMT client creation failed");
 		goto error_client_create;
 	}
 
 	client->data = (void *) ipc_client;
 
-	LOGD("Setting log handler");
+	RIL_LOGD("Setting log handler");
 
 	rc = ipc_client_set_log_callback(ipc_client, ipc_log_handler, NULL);
 	if (rc < 0) {
-		LOGE("Setting log handler failed");
+		RIL_LOGE("Setting log handler failed");
 		goto error_log_callback;
 	}
 
-	LOGD("Creating data");
+	RIL_LOGD("Creating data");
 
 	rc = ipc_client_data_create(ipc_client);
 	if (rc < 0) {
-		LOGE("Creating data failed");
+		RIL_LOGE("Creating data failed");
 		goto error_data_create;
 	}
 
-	LOGD("Starting bootstrap");
+	RIL_LOGD("Starting bootstrap");
 
 	rc = ipc_client_bootstrap(ipc_client);
 	if (rc < 0) {
-		LOGE("Modem bootstrap failed");
+		RIL_LOGE("Modem bootstrap failed");
 		goto error_bootstrap;
 	}
 
-	LOGD("Client power on...");
+	RIL_LOGD("Client power on...");
 
 	rc = ipc_client_power_on(ipc_client);
 	if (rc < 0) {
-		LOGE("%s: failed to power on ipc client", __func__);
+		RIL_LOGE("%s: failed to power on ipc client", __func__);
 		goto error_power_on;
 	}
 
-	LOGD("Client open...");
+	RIL_LOGD("Client open...");
 
 	rc = ipc_client_open(ipc_client);
 	if (rc < 0) {
-		LOGE("%s: failed to open ipc client", __func__);
+		RIL_LOGE("%s: failed to open ipc client", __func__);
 		goto error_open;
 	}
 
-	LOGD("IPC FMT client done");
+	RIL_LOGD("IPC FMT client done");
 
 	return 0;
 
@@ -188,13 +188,13 @@ int ipc_fmt_destroy(struct ril_client *client)
 	int rc;
 
 	if (client == NULL || client->data == NULL) {
-		LOGE("Client was already destroyed");
+		RIL_LOGE("Client was already destroyed");
 		return 0;
 	}
 
 	ipc_client = (struct ipc_client *) client->data;
 
-	LOGD("Destroying ipc fmt client");
+	RIL_LOGD("Destroying ipc fmt client");
 
 	if (ipc_client != NULL) {
 		ipc_client_power_off(ipc_client);
@@ -241,7 +241,7 @@ int ipc_rfs_read_loop(struct ril_client *client)
 	while (1) {
 		rc = ipc_client_poll(ipc_client, NULL);
 		if (rc < 0) {
-			LOGE("IPC RFS client poll failed, aborting");
+			RIL_LOGE("IPC RFS client poll failed, aborting");
 			goto error;
 		}
 
@@ -250,7 +250,7 @@ int ipc_rfs_read_loop(struct ril_client *client)
 		RIL_CLIENT_LOCK(client);
 		if (ipc_client_recv(ipc_client, &info) < 0) {
 			RIL_CLIENT_UNLOCK(client);
-			LOGE("IPC RFS recv failed, aborting");
+			RIL_LOGE("IPC RFS recv failed, aborting");
 			goto error;
 		}
 		RIL_CLIENT_UNLOCK(client);
@@ -282,41 +282,41 @@ int ipc_rfs_create(struct ril_client *client)
 	if (client == NULL)
 		return -EINVAL;
 
-	LOGD("Creating new RFS client");
+	RIL_LOGD("Creating new RFS client");
 
 	ipc_client = ipc_client_create(IPC_CLIENT_TYPE_RFS);
 	if (ipc_client == NULL) {
-		LOGE("RFS client creation failed");
+		RIL_LOGE("RFS client creation failed");
 		goto error_client_create;
 	}
 
 	client->data = (void *) ipc_client;
 
-	LOGD("Setting log handler");
+	RIL_LOGD("Setting log handler");
 
 	rc = ipc_client_set_log_callback(ipc_client, ipc_log_handler, NULL);
 	if (rc < 0) {
-		LOGE("Setting log handler failed");
+		RIL_LOGE("Setting log handler failed");
 		goto error_log_callback;
 	}
 
-	LOGD("Creating data");
+	RIL_LOGD("Creating data");
 
 	rc = ipc_client_data_create(ipc_client);
 	if (rc < 0) {
-		LOGE("Creating data failed");
+		RIL_LOGE("Creating data failed");
 		goto error_data_create;
 	}
 
-	LOGD("Client open...");
+	RIL_LOGD("Client open...");
 
 	rc = ipc_client_open(ipc_client);
 	if (rc < 0) {
-		LOGE("%s: failed to open ipc client", __func__);
+		RIL_LOGE("%s: failed to open ipc client", __func__);
 		goto error_open;
 	}
 
-	LOGD("IPC RFS client done");
+	RIL_LOGD("IPC RFS client done");
 
 	return 0;
 
@@ -345,13 +345,13 @@ int ipc_rfs_destroy(struct ril_client *client)
 	int rc;
 
 	if (client == NULL || client->data == NULL) {
-		LOGE("Client was already destroyed");
+		RIL_LOGE("Client was already destroyed");
 		return 0;
 	}
 
 	ipc_client = (struct ipc_client *) client->data;
 
-	LOGD("Destroying ipc rfs client");
+	RIL_LOGD("Destroying ipc rfs client");
 
 	if (ipc_client != NULL) {
 		ipc_client_close(ipc_client);

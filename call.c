@@ -33,7 +33,7 @@ unsigned char ril2ipc_call_identity(int clir)
 		case 2:
 			return IPC_CALL_IDENTITY_HIDE;
 		default:
-			LOGE("Unknown call identity: 0x%x", clir);
+			RIL_LOGE("Unknown call identity: 0x%x", clir);
 			return IPC_CALL_IDENTITY_DEFAULT;
 	}
 }
@@ -54,7 +54,7 @@ unsigned char ipc2ril_call_list_entry_state(unsigned char call_state)
 		case IPC_CALL_LIST_ENTRY_STATE_WAITING:
 			return RIL_CALL_WAITING;
 		default:
-			LOGE("Unknown call list entry state: 0x%x", call_state);
+			RIL_LOGE("Unknown call list entry state: 0x%x", call_state);
 			return -1;
 	}
 }
@@ -67,7 +67,7 @@ RIL_LastCallFailCause ipc2ril_call_fail_cause(unsigned char end_cause)
 			return CALL_FAIL_NORMAL;
 		case IPC_CALL_END_CAUSE_UNSPECIFIED:
 		default:
-			LOGE("Unknown call fail cause: 0x%x", end_cause);
+			RIL_LOGE("Unknown call fail cause: 0x%x", end_cause);
 			return CALL_FAIL_ERROR_UNSPECIFIED;
 	}
 }
@@ -88,7 +88,7 @@ void ipc_call_status(struct ipc_message_info *info)
 
 	call_status = (struct ipc_call_status *) info->data;
 
-	LOGD("Updating call status data");
+	RIL_LOGD("Updating call status data");
 	memcpy(&(ril_data.state.call_status), call_status, sizeof(struct ipc_call_status));
 
 	ril_request_unsolicited(RIL_UNSOL_RESPONSE_CALL_STATE_CHANGED, NULL, 0);
@@ -259,7 +259,7 @@ void ril_request_dtmf(RIL_Token t, void *data, int length)
 	count = 1;
 
 	if (ril_data.state.dtmf_tone != 0) {
-		LOGD("Another tone wasn't stopped, stopping it before anything");
+		RIL_LOGD("Another tone wasn't stopped, stopping it before anything");
 
 		cont_dtmf.state = IPC_CALL_DTMF_STATE_STOP;
 		cont_dtmf.tone = 0;
@@ -305,7 +305,7 @@ void ipc_call_burst_dtmf(struct ipc_message_info *info)
 
 	// This apparently should return 1, or perhaps that is the DTMF tones count
 	if (code == 0) {
-		LOGD("Apparently, something went wrong with DTMF burst (code=0x%x)", code);
+		RIL_LOGD("Apparently, something went wrong with DTMF burst (code=0x%x)", code);
 		goto error;
 	}
 
@@ -329,7 +329,7 @@ void ril_request_dtmf_start(RIL_Token t, void *data, int length)
 	tone = *((unsigned char *) data);
 
 	if (ril_data.state.dtmf_tone != 0) {
-		LOGD("Another tone wasn't stopped, stopping it before anything");
+		RIL_LOGD("Another tone wasn't stopped, stopping it before anything");
 
 		cont_dtmf.state = IPC_CALL_DTMF_STATE_STOP;
 		cont_dtmf.tone = 0;

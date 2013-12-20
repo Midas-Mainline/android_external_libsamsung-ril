@@ -270,7 +270,7 @@ int ril_radio_state_complete(RIL_RadioState radio_state, RIL_Token token)
 
 void ril_radio_state_update(RIL_RadioState radio_state)
 {
-	LOGD("Setting radio state to %d", radio_state);
+	RIL_LOGD("Setting radio state to %d", radio_state);
 	ril_data.state.radio_state = radio_state;
 
 	ril_request_unsolicited(RIL_UNSOL_RESPONSE_RADIO_STATE_CHANGED, NULL, 0);
@@ -446,7 +446,7 @@ void ipc_fmt_dispatch(struct ipc_message_info *info)
 			ipc_gprs_pdp_context(info);
 			break;
 		default:
-			LOGE("%s: Unhandled request: %s (%04x)", __func__, ipc_command_to_str(IPC_COMMAND(info)), IPC_COMMAND(info));
+			RIL_LOGE("%s: Unhandled request: %s (%04x)", __func__, ipc_command_to_str(IPC_COMMAND(info)), IPC_COMMAND(info));
 			break;
 	}
 
@@ -468,7 +468,7 @@ void ipc_rfs_dispatch(struct ipc_message_info *info)
 			ipc_rfs_nv_write_item(info);
 			break;
 		default:
-			LOGE("%s: Unhandled request: %s (%04x)", __func__, ipc_command_to_str(IPC_COMMAND(info)), IPC_COMMAND(info));
+			RIL_LOGE("%s: Unhandled request: %s (%04x)", __func__, ipc_command_to_str(IPC_COMMAND(info)), IPC_COMMAND(info));
 			break;
 	}
 
@@ -496,7 +496,7 @@ void srs_dispatch(struct srs_message *message)
 			srs_snd_set_call_audio_path(message);
 			break;
 		default:
-			LOGE("%s: Unhandled request: (%04x)", __func__, message->command);
+			RIL_LOGE("%s: Unhandled request: (%04x)", __func__, message->command);
 			break;
 	}
 
@@ -684,7 +684,7 @@ void ril_on_request(int request, void *data, size_t length, RIL_Token t)
 			ril_request_complete(t, RIL_E_SUCCESS, NULL, 0);
 			break;
 		default:
-			LOGE("%s: Unhandled request: %d", __func__, request);
+			RIL_LOGE("%s: Unhandled request: %d", __func__, request);
 			ril_request_complete(t, RIL_E_REQUEST_NOT_SUPPORTED, NULL, 0);
 			break;
 	}
@@ -753,67 +753,67 @@ const RIL_RadioFunctions *RIL_Init(const struct RIL_Env *env, int argc, char **a
 
 	RIL_LOCK();
 
-	LOGD("Creating IPC FMT client");
+	RIL_LOGD("Creating IPC FMT client");
 
 	ipc_fmt_client = ril_client_new(&ipc_fmt_client_funcs);
 	rc = ril_client_create(ipc_fmt_client);
 
 	if (rc < 0) {
-		LOGE("IPC FMT client creation failed.");
+		RIL_LOGE("IPC FMT client creation failed.");
 		goto ipc_rfs;
 	}
 
 	rc = ril_client_thread_start(ipc_fmt_client);
 
 	if (rc < 0) {
-		LOGE("IPC FMT thread creation failed.");
+		RIL_LOGE("IPC FMT thread creation failed.");
 		goto ipc_rfs;
 	}
 
 	ril_data.ipc_fmt_client = ipc_fmt_client;
-	LOGD("IPC FMT client ready");
+	RIL_LOGD("IPC FMT client ready");
 
 ipc_rfs:
-	LOGD("Creating IPC RFS client");
+	RIL_LOGD("Creating IPC RFS client");
 
 	ipc_rfs_client = ril_client_new(&ipc_rfs_client_funcs);
 	rc = ril_client_create(ipc_rfs_client);
 
 	if (rc < 0) {
-		LOGE("IPC RFS client creation failed.");
+		RIL_LOGE("IPC RFS client creation failed.");
 		goto srs;
 	}
 
 	rc = ril_client_thread_start(ipc_rfs_client);
 
 	if (rc < 0) {
-		LOGE("IPC RFS thread creation failed.");
+		RIL_LOGE("IPC RFS thread creation failed.");
 		goto srs;
 	}
 
 	ril_data.ipc_rfs_client = ipc_rfs_client;
-	LOGD("IPC RFS client ready");
+	RIL_LOGD("IPC RFS client ready");
 
 srs:
-	LOGD("Creating SRS client");
+	RIL_LOGD("Creating SRS client");
 
 	srs_client = ril_client_new(&srs_client_funcs);
 	rc = ril_client_create(srs_client);
 
 	if (rc < 0) {
-		LOGE("SRS client creation failed.");
+		RIL_LOGE("SRS client creation failed.");
 		goto end;
 	}
 
 	rc = ril_client_thread_start(srs_client);
 
 	if (rc < 0) {
-		LOGE("SRS thread creation failed.");
+		RIL_LOGE("SRS thread creation failed.");
 		goto end;
 	}
 
 	ril_data.srs_client = srs_client;
-	LOGD("SRS client ready");
+	RIL_LOGD("SRS client ready");
 
 end:
 	RIL_UNLOCK();

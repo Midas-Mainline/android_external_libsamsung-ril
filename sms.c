@@ -207,7 +207,7 @@ void ril_request_send_sms_next(void)
 	ril_request_send_sms_unregister(send_sms);
 
 	if (pdu == NULL) {
-		LOGE("SMS send request has no valid PDU");
+		RIL_LOGE("SMS send request has no valid PDU");
 		if (smsc != NULL)
 			free(smsc);
 		return;
@@ -216,11 +216,11 @@ void ril_request_send_sms_next(void)
 	ril_data.tokens.outgoing_sms = t;
 	if (smsc == NULL) {
 		// We first need to get SMS SVC before sending the message
-		LOGD("We have no SMSC, let's ask one");
+		RIL_LOGD("We have no SMSC, let's ask one");
 
 		rc = ril_request_send_sms_register(pdu, pdu_length, NULL, 0, t);
 		if (rc < 0) {
-			LOGE("Unable to add the request to the list");
+			RIL_LOGE("Unable to add the request to the list");
 
 			ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
 			if (pdu != NULL)
@@ -256,7 +256,7 @@ void ril_request_send_sms_complete(RIL_Token t, char *pdu, int pdu_length, unsig
 		goto error;
 
 	if ((pdu_length / 2 + smsc_length) > 0xfe) {
-		LOGE("PDU or SMSC too large, aborting");
+		RIL_LOGE("PDU or SMSC too large, aborting");
 		goto error;
 	}
 
@@ -266,7 +266,7 @@ void ril_request_send_sms_complete(RIL_Token t, char *pdu, int pdu_length, unsig
 	// Length of the final message
 	length = sizeof(send_msg) + pdu_hex_length + smsc_length;
 
-	LOGD("Sending SMS message (length: 0x%x)!", length);
+	RIL_LOGD("Sending SMS message (length: 0x%x)!", length);
 
 	pdu_hex = calloc(1, pdu_hex_length);
 	hex2bin(pdu, pdu_length, pdu_hex);
@@ -277,27 +277,27 @@ void ril_request_send_sms_complete(RIL_Token t, char *pdu, int pdu_length, unsig
 	unsigned char pdu_tp_da_len = pdu_hex[pdu_tp_da_index];
 
 	if (pdu_tp_da_len > 0xff / 2) {
-		LOGE("PDU TP-DA Len failed (0x%x)\n", pdu_tp_da_len);
+		RIL_LOGE("PDU TP-DA Len failed (0x%x)\n", pdu_tp_da_len);
 		goto pdu_end;
 	}
 
-	LOGD("PDU TP-DA Len is 0x%x\n", pdu_tp_da_len);
+	RIL_LOGD("PDU TP-DA Len is 0x%x\n", pdu_tp_da_len);
 
 	int pdu_tp_udh_index = pdu_tp_da_index + pdu_tp_da_len;
 	unsigned char pdu_tp_udh_len = pdu_hex[pdu_tp_udh_index];
 
 	if (pdu_tp_udh_len > 0xff / 2 || pdu_tp_udh_len < 5) {
-		LOGE("PDU TP-UDH Len failed (0x%x)\n", pdu_tp_udh_len);
+		RIL_LOGE("PDU TP-UDH Len failed (0x%x)\n", pdu_tp_udh_len);
 		goto pdu_end;
 	}
 
-	LOGD("PDU TP-UDH Len is 0x%x\n", pdu_tp_udh_len);
+	RIL_LOGD("PDU TP-UDH Len is 0x%x\n", pdu_tp_udh_len);
 
 	int pdu_tp_udh_num_index = pdu_tp_udh_index + 4;
 	unsigned char pdu_tp_udh_num = pdu_hex[pdu_tp_udh_num_index];
 
 	if (pdu_tp_udh_num > 0xf) {
-		LOGE("PDU TP-UDH Num failed (0x%x)\n", pdu_tp_udh_num);
+		RIL_LOGE("PDU TP-UDH Num failed (0x%x)\n", pdu_tp_udh_num);
 		goto pdu_end;
 	}
 
@@ -305,14 +305,14 @@ void ril_request_send_sms_complete(RIL_Token t, char *pdu, int pdu_length, unsig
 	unsigned char pdu_tp_udh_seq = pdu_hex[pdu_tp_udh_seq_index];
 
 	if (pdu_tp_udh_seq > 0xf || pdu_tp_udh_seq > pdu_tp_udh_num) {
-		LOGE("PDU TP-UDH Seq failed (0x%x)\n", pdu_tp_udh_seq);
+		RIL_LOGE("PDU TP-UDH Seq failed (0x%x)\n", pdu_tp_udh_seq);
 		goto pdu_end;
 	}
 
-	LOGD("We are sending message %d on %d\n", pdu_tp_udh_seq, pdu_tp_udh_num);
+	RIL_LOGD("We are sending message %d on %d\n", pdu_tp_udh_seq, pdu_tp_udh_num);
 
 	if (pdu_tp_udh_num > 1) {
-		LOGD("We are sending a multi-part message!");
+		RIL_LOGD("We are sending a multi-part message!");
 		send_msg_type = IPC_SMS_MSG_MULTIPLE;
 	}
 
@@ -379,11 +379,11 @@ void ril_request_send_sms(RIL_Token t, void *data, size_t length)
 	}
 
 	if (ril_data.tokens.outgoing_sms != RIL_TOKEN_NULL) {
-		LOGD("Another outgoing SMS is being processed, adding to the list");
+		RIL_LOGD("Another outgoing SMS is being processed, adding to the list");
 
 		rc = ril_request_send_sms_register(pdu, pdu_length, smsc, smsc_length, t);
 		if (rc < 0) {
-			LOGE("Unable to add the request to the list");
+			RIL_LOGE("Unable to add the request to the list");
 			goto error;
 		}
 
@@ -393,11 +393,11 @@ void ril_request_send_sms(RIL_Token t, void *data, size_t length)
 	ril_data.tokens.outgoing_sms = t;
 	if (smsc == NULL) {
 		// We first need to get SMS SVC before sending the message
-		LOGD("We have no SMSC, let's ask one");
+		RIL_LOGD("We have no SMSC, let's ask one");
 
 		rc = ril_request_send_sms_register(pdu, pdu_length, NULL, 0, t);
 		if (rc < 0) {
-			LOGE("Unable to add the request to the list");
+			RIL_LOGE("Unable to add the request to the list");
 			goto error;
 		}
 
@@ -444,7 +444,7 @@ void ipc_sms_svc_center_addr(struct ipc_message_info *info)
 
 	send_sms = ril_request_send_sms_info_find_token(ril_request_get_token(info->aseq));
 	if (send_sms == NULL || send_sms->pdu == NULL || send_sms->pdu_length <= 0) {
-		LOGE("The request wasn't queued, reporting generic error!");
+		RIL_LOGE("The request wasn't queued, reporting generic error!");
 
 		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 		ril_request_send_sms_info_clear(send_sms);
@@ -461,7 +461,7 @@ void ipc_sms_svc_center_addr(struct ipc_message_info *info)
 	smsc = (unsigned char *) info->data + sizeof(unsigned char);
 	smsc_length = (int) ((unsigned char *) info->data)[0];
 
-	LOGD("Got SMSC, completing the request");
+	RIL_LOGD("Got SMSC, completing the request");
 	ril_request_send_sms_unregister(send_sms);
 	ril_request_send_sms_complete(t, pdu, pdu_length, smsc, smsc_length);
 	if (pdu != NULL)
@@ -480,7 +480,7 @@ void ipc_sms_send_msg_complete(struct ipc_message_info *info)
 
 	phone_res = (struct ipc_gen_phone_res *) info->data;
 	if (ipc_gen_phone_res_check(phone_res) < 0) {
-		LOGE("IPC_GEN_PHONE_RES indicates error, abort request to RILJ");
+		RIL_LOGE("IPC_GEN_PHONE_RES indicates error, abort request to RILJ");
 
 		ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
 		// Send the next SMS in the list
@@ -499,7 +499,7 @@ void ipc_sms_send_msg(struct ipc_message_info *info)
 
 	report_msg = (struct ipc_sms_send_msg_response *) info->data;
 
-	LOGD("Got ACK for msg_tpid #%d\n", report_msg->msg_tpid);
+	RIL_LOGD("Got ACK for msg_tpid #%d\n", report_msg->msg_tpid);
 
 	memset(&response, 0, sizeof(response));
 	response.messageRef = report_msg->msg_tpid;
@@ -620,7 +620,7 @@ void ipc_sms_incoming_msg_complete(char *pdu, int length, unsigned char type, un
 	} else if (type == IPC_SMS_TYPE_STATUS_REPORT) {
 		ril_request_unsolicited(RIL_UNSOL_RESPONSE_NEW_SMS_STATUS_REPORT, pdu, length);
 	} else {
-		LOGE("Unhandled message type: %x", type);
+		RIL_LOGE("Unhandled message type: %x", type);
 	}
 
 	free(pdu);
@@ -646,10 +646,10 @@ void ipc_sms_incoming_msg(struct ipc_message_info *info)
 	bin2hex(pdu_hex, msg->length, pdu);
 
 	if (ril_data.state.sms_incoming_msg_tpid != 0) {
-		LOGD("Another message is waiting ACK, queuing");
+		RIL_LOGD("Another message is waiting ACK, queuing");
 		rc = ipc_sms_incoming_msg_register(pdu, length, msg->type, msg->msg_tpid);
 		if (rc < 0)
-			LOGE("Unable to register incoming msg");
+			RIL_LOGE("Unable to register incoming msg");
 
 		return;
 	}
@@ -688,7 +688,7 @@ void ril_request_sms_acknowledge(RIL_Token t, void *data, size_t length)
 	fail_cause = ((int *) data)[1];
 
 	if (ril_data.state.sms_incoming_msg_tpid == 0) {
-		LOGE("There is no SMS message to ACK!");
+		RIL_LOGE("There is no SMS message to ACK!");
 		goto error;
 	}
 
@@ -885,10 +885,10 @@ int ril_sms_send(char *number, char *message)
 	ril_data.state.ril_sms_tpid = RIL_SMS_TPID;
 
 	if (ril_data.state.sms_incoming_msg_tpid != 0) {
-		LOGD("Another message is waiting ACK, queuing");
+		RIL_LOGD("Another message is waiting ACK, queuing");
 		rc = ipc_sms_incoming_msg_register(pdu, length, IPC_SMS_TYPE_POINT_TO_POINT, ril_data.state.ril_sms_tpid);
 		if (rc < 0) {
-			LOGE("Unable to register incoming msg");
+			RIL_LOGE("Unable to register incoming msg");
 			return -1;
 		}
 

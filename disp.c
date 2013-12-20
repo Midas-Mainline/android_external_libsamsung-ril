@@ -46,7 +46,7 @@ void ipc2ril_rssi(unsigned char rssi, RIL_SignalStrength *ss)
 			asu = 31;
 	}
 
-	LOGD("Signal Strength is %d\n", asu);
+	RIL_LOGD("Signal Strength is %d\n", asu);
 
 #if RIL_VERSION >= 6
 	memset(ss, 0, sizeof(RIL_SignalStrength_v6));
@@ -80,7 +80,7 @@ void ipc2ril_bars(unsigned char bars, RIL_SignalStrength *ss)
 		default	: asu = bars;	break;
 	}
 
-	LOGD("Signal Strength is %d\n", asu);
+	RIL_LOGD("Signal Strength is %d\n", asu);
 
 #if RIL_VERSION >= 6
 	memset(ss, 0, sizeof(RIL_SignalStrength_v6));

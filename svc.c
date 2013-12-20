@@ -26,7 +26,7 @@
 int ril_oem_hook_svc_session_start(void)
 {
 	if (ril_data.oem_hook_svc_session != NULL) {
-		LOGE("OEM hook SVC session was already started");
+		RIL_LOGE("OEM hook SVC session was already started");
 		return -1;
 	}
 
@@ -38,7 +38,7 @@ int ril_oem_hook_svc_session_start(void)
 void ril_oem_hook_svc_session_stop(void)
 {
 	if (ril_data.oem_hook_svc_session == NULL) {
-		LOGE("OEM hook SVC session was already stopped");
+		RIL_LOGE("OEM hook SVC session was already stopped");
 		return;
 	}
 
@@ -120,7 +120,7 @@ void ipc_svc_callback(struct ipc_message_info *info)
 		goto error;
 
 	if (ril_data.oem_hook_svc_session->token != RIL_TOKEN_NULL) {
-		LOGE("%s: Another token is waiting", __func__);
+		RIL_LOGE("%s: Another token is waiting", __func__);
 		goto error;
 	}
 
@@ -176,7 +176,7 @@ void ril_request_oem_hook_raw(RIL_Token token, void *data, int length)
 			} else {
 				rc = ril_oem_hook_svc_session_start();
 				if (rc < 0) {
-					LOGE("%s: Unable to start OEM hook SVC session", __func__);
+					RIL_LOGE("%s: Unable to start OEM hook SVC session", __func__);
 					goto error;
 				}
 
