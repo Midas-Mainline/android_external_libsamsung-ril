@@ -1,7 +1,7 @@
 /*
  * This file is part of Samsung-RIL.
  *
- * Copyright (C) 2011-2013 Paul Kocialkowski <contact@paulk.fr>
+ * Copyright (C) 2011-2014 Paul Kocialkowski <contact@paulk.fr>
  *
  * Samsung-RIL is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,70 +17,51 @@
  * along with Samsung-RIL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdlib.h>
 #include <pthread.h>
 
 #define LOG_TAG "RIL"
 #include <utils/Log.h>
 
-#include "samsung-ril.h"
+#include <samsung-ril.h>
 
-struct ril_client *ril_client_new(struct ril_client_funcs *client_funcs)
+struct ril_client *ril_client_find_id(int id)
 {
-	struct ril_client *ril_client;
-	int rc;
+	unsigned int i;
 
-	ril_client = calloc(1, sizeof(struct ril_client));
+	if (ril_clients == NULL || ril_clients_count == 0)
+		return NULL;
 
-	if (client_funcs != NULL) {
-		ril_client->funcs.create = client_funcs->create;
-		ril_client->funcs.destroy = client_funcs->destroy;
-		ril_client->funcs.read_loop = client_funcs->read_loop;
+	for (i = 0; i < ril_clients_count; i++) {
+		if (ril_clients[i] == NULL)
+			continue;
+
+		if (ril_clients[i]->id == id)
+			return ril_clients[i];
 	}
 
-	pthread_mutex_init(&(ril_client->mutex), NULL);
-
-	return ril_client;
-}
-
-int ril_client_free(struct ril_client *client)
-{
-	if (client == NULL)
-		return -1;
-
-	pthread_mutex_destroy(&(client->mutex));
-
-	free(client);
-
-	return 0;
+	return NULL;
 }
 
 int ril_client_create(struct ril_client *client)
 {
 	int rc;
-	int c;
 
-	if (client == NULL || client->funcs.create == NULL)
+	if (client == NULL)
 		return -1;
 
-	for (c = RIL_CLIENT_MAX_TRIES ; c > 0 ; c--) {
-		RIL_LOGD("Creating RIL client inners, try #%d", RIL_CLIENT_MAX_TRIES - c + 1);
+	client->data = NULL;
+	pthread_mutex_init(&client->mutex, NULL);
 
-		rc = client->funcs.create(client);
-		if (rc < 0)
-			RIL_LOGE("RIL client inners creation failed");
-		else
-			break;
-
-		usleep(500000);
+	if (client->handlers != NULL && client->handlers->create != NULL) {
+		rc = client->handlers->create(client);
+		if (rc < 0) {
+			RIL_LOGE("Creating %s client failed", client->name);
+			return -1;
+		}
 	}
 
-	if (c == 0) {
-		RIL_LOGE("RIL client inners creation failed too many times");
-		client->state = RIL_CLIENT_ERROR;
-		return -1;
-	}
-
-	client->state = RIL_CLIENT_CREATED;
+	RIL_LOGD("Created %s client", client->name);
 
 	return 0;
 }
@@ -88,30 +69,63 @@ int ril_client_create(struct ril_client *client)
 int ril_client_destroy(struct ril_client *client)
 {
 	int rc;
-	int c;
 
-	if (client == NULL || client->funcs.destroy == NULL)
+	if (client == NULL)
 		return -1;
 
-	for (c = RIL_CLIENT_MAX_TRIES ; c > 0 ; c--) {
-		RIL_LOGD("Destroying RIL client inners, try #%d", RIL_CLIENT_MAX_TRIES - c + 1);
-
-		rc = client->funcs.destroy(client);
-		if (rc < 0)
-			RIL_LOGE("RIL client inners destroying failed");
-		else
-			break;
-
-		usleep(500000);
+	if (client->handlers != NULL && client->handlers->destroy != NULL) {
+		rc = client->handlers->destroy(client);
+		if (rc < 0) {
+			RIL_LOGE("Destroying %s client failed", client->name);
+			return -1;
+		}
 	}
 
-	if (c == 0) {
-		RIL_LOGE("RIL client inners destroying failed too many times");
-		client->state = RIL_CLIENT_ERROR;
+	pthread_mutex_destroy(&client->mutex);
+
+	RIL_LOGD("Destroyed %s client", client->name);
+
+	return 0;
+}
+
+int ril_client_open(struct ril_client *client)
+{
+	int rc = 0;
+
+	if (client == NULL)
+		return -1;
+
+	if (client->handlers == NULL || client->handlers->open == NULL)
+		return -1;
+
+	rc = client->handlers->open(client);
+	if (rc < 0) {
+		RIL_LOGE("Opening %s client failed", client->name);
 		return -1;
 	}
 
-	client->state = RIL_CLIENT_DESTROYED;
+	RIL_LOGD("Opened %s client", client->name);
+
+	return 0;
+}
+
+int ril_client_close(struct ril_client *client)
+{
+	int rc;
+
+	if (client == NULL)
+		return -1;
+
+	if (client->handlers == NULL || client->handlers->close == NULL)
+		return -1;
+
+	rc = client->handlers->close(client);
+	if (rc < 0) {
+		RIL_LOGE("Closing %s client failed", client->name);
+		return -1;
+	}
+
+	RIL_LOGD("Closed %s client", client->name);
 
 	return 0;
 }
@@ -120,69 +134,130 @@ void *ril_client_thread(void *data)
 {
 	struct ril_client *client;
 	int rc;
-	int c;
 
-	if (data == NULL)
+	if (data == NULL || ril_data == NULL)
 		return NULL;
 
 	client = (struct ril_client *) data;
 
-	if (client->funcs.read_loop == NULL)
-		return NULL;
+	client->failures = 0;
 
-	for (c = RIL_CLIENT_MAX_TRIES ; c > 0 ; c--) {
-		client->state = RIL_CLIENT_READY;
+	do {
+		if (client->failures) {
+			usleep(RIL_CLIENT_RETRY_DELAY);
 
-		rc = client->funcs.read_loop(client);
+			rc = ril_client_close(client);
+			if (rc < 0)
+				goto failure;
+
+			if (client->failures > 1) {
+				rc = ril_client_destroy(client);
+				if (rc < 0)
+					goto failure;
+
+				rc = ril_client_create(client);
+				if (rc < 0)
+					goto failure;
+			}
+
+			rc = ril_client_open(client);
+			if (rc < 0)
+				goto failure;
+		}
+
+		rc = client->handlers->loop(client);
 		if (rc < 0) {
-			client->state = RIL_CLIENT_ERROR;
+			RIL_LOGE("%s client loop failed", client->name);
 
-			RIL_LOGE("RIL client read loop failed");
+			if (client->critical) {
+				RIL_LOCK();
+				ril_radio_state_update(RADIO_STATE_UNAVAILABLE);
+				RIL_UNLOCK();
+			}
 
-			ril_client_destroy(client);
-			ril_client_create(client);
-
-			continue;
+			goto failure;
 		} else {
-			client->state = RIL_CLIENT_CREATED;
-
-			RIL_LOGD("RIL client read loop ended");
+			RIL_LOGE("%s client loop terminated", client->name);
 			break;
 		}
-	}
 
-	if (c == 0) {
-		RIL_LOGE("RIL client read loop failed too many times");
-		client->state = RIL_CLIENT_ERROR;
-	}
+failure:
+		client->failures++;
+	} while (client->failures < RIL_CLIENT_RETRY_COUNT);
 
-	// Destroy everything here
+	ril_client_close(client);
+	ril_client_destroy(client);
 
-	rc = ril_client_destroy(client);
-	if (rc < 0)
-		RIL_LOGE("RIL client destroy failed");
+	RIL_LOGD("Stopped %s client loop", client->name);
 
-	rc = ril_client_free(client);
-	if (rc < 0)
-		RIL_LOGE("RIL client free failed");
-
-	return 0;
+	return NULL;
 }
 
-int ril_client_thread_start(struct ril_client *client)
+int ril_client_loop(struct ril_client *client)
 {
 	pthread_attr_t attr;
 	int rc;
 
+	if (client == NULL)
+		return -1;
+
+	if (client->handlers == NULL || client->handlers->loop == NULL)
+		return -1;
+
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
-	rc = pthread_create(&(client->thread), &attr, ril_client_thread, (void *) client);
-
+	rc = pthread_create(&client->thread, &attr, ril_client_thread, (void *) client);
 	if (rc != 0) {
-		RIL_LOGE("RIL client thread creation failed");
+		RIL_LOGE("Starting %s client loop failed", client->name);
 		return -1;
 	}
+
+	RIL_LOGD("Started %s client loop", client->name);
+
+	return 0;
+}
+
+int ril_client_request_register(struct ril_client *client, int request,
+	RIL_Token token)
+{
+	int rc = 0;
+
+	if (client == NULL || client->callbacks == NULL || client->callbacks->request_register == NULL)
+		return -1;
+
+	rc = client->callbacks->request_register(client, request, token);
+	if (rc < 0)
+		return -1;
+
+	return 0;
+}
+
+int ril_client_request_unregister(struct ril_client *client, int request,
+	RIL_Token token)
+{
+	int rc = 0;
+
+	if (client == NULL || client->callbacks == NULL || client->callbacks->request_unregister == NULL)
+		return -1;
+
+	rc = client->callbacks->request_unregister(client, request, token);
+	if (rc < 0)
+		return -1;
+
+	return 0;
+}
+
+int ril_client_flush(struct ril_client *client)
+{
+	int rc = 0;
+
+	if (client == NULL || client->callbacks == NULL || client->callbacks->flush == NULL)
+		return -1;
+
+	rc = client->callbacks->flush(client);
+	if (rc < 0)
+		return -1;
 
 	return 0;
 }

@@ -1,7 +1,7 @@
 /*
  * This file is part of Samsung-RIL.
  *
- * Copyright (C) 2011-2013 Paul Kocialkowski <contact@paulk.fr>
+ * Copyright (C) 2011-2014 Paul Kocialkowski <contact@paulk.fr>
  *
  * Samsung-RIL is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,178 +17,263 @@
  * along with Samsung-RIL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define LOG_TAG "RIL-GEN"
+#include <stdlib.h>
+
+#define LOG_TAG "RIL"
 #include <utils/Log.h>
 
-#include "samsung-ril.h"
-#include "util.h"
+#include <samsung-ril.h>
+#include <utils.h>
 
-/*
- * IPC_GEN_PHONE_RES has shared aseq (in the header), group, index and type (in the data)
- * with the original request it responds to. 
- * On this implementation, we just check aseq and command (group and index).
- * aseq permits to identify the queued request and do what's wanted.
- * It can be either call a function with the struct ipc_message_info,
- * complete the request to RILJ (with or without an error),
- * return to RILJ if there is an error in this response.
- * 
- * It would have been possible to deal with group, index and type only and use 
- * callback functions. Though, what is currently being used is more a "standard"
- * error catch system, that requires less code (no particular function), while
- * it also permits using custom functions, when IPC_GEN_PHONE_RES code is 
- * request-specific.
- * 
- * On a custom function, don't forget to get a clean new aseq if you're going to 
- * send some data to the modem, just liek this:
- * aseq = ril_request_reg_id(ril_request_get_token(info->aseq));
- *
- * Please use the GEN_PHONE_RES engine as often as possible!
- */
-
-/*
- * GEN expects functions
- */
-
-int ipc_gen_phone_res_expect_register(unsigned char aseq, unsigned short command,
-	void (*func)(struct ipc_message_info *info), int complete, int abort)
+int ipc_gen_phone_res_expect_register(struct ril_client *client,
+	unsigned char aseq, unsigned short command,
+	int (*callback)(struct ipc_message *message),
+	int complete, int abort)
 {
-	struct ipc_gen_phone_res_expect_info *expect;
+	struct ipc_gen_phone_res_expect *expect;
+	struct ipc_fmt_data *data;
 	struct list_head *list_end;
 	struct list_head *list;
 
-	expect = calloc(1, sizeof(struct ipc_gen_phone_res_expect_info));
-	if (expect == NULL)
+	if (client == NULL || client->data == NULL)
 		return -1;
 
+	data = (struct ipc_fmt_data *) client->data;
+
+	RIL_CLIENT_LOCK(client);
+
+	expect = calloc(1, sizeof(struct ipc_gen_phone_res_expect));
 	expect->aseq = aseq;
 	expect->command = command;
-	expect->func = func;
+	expect->callback = callback;
 	expect->complete = complete;
 	expect->abort = abort;
 
-	list_end = ril_data.generic_responses;
+	list_end = data->gen_phone_res_expect;
 	while (list_end != NULL && list_end->next != NULL)
 		list_end = list_end->next;
 
-	list = list_head_alloc((void *) expect, list_end, NULL);
+	list = list_head_alloc(list_end, NULL, (void *) expect);
 
-	if (ril_data.generic_responses == NULL)
-		ril_data.generic_responses = list;
+	if (data->gen_phone_res_expect == NULL)
+		data->gen_phone_res_expect = list;
+
+	RIL_CLIENT_UNLOCK(client);
 
 	return 0;
 }
 
-void ipc_gen_phone_res_expect_unregister(struct ipc_gen_phone_res_expect_info *expect)
+int ipc_gen_phone_res_expect_unregister(struct ril_client *client,
+	struct ipc_gen_phone_res_expect *expect)
 {
+	struct ipc_fmt_data *data;
 	struct list_head *list;
 
-	if (expect == NULL)
-		return;
+	if (client == NULL || client->data == NULL)
+		return -1;
 
-	list = ril_data.generic_responses;
+	data = (struct ipc_fmt_data *) client->data;
+
+	RIL_CLIENT_LOCK(client);
+
+	list = data->gen_phone_res_expect;
 	while (list != NULL) {
 		if (list->data == (void *) expect) {
-			memset(expect, 0, sizeof(struct ipc_gen_phone_res_expect_info));
+			memset(expect, 0, sizeof(struct ipc_gen_phone_res_expect));
 			free(expect);
 
-			if (list == ril_data.generic_responses)
-				ril_data.generic_responses = list->next;
+			if (list == data->gen_phone_res_expect)
+				data->gen_phone_res_expect = list->next;
 
 			list_head_free(list);
 
 			break;
 		}
+
 list_continue:
 		list = list->next;
 	}
+
+	RIL_CLIENT_UNLOCK(client);
+
+	return 0;
 }
 
-struct ipc_gen_phone_res_expect_info *ipc_gen_phone_res_expect_info_find_aseq(unsigned char aseq)
+int ipc_gen_phone_res_expect_flush(struct ril_client *client)
 {
-	struct ipc_gen_phone_res_expect_info *expect;
+	struct ipc_gen_phone_res_expect *expect;
+	struct ipc_fmt_data *data;
+	struct list_head *list;
+	struct list_head *list_next;
+
+	if (client == NULL || client->data == NULL)
+		return -1;
+
+	data = (struct ipc_fmt_data *) client->data;
+
+	RIL_CLIENT_LOCK(client);
+
+	list = data->gen_phone_res_expect;
+	while (list != NULL) {
+		if (list->data != NULL) {
+			expect = (struct ipc_gen_phone_res_expect *) list->data;
+			memset(expect, 0, sizeof(struct ipc_gen_phone_res_expect));
+			free(expect);
+		}
+
+		if (list == data->gen_phone_res_expect)
+			data->gen_phone_res_expect = list->next;
+
+		list_next = list->next;
+
+		list_head_free(list);
+
+list_continue:
+		list = list_next;
+	}
+
+	RIL_CLIENT_UNLOCK(client);
+
+	return 0;
+}
+
+struct ipc_gen_phone_res_expect *ipc_gen_phone_res_expect_find_aseq(struct ril_client *client,
+	unsigned char aseq)
+{
+	struct ipc_gen_phone_res_expect *expect;
+	struct ipc_fmt_data *data;
 	struct list_head *list;
 
-	list = ril_data.generic_responses;
+	if (client == NULL || client->data == NULL)
+		return NULL;
+
+	data = (struct ipc_fmt_data *) client->data;
+
+	RIL_CLIENT_LOCK(client);
+
+	list = data->gen_phone_res_expect;
 	while (list != NULL) {
-		expect = (struct ipc_gen_phone_res_expect_info *) list->data;
-		if (expect == NULL)
+		if (list->data == NULL)
 			goto list_continue;
 
-		if (expect->aseq == aseq)
+		expect = (struct ipc_gen_phone_res_expect *) list->data;
+
+		if (expect->aseq == aseq) {
+			RIL_CLIENT_UNLOCK(client);
 			return expect;
+		}
 
 list_continue:
 		list = list->next;
 	}
+
+	RIL_CLIENT_UNLOCK(client);
 
 	return NULL;
 }
 
-int ipc_gen_phone_res_expect_to_func(unsigned char aseq, unsigned short command,
-	void (*func)(struct ipc_message_info *info))
+int ipc_gen_phone_res_expect_callback(unsigned char aseq, unsigned short command,
+	int (*callback)(struct ipc_message *message))
 {
-	return ipc_gen_phone_res_expect_register(aseq, command, func, 0, 0);
-}
-
-int ipc_gen_phone_res_expect_to_complete(unsigned char aseq, unsigned short command)
-{
-	return ipc_gen_phone_res_expect_register(aseq, command, NULL, 1, 0);
-}
-
-int ipc_gen_phone_res_expect_to_abort(unsigned char aseq, unsigned short command)
-{
-	return ipc_gen_phone_res_expect_register(aseq, command, NULL, 0, 1);
-}
-
-/*
- * GEN dequeue function
- */
-
-void ipc_gen_phone_res(struct ipc_message_info *info)
-{
-	struct ipc_gen_phone_res_expect_info *expect;
-	struct ipc_gen_phone_res *phone_res;
-	RIL_Errno e;
+	struct ril_client *client;
 	int rc;
 
-	if (info->data == NULL || info->length < sizeof(struct ipc_gen_phone_res))
-		return;
+	client = ril_client_find_id(RIL_CLIENT_IPC_FMT);
+	if (client == NULL)
+		return -1;
 
-	phone_res = (struct ipc_gen_phone_res *) info->data;
-	expect = ipc_gen_phone_res_expect_info_find_aseq(info->aseq);
-
-	if (expect == NULL) {
-		RIL_LOGD("aseq: 0x%x not found in the IPC_GEN_PHONE_RES queue", info->aseq);
-		return;
-	}
-
-	RIL_LOGD("aseq: 0x%x found in the IPC_GEN_PHONE_RES queue!", info->aseq);
-
-	if (expect->command != IPC_COMMAND(phone_res)) {
-		RIL_LOGE("IPC_GEN_PHONE_RES aseq (0x%x) doesn't match the queued one with command (0x%x)", 
-			expect->aseq, expect->command);
-
-		if (expect->func != NULL) {
-			RIL_LOGE("Not safe to run the custom function, reporting generic failure");
-			ril_request_complete(ril_request_get_token(expect->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
-			goto unregister;
-		}
-	}
-
-	if (expect->func != NULL) {
-		expect->func(info);
-		goto unregister;
-	}
-
-	rc = ipc_gen_phone_res_check(phone_res);
+	rc = ipc_gen_phone_res_expect_register(client, aseq, command, callback, 0, 0);
 	if (rc < 0)
-		e = RIL_E_GENERIC_FAILURE;
+		return -1;
+
+	return 0;
+}
+
+int ipc_gen_phone_res_expect_complete(unsigned char aseq, unsigned short command)
+{
+	struct ril_client *client;
+	int rc;
+
+	client = ril_client_find_id(RIL_CLIENT_IPC_FMT);
+	if (client == NULL)
+		return -1;
+
+	rc = ipc_gen_phone_res_expect_register(client, aseq, command, NULL, 1, 0);
+	if (rc < 0)
+		return -1;
+
+	return 0;
+}
+
+int ipc_gen_phone_res_expect_abort(unsigned char aseq, unsigned short command)
+{
+	struct ril_client *client;
+	int rc;
+
+	client = ril_client_find_id(RIL_CLIENT_IPC_FMT);
+	if (client == NULL)
+		return -1;
+
+	rc = ipc_gen_phone_res_expect_register(client, aseq, command, NULL, 0, 1);
+	if (rc < 0)
+		return -1;
+
+	return 0;
+}
+
+int ipc_gen_phone_res(struct ipc_message *message)
+{
+	struct ipc_gen_phone_res_expect *expect;
+	struct ipc_gen_phone_res_data *data;
+	struct ril_client *client;
+	RIL_Errno error;
+	int rc;
+
+	if (message == NULL || message->data == NULL || message->size < sizeof(struct ipc_gen_phone_res_data))
+		return -1;
+
+	client = ril_client_find_id(RIL_CLIENT_IPC_FMT);
+	if (client == NULL)
+		return -1;
+
+	data = (struct ipc_gen_phone_res_data *) message->data;
+
+	expect = ipc_gen_phone_res_expect_find_aseq(client, message->aseq);
+	if (expect == NULL) {
+		RIL_LOGD("Ignoring generic response for command %s", ipc_command_string(IPC_COMMAND(data->group, data->index)));
+		return 0;
+	}
+
+	if (IPC_COMMAND(data->group, data->index) != expect->command) {
+		RIL_LOGE("Generic response commands mismatch: %s/%s", ipc_command_string(IPC_COMMAND(data->group, data->index)), ipc_command_string(expect->command));
+		goto error;
+	}
+
+	RIL_LOGD("Generic response was expected");
+
+	if (expect->callback != NULL) {
+		rc = expect->callback(message);
+		goto complete;
+	}
+
+	rc = ipc_gen_phone_res_check(data);
+	if (rc < 0)
+		error = RIL_E_GENERIC_FAILURE;
 	else
-		e = RIL_E_SUCCESS;
+		error = RIL_E_SUCCESS;
 
-	if (expect->complete || (expect->abort && e == RIL_E_GENERIC_FAILURE))
-		ril_request_complete(ril_request_get_token(expect->aseq), e, NULL, 0);
+	if (expect->complete || (expect->abort && error == RIL_E_GENERIC_FAILURE))
+		ril_request_complete(ipc_fmt_request_token(message->aseq), error, NULL, 0);
 
-unregister:
-	ipc_gen_phone_res_expect_unregister(expect);
+	rc = 0;
+	goto complete;
+
+error:
+	rc = -1;
+
+complete:
+	if (expect != NULL)
+		ipc_gen_phone_res_expect_unregister(client, expect);
+
+	return rc;
 }

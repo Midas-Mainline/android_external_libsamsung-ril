@@ -2,7 +2,7 @@
  * This file is part of Samsung-RIL.
  *
  * Copyright (C) 2010-2011 Joerie de Gram <j.de.gram@gmail.com>
- * Copyright (C) 2011-2013 Paul Kocialkowski <contact@paulk.fr>
+ * Copyright (C) 2011-2014 Paul Kocialkowski <contact@paulk.fr>
  *
  * Samsung-RIL is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,33 +18,25 @@
  * along with Samsung-RIL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _SAMSUNG_RIL_UTIL_H_
-#define _SAMSUNG_RIL_UTIL_H_
+#ifndef _UTILS_H_
+#define _UTILS_H_
+
+#include <stdlib.h>
+#include <sys/eventfd.h>
 
 struct list_head {
 	struct list_head *prev;
 	struct list_head *next;
-	void *data;
+	const void *data;
 };
 
-struct list_head *list_head_alloc(void *data, struct list_head *prev, struct list_head *next);
+struct list_head *list_head_alloc(struct list_head *prev, struct list_head *next,
+	const void *data);
 void list_head_free(struct list_head *list);
-
-void bin2hex(const unsigned char *data, int length, char *buf);
-void hex2bin(const char *data, int length, unsigned char *buf);
-int gsm72ascii(unsigned char *data, char **data_dec, int length);
-int ascii2gsm7_ussd(char *data, unsigned char **data_enc, int length);
-size_t ascii2gsm7(char *ascii, unsigned char *gsm7);
-void hex_dump(void *data, int size);
-int utf8_write(char *utf8, int offset, int v);
-char *pdu_create(char *number, char *message);
-
-typedef enum {
-	SMS_CODING_SCHEME_UNKNOWN = 0,
-	SMS_CODING_SCHEME_GSM7,
-	SMS_CODING_SCHEME_UCS2
-} SmsCodingScheme;
-
-SmsCodingScheme sms_get_coding_scheme(int dataCoding);
+int data_dump(const void *data, size_t size);
+int strings_array_free(char **array, size_t size);
+int eventfd_flush(int fd);
+int eventfd_recv(int fd, eventfd_t *event);
+int eventfd_send(int fd, eventfd_t event);
 
 #endif

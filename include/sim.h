@@ -1,7 +1,7 @@
 /*
  * This file is part of Samsung-RIL.
  *
- * Copyright (C) 2013 Paul Kocialkowski <contact@paulk.fr>
+ * Copyright (C) 2013-2014 Paul Kocialkowski <contact@paulk.fr>
  *
  * Samsung-RIL is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,22 +20,36 @@
 #ifndef _SIM_H_
 #define _SIM_H_
 
-// Values from TS 11.11
-#define SIM_COMMAND_READ_BINARY		0xB0
-#define SIM_COMMAND_UPDATE_BINARY	0xD6
-#define SIM_COMMAND_READ_RECORD		0xB2
-#define SIM_COMMAND_UPDATE_RECORD	0xDC
-#define SIM_COMMAND_SEEK		0xA2
-#define SIM_COMMAND_GET_RESPONSE	0xC0
+#include <stdlib.h>
 
-#define SIM_FILE_STRUCTURE_TRANSPARENT	0x00
-#define SIM_FILE_STRUCTURE_LINEAR_FIXED	0x01
-#define SIM_FILE_STRUCTURE_CYCLIC	0x03
+#define SIM_COMMAND_READ_BINARY					0xB0
+#define SIM_COMMAND_UPDATE_BINARY				0xD6
+#define SIM_COMMAND_READ_RECORD					0xB2
+#define SIM_COMMAND_UPDATE_RECORD				0xDC
+#define SIM_COMMAND_SEEK					0xA2
+#define SIM_COMMAND_GET_RESPONSE				0xC0
 
-#define SIM_FILE_TYPE_RFU		0x00
-#define SIM_FILE_TYPE_MF		0x01
-#define SIM_FILE_TYPE_DF		0x02
-#define SIM_FILE_TYPE_EF		0x04
+#define SIM_FILE_STRUCTURE_TRANSPARENT				0x00
+#define SIM_FILE_STRUCTURE_LINEAR_FIXED				0x01
+#define SIM_FILE_STRUCTURE_CYCLIC				0x03
+
+#define SIM_FILE_TYPE_RFU					0x00
+#define SIM_FILE_TYPE_MF					0x01
+#define SIM_FILE_TYPE_DF					0x02
+#define SIM_FILE_TYPE_EF					0x04
+
+struct sim_file_response {
+	unsigned char rfu12[2];
+	unsigned char file_size[2];
+	unsigned char file_id[2];
+	unsigned char file_type;
+	unsigned char rfu3;
+	unsigned char access_condition[3];
+	unsigned char file_status;
+	unsigned char file_length;
+	unsigned char file_structure;
+	unsigned char record_length;
+} __attribute__((__packed__));
 
 struct sim_file_id {
 	unsigned short file_id;
@@ -85,19 +99,7 @@ struct sim_file_id sim_file_ids[] = {
 	{ 0x7F20, SIM_FILE_TYPE_DF },
 };
 
-int sim_file_ids_count = sizeof(sim_file_ids) / sizeof(sim_file_ids[0]);
-
-struct sim_file_response {
-	unsigned char rfu12[2];
-	unsigned char file_size[2];
-	unsigned char file_id[2];
-	unsigned char file_type;
-	unsigned char rfu3;
-	unsigned char access_condition[3];
-	unsigned char file_status;
-	unsigned char file_length;
-	unsigned char file_structure;
-	unsigned char record_length;
-} __attribute__((__packed__));
+unsigned int sim_file_ids_count = sizeof(sim_file_ids) /
+	sizeof(struct sim_file_id);
 
 #endif

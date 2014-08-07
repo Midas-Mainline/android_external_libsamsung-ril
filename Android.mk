@@ -1,7 +1,7 @@
 # This file is part of Samsung-RIL.
 #
 # Copyright (C) 2010-2011 Joerie de Gram <j.de.gram@gmail.com>
-# Copyright (C) 2011-2013 Paul Kocialkowski <contact@paulk.fr>
+# Copyright (C) 2011-2014 Paul Kocialkowski <contact@paulk.fr>
 #
 # Samsung-RIL is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,38 +25,32 @@ LOCAL_SRC_FILES := \
 	client.c \
 	ipc.c \
 	srs.c \
-	util.c \
-	gen.c \
-	pwr.c \
-	disp.c \
-	misc.c \
-	sat.c \
-	ss.c \
-	sec.c \
-	svc.c \
-	net.c \
-	sms.c \
+	utils.c \
+	power.c \
 	call.c \
-	snd.c \
-	gprs.c \
-	rfs.c
+	sms.c \
+	sim.c \
+	network.c \
+	sound.c \
+	misc.c \
+	oem.c \
+	data.c \
+	rfs.c \
+	gen.c
 
 LOCAL_C_INCLUDES := \
+	$(LOCAL_PATH) \
+	$(LOCAL_PATH)/include \
 	external/libsamsung-ipc/include \
-	$(LOCAL_PATH)/include
+	hardware/libhardware_legacy/include \
+	system/core/include
 
-LOCAL_CFLAGS := -D_GNU_SOURCE -DRIL_SHLIB
+LOCAL_CFLAGS := -DRIL_SHLIB
 
-# Disable STK
-LOCAL_CFLAGS += -DDISABLE_STK
-
-# Samsung-RIL only supports IPC V4
-LOCAL_CFLAGS += -DDEVICE_IPC_V4
-
-LOCAL_SHARED_LIBRARIES := libcutils libnetutils libutils liblog
+LOCAL_SHARED_LIBRARIES := libcutils libnetutils libutils liblog libpower
 LOCAL_STATIC_LIBRARIES := libsamsung-ipc
-LOCAL_PRELINK_MODULE := false
 
+LOCAL_PRELINK_MODULE := false
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libsamsung-ril
 

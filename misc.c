@@ -2,7 +2,7 @@
  * This file is part of Samsung-RIL.
  *
  * Copyright (C) 2010-2011 Joerie de Gram <j.de.gram@gmail.com>
- * Copyright (C) 2011-2013 Paul Kocialkowski <contact@paulk.fr>
+ * Copyright (C) 2011-2014 Paul Kocialkowski <contact@paulk.fr>
  *
  * Samsung-RIL is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,256 +18,270 @@
  * along with Samsung-RIL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define LOG_TAG "RIL-MISC"
+#include <stdlib.h>
+
+#define LOG_TAG "RIL"
 #include <utils/Log.h>
 
-#include "samsung-ril.h"
-#include "util.h"
+#include <samsung-ril.h>
 
-void ril_request_get_imei_send(RIL_Token t)
+int ipc_misc_me_version(struct ipc_message *message)
 {
-	unsigned char data;
+	struct ipc_misc_me_version_response_data *data;
+	char *baseband_version;
+	int active;
 
-	data = IPC_MISC_ME_SN_SERIAL_NUM;
-	ipc_fmt_send(IPC_MISC_ME_SN, IPC_TYPE_GET, (unsigned char *) &data, sizeof(data), ril_request_get_id(t));
+	if (message == NULL || message->data == NULL || message->size < sizeof(struct ipc_misc_me_version_response_data))
+		return -1;
+
+	if (message->type != IPC_TYPE_RESP || !ipc_seq_valid(message->aseq))
+		return 0;
+
+	data = (struct ipc_misc_me_version_response_data *) message->data;
+
+	baseband_version = strndup(data->software_version, sizeof(data->software_version));
+
+	ril_request_complete(ipc_fmt_request_token(message->aseq), RIL_E_SUCCESS, (void *) baseband_version, sizeof(baseband_version));
+
+	free(baseband_version);
+
+	return 0;
 }
 
-void ril_request_get_imei(RIL_Token t)
+int ril_request_baseband_version(void *data, size_t size, RIL_Token token)
 {
-	if (ril_radio_state_complete(RADIO_STATE_OFF, t))
-		return;
+	struct ipc_misc_me_version_request_data request_data;
+	struct ril_request *request;
+	int rc;
 
-	if (ril_data.tokens.get_imei) {
-		RIL_LOGD("Another IMEI request is waiting, aborting");
-		ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
-		return;
-	}
+	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	if (rc < 0)
+		return RIL_REQUEST_UNHANDLED;
 
-	ril_data.tokens.get_imei = t;
+	request = ril_request_find_request_status(RIL_REQUEST_BASEBAND_VERSION, RIL_REQUEST_HANDLED);
+	if (request != NULL)
+		return RIL_REQUEST_UNHANDLED;
 
-	if (ril_data.tokens.get_imeisv) {
-		RIL_LOGD("IMEISV token found: %p", ril_data.tokens.get_imeisv);
-
-		ril_request_get_imei_send(ril_data.tokens.get_imei);
-	} else {
-		RIL_LOGD("Waiting for IMEISV token");
-	}
-}
-
-void ril_request_get_imeisv(RIL_Token t)
-{
-	if (ril_radio_state_complete(RADIO_STATE_OFF, t))
-		return;
-
-	if (ril_data.tokens.get_imeisv) {
-		RIL_LOGD("Another IMEISV request is waiting, aborting");
-		ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
-		return;
-	}
-
-	ril_data.tokens.get_imeisv = t;
-
-	if (ril_data.tokens.get_imei) {
-		RIL_LOGD("IMEI token found: %p", ril_data.tokens.get_imei);
-
-		ril_request_get_imei_send(ril_data.tokens.get_imei);
-	} else {
-		RIL_LOGD("Waiting for IMEI token");
-	}
-}
-
-void ipc_misc_me_sn_imei(struct ipc_message_info *info)
-{
-	struct ipc_misc_me_sn *imei_info;
-	RIL_Token t;
-	char imei[33];
-	char imeisv[3];
-
-	if (info->type != IPC_TYPE_RESP)
+	rc = ipc_misc_me_version_setup(&request_data);
+	if (rc < 0)
 		goto error;
 
-	if (info->data == NULL || info->length < sizeof(struct ipc_misc_me_sn))
+	rc = ipc_fmt_send(ipc_fmt_request_seq(token), IPC_MISC_ME_VERSION, IPC_TYPE_GET, (void *) &request_data, sizeof(request_data));
+	if (rc < 0)
 		goto error;
 
-	imei_info = (struct ipc_misc_me_sn *) info->data;
-	t = ril_request_get_token(info->aseq);
-
-	if (ril_data.tokens.get_imei != t) 
-		RIL_LOGE("IMEI tokens mismatch (%p and %p)",
-			ril_data.tokens.get_imei, t);
-
-	if (imei_info->length > 32)
-		return;
-
-	memset(imei, 0, sizeof(imei));
-	memset(imeisv, 0, sizeof(imeisv));
-
-	memcpy(imei, imei_info->data, imei_info->length);
-
-	// Last two bytes of IMEI in imei_info are the SV bytes
-	memcpy(imeisv, (imei_info->data + imei_info->length - 2), 2);
-
-	// In case of token mismatch, complete both requests
-	if (t && ril_data.tokens.get_imei != t) {
-		ril_request_complete(t, RIL_E_SUCCESS, imei, sizeof(char *));
-	}
-
-	// IMEI
-	if (ril_data.tokens.get_imei) {
-		ril_request_complete(ril_data.tokens.get_imei,
-			RIL_E_SUCCESS, imei, sizeof(char *));
-		ril_data.tokens.get_imei = 0;
-	}
-
-	// IMEI SV
-	if (ril_data.tokens.get_imeisv) {
-		ril_request_complete(ril_data.tokens.get_imeisv,
-			RIL_E_SUCCESS, imeisv, sizeof(char *));
-		ril_data.tokens.get_imeisv = 0;
-	}
-
-	return;
+	rc = RIL_REQUEST_HANDLED;
+	goto complete;
 
 error:
-	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
+	ril_request_complete(token, RIL_E_GENERIC_FAILURE, NULL, 0);
+
+	rc = RIL_REQUEST_COMPLETED;
+
+complete:
+	return rc;
 }
 
-void ipc_misc_me_sn(struct ipc_message_info *info)
+int ipc_misc_me_imsi(struct ipc_message *message)
 {
-	struct ipc_misc_me_sn *me_sn_info;
-
-	if (info->type != IPC_TYPE_RESP)
-		return;
-
-	if (info->data == NULL || info->length < sizeof(struct ipc_misc_me_sn))
-		goto error;
-
-	me_sn_info = (struct ipc_misc_me_sn *) info->data;
-
-	switch (me_sn_info->type) {
-		case IPC_MISC_ME_SN_SERIAL_NUM:
-			ipc_misc_me_sn_imei(info);
-			break;
-		case IPC_MISC_ME_SN_SERIAL_NUM_SERIAL:
-			RIL_LOGD("Got IPC_MISC_ME_SN_SERIAL_NUM_SERIAL: %s\n",
-				me_sn_info->data);
-			break;
-	}
-
-	return;
-
-error:
-	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
-}
-
-void ril_request_baseband_version(RIL_Token t)
-{
-	unsigned char data;
-
-	if (ril_radio_state_complete(RADIO_STATE_OFF, t))
-		return;
-
-	if (ril_data.tokens.baseband_version) {
-		RIL_LOGD("Another Baseband version request is waiting, aborting");
-		ril_request_complete(t, RIL_E_GENERIC_FAILURE, NULL, 0);
-		return;
-	}
-
-	ril_data.tokens.baseband_version = t;
-
-	data = 0xff;
-
-	ipc_fmt_send(IPC_MISC_ME_VERSION, IPC_TYPE_GET, (unsigned char *) &data, sizeof(data), ril_request_get_id(t));
-}
-
-void ipc_misc_me_version(struct ipc_message_info *info)
-{
-	char sw_version[33];
-	struct ipc_misc_me_version *version;
-	RIL_Token t;
-
-	if (info->type != IPC_TYPE_RESP)
-		return;
-
-	if (info->data == NULL || info->length < sizeof(struct ipc_misc_me_version))
-		goto error;
-
-	version = (struct ipc_misc_me_version *) info->data;
-	t = ril_request_get_token(info->aseq);
-
-	if (ril_data.tokens.baseband_version != t) 
-		RIL_LOGE("Baseband tokens mismatch (%p and %p)",
-			ril_data.tokens.baseband_version, t);
-
-	memcpy(sw_version, version->sw_version, 32);
-	sw_version[32] = '\0';
-
-	ril_request_complete(t, RIL_E_SUCCESS, sw_version, sizeof(sw_version));
-	ril_data.tokens.baseband_version = 0;
-
-	return;
-
-error:
-	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
-}
-
-void ril_request_get_imsi(RIL_Token t)
-{
-	if (ril_radio_state_complete(RADIO_STATE_OFF, t))
-		return;
-
-	ipc_fmt_send_get(IPC_MISC_ME_IMSI, ril_request_get_id(t));
-}
-
-void ipc_misc_me_imsi(struct ipc_message_info *info)
-{
-	unsigned char imsi_length;
 	char *imsi;
 
-	if (info->type != IPC_TYPE_RESP)
-		return;
+	if (message == NULL || message->data == NULL || message->size < sizeof(struct ipc_misc_me_imsi_header))
+		return -1;
 
-	if (info->data == NULL || info->length < sizeof(unsigned char))
-		goto error;
+	if (message->type != IPC_TYPE_RESP || !ipc_seq_valid(message->aseq))
+		return 0;
 
-	imsi_length = *((unsigned char *) info->data);
-
-	if (((int) info->length) < imsi_length + 1) {
-		RIL_LOGE("%s: missing IMSI data", __func__);
-		ril_request_complete(ril_request_get_token(info->aseq),
-			RIL_E_GENERIC_FAILURE, NULL, 0);
-		return;
+	imsi = ipc_misc_me_imsi_imsi_extract(message->data, message->size);
+	if (imsi == NULL) {
+		ril_request_complete(ipc_fmt_request_token(message->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
+		return 0;
 	}
 
-	imsi = (char *) calloc(1, imsi_length + 1);
-	memcpy(imsi, ((unsigned char *) info->data) + sizeof(unsigned char), imsi_length);
-	imsi[imsi_length] = '\0';
-
-	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_SUCCESS, imsi, imsi_length + 1);
+	ril_request_complete(ipc_fmt_request_token(message->aseq), RIL_E_SUCCESS, (void *) imsi, sizeof(imsi));
 
 	free(imsi);
 
-	return;
-
-error:
-	ril_request_complete(ril_request_get_token(info->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
+	return 0;
 }
 
-void ipc_misc_time_info(struct ipc_message_info *info)
+int ril_request_get_imsi(void *data, size_t size, RIL_Token token)
 {
-	struct ipc_misc_time_info *nitz;
-	char str[128];
+	struct ril_request *request;
+	int rc;
 
-	if (info->data == NULL || info->length < sizeof(struct ipc_misc_time_info))
-		return;
+	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	if (rc < 0)
+		return RIL_REQUEST_UNHANDLED;
 
-	nitz = (struct ipc_misc_time_info *) info->data;
+	request = ril_request_find_request_status(RIL_REQUEST_GET_IMSI, RIL_REQUEST_HANDLED);
+	if (request != NULL)
+		return RIL_REQUEST_UNHANDLED;
 
-	sprintf(str, "%02u/%02u/%02u,%02u:%02u:%02u%c%02d,%02d",
-		nitz->year, nitz->mon, nitz->day, nitz->hour,
-		nitz->min, nitz->sec, nitz->tz < 0 ? '-' : '+',
-		nitz->tz < 0 ? -nitz->tz : nitz->tz, nitz->dl);
+	rc = ipc_fmt_send(ipc_fmt_request_seq(token), IPC_MISC_ME_IMSI, IPC_TYPE_GET, NULL, 0);
+	if (rc < 0) {
+		ril_request_complete(token, RIL_E_GENERIC_FAILURE, NULL, 0);
+		return RIL_REQUEST_COMPLETED;
+	}
 
-	ril_request_unsolicited(RIL_UNSOL_NITZ_TIME_RECEIVED,
-		str, strlen(str) + 1);
+	return RIL_REQUEST_HANDLED;
+}
+
+int ipc_misc_me_sn(struct ipc_message *message)
+{
+	struct ipc_misc_me_sn_response_data *data;
+	struct ril_request *request;
+	char *imei;
+	char *imeisv;
+	unsigned int offset;
+
+	if (message == NULL || message->data == NULL || message->size < sizeof(struct ipc_misc_me_sn_response_data))
+		return -1;
+
+	if (message->type != IPC_TYPE_RESP)
+		return 0;
+
+	data = (struct ipc_misc_me_sn_response_data *) message->data;
+
+	if (data->type != IPC_MISC_ME_SN_SERIAL_NUM)
+		return 0;
+
+	imei = ipc_misc_me_sn_extract(data);
+	if (imei == NULL) {
+		request = ril_request_find_request_status(RIL_REQUEST_GET_IMEI, RIL_REQUEST_HANDLED);
+		if (request != NULL)
+			ril_request_complete(request->token, RIL_E_GENERIC_FAILURE, NULL, 0);
+
+		request = ril_request_find_request_status(RIL_REQUEST_GET_IMEISV, RIL_REQUEST_HANDLED);
+		if (request != NULL)
+			ril_request_complete(request->token, RIL_E_GENERIC_FAILURE, NULL, 0);
+
+		return 0;
+	}
+
+	offset = strlen(imei) - 2;
+	imeisv = strdup((char *) (imei + offset));
+
+	imei[offset] = '\0';
+
+	request = ril_request_find_request_status(RIL_REQUEST_GET_IMEI, RIL_REQUEST_HANDLED);
+	if (request != NULL)
+		ril_request_complete(request->token, RIL_E_SUCCESS, (void *) imei, sizeof(imei));
+
+	request = ril_request_find_request_status(RIL_REQUEST_GET_IMEISV, RIL_REQUEST_HANDLED);
+	if (request != NULL)
+		ril_request_complete(request->token, RIL_E_SUCCESS, (void *) imeisv, sizeof(imeisv));
+
+	free(imei);
+	free(imeisv);
+
+	return 0;
+}
+
+int ril_request_get_imei(void *data, size_t size, RIL_Token token)
+{
+	struct ipc_misc_me_sn_request_data request_data;
+	struct ril_request *request;
+	int rc;
+
+	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	if (rc < 0)
+		return RIL_REQUEST_UNHANDLED;
+
+	request = ril_request_find_request_status(RIL_REQUEST_GET_IMEI, RIL_REQUEST_HANDLED);
+	if (request != NULL)
+		return RIL_REQUEST_UNHANDLED;
+
+	// The response to the IMEISV request will hold IMEI as well
+	request = ril_request_find_request_status(RIL_REQUEST_GET_IMEISV, RIL_REQUEST_HANDLED);
+	if (request != NULL)
+		return RIL_REQUEST_HANDLED;
+
+	request_data.type = IPC_MISC_ME_SN_SERIAL_NUM;
+
+	rc = ipc_fmt_send(ipc_fmt_request_seq(token), IPC_MISC_ME_SN, IPC_TYPE_GET, (void *) &request_data, sizeof(request_data));
+	if (rc < 0) {
+		ril_request_complete(token, RIL_E_GENERIC_FAILURE, NULL, 0);
+		return RIL_REQUEST_COMPLETED;
+	}
+
+	return RIL_REQUEST_HANDLED;
+}
+
+int ril_request_get_imeisv(void *data, size_t size, RIL_Token token)
+{
+	struct ipc_misc_me_sn_request_data request_data;
+	struct ril_request *request;
+	int rc;
+
+	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	if (rc < 0)
+		return RIL_REQUEST_UNHANDLED;
+
+	request = ril_request_find_request_status(RIL_REQUEST_GET_IMEISV, RIL_REQUEST_HANDLED);
+	if (request != NULL)
+		return RIL_REQUEST_UNHANDLED;
+
+	// The response to the IMEI request will hold IMEISV as well
+	request = ril_request_find_request_status(RIL_REQUEST_GET_IMEI, RIL_REQUEST_HANDLED);
+	if (request != NULL)
+		return RIL_REQUEST_HANDLED;
+
+	request_data.type = IPC_MISC_ME_SN_SERIAL_NUM;
+
+	rc = ipc_fmt_send(ipc_fmt_request_seq(token), IPC_MISC_ME_SN, IPC_TYPE_GET, (void *) &request_data, sizeof(request_data));
+	if (rc < 0) {
+		ril_request_complete(token, RIL_E_GENERIC_FAILURE, NULL, 0);
+		return RIL_REQUEST_COMPLETED;
+	}
+
+	return RIL_REQUEST_HANDLED;
+}
+
+int ipc_misc_time_info(struct ipc_message *message)
+{
+	struct ipc_misc_time_info_data *data;
+	char *string = NULL;
+
+	if (message == NULL || message->data == NULL || message->size < sizeof(struct ipc_misc_time_info_data))
+		return -1;
+
+	data = (struct ipc_misc_time_info_data *) message->data;
+
+	asprintf(&string, "%02u/%02u/%02u,%02u:%02u:%02u%c%02d,%02d", data->year, data->mon, data->day, data->hour, data->min, data->sec, data->tz < 0 ? '-' : '+', data->tz < 0 ? -data->tz : data->tz, data->dl);
+
+	ril_request_unsolicited(RIL_UNSOL_NITZ_TIME_RECEIVED, string, sizeof(string));
+
+	if (string != NULL)
+		free(string);
+
+	return 0;
+}
+
+int ril_request_screen_state(void *data, size_t size, RIL_Token token)
+{
+	int value;
+	int rc;
+
+	if (data == NULL || size < sizeof(int)) {
+		ril_request_complete(token, RIL_E_GENERIC_FAILURE, NULL, 0);
+		return RIL_REQUEST_COMPLETED;
+	}
+
+	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	if (rc < 0)
+		return RIL_REQUEST_UNHANDLED;
+
+	value = *((int *) data);
+
+	if (value)
+#if RIL_VERSION >= 6
+		ril_request_unsolicited(RIL_UNSOL_RESPONSE_VOICE_NETWORK_STATE_CHANGED, NULL, 0);
+#else
+		ril_request_unsolicited(RIL_UNSOL_RESPONSE_NETWORK_STATE_CHANGED, NULL, 0);
+#endif
+
+	ril_request_complete(token, RIL_E_SUCCESS, NULL, 0);
+
+	return RIL_REQUEST_COMPLETED;
 }

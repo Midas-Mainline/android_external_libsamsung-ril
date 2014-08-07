@@ -1,7 +1,7 @@
 /*
  * This file is part of Samsung-RIL.
  *
- * Copyright (C) 2011-2013 Paul Kocialkowski <contact@oaulk.fr>
+ * Copyright (C) 2011-2014 Paul Kocialkowski <contact@paulk.fr>
  *
  * Samsung-RIL is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,40 +17,36 @@
  * along with Samsung-RIL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* Samsung RIL Socket protocol defines */
-
 #ifndef _SAMSUNG_RIL_SOCKET_H_
 #define _SAMSUNG_RIL_SOCKET_H_
 
-#define SRS_COMMAND(f)  ((f->group << 8) | f->index)
-#define SRS_GROUP(m)    (m >> 8)
-#define SRS_INDEX(m)    (m & 0xff)
+#include <stdlib.h>
 
-#define SRS_SOCKET_NAME			"samsung-ril-socket"
-#define SRS_DATA_MAX_SIZE		0x1000
+/*
+ * Groups
+ */
 
-#define SRS_CONTROL			0x01
-#define SRS_CONTROL_PING		0x0101
+#define SRS_GROUP_CONTROL					0x01
+#define SRS_GROUP_SND						0x02
 
-#define SRS_SND				0x02
-#define SRS_SND_SET_CALL_VOLUME		0x0201
-#define SRS_SND_SET_CALL_AUDIO_PATH	0x0202
-#define SRS_SND_SET_CALL_CLOCK_SYNC	0x0203
+/*
+ * Commands
+ */
 
-#define SRS_CONTROL_CAFFE		0xCAFFE
+#define SRS_CONTROL_PING					0x0101
 
-struct srs_header {
-	unsigned int length;
-	unsigned char group;
-	unsigned char index;
-} __attribute__((__packed__));
+#define SRS_SND_SET_CALL_VOLUME					0x0201
+#define SRS_SND_SET_CALL_AUDIO_PATH				0x0202
+#define SRS_SND_SET_CALL_CLOCK_SYNC				0x0203
 
-struct srs_message {
-	unsigned short command;
-	int length;
-	void *data;
-};
+/*
+ * Values
+ */
 
+#define SRS_SOCKET_NAME				"samsung-ril-socket"
+#define SRS_BUFFER_LENGTH					0x1000
+
+#define SRS_CONTROL_CAFFE					0xCAFFE
 
 enum srs_snd_type {
 	SRS_SND_TYPE_VOICE,
@@ -73,21 +69,45 @@ enum srs_snd_clock {
 	SND_CLOCK_START
 };
 
-struct srs_snd_call_volume {
+/*
+ * Macros
+ */
+
+#define SRS_COMMAND(group, index)		((group << 8) | index)
+#define SRS_GROUP(command)			(command >> 8)
+#define SRS_INDEX(command)			(command & 0xff)
+
+/*
+ * Structures
+ */
+
+struct srs_message {
+	unsigned short command;
+	void *data;
+	size_t size;
+};
+
+struct srs_header {
+	unsigned int length;
+	unsigned char group;
+	unsigned char index;
+} __attribute__((__packed__));
+
+struct srs_control_ping_data {
+	unsigned int caffe;
+} __attribute__((__packed__));
+
+struct srs_snd_call_volume_data {
 	enum srs_snd_type type;
 	int volume;
 } __attribute__((__packed__));
 
-struct srs_snd_call_audio_path {
+struct srs_snd_call_audio_path_data {
 	enum srs_snd_path path;
 } __attribute__((__packed__));
 
-struct srs_snd_call_clock_sync {
+struct srs_snd_call_clock_sync_data {
 	unsigned char sync;
-} __attribute__((__packed__));
-
-struct srs_control_ping {
-	int caffe;
 } __attribute__((__packed__));
 
 #endif
