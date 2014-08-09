@@ -44,10 +44,6 @@ int ipc_svc_display_screen(struct ipc_message *message)
 	if (client == NULL || client->data == NULL)
 		return 0;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
-	if (rc < 0)
-		return 0;
-
 	ipc_fmt_data = (struct ipc_fmt_data *) client->data;
 
 	count = ipc_svc_display_screen_count_extract(message->data, message->size);
@@ -116,10 +112,6 @@ int ril_request_oem_hook_raw(void *data, size_t size, RIL_Token token)
 	client = ril_client_find_id(RIL_CLIENT_IPC_FMT);
 	if (client == NULL || client->data == NULL)
 		goto error;
-
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
-	if (rc < 0)
-		return RIL_REQUEST_UNHANDLED;
 
 	request = ril_request_find_request_status(RIL_REQUEST_OEM_HOOK_RAW, RIL_REQUEST_HANDLED);
 	if (request != NULL)
