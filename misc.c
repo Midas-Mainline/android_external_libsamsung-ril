@@ -110,7 +110,7 @@ int ril_request_get_imsi(void *data, size_t size, RIL_Token token)
 	struct ril_request *request;
 	int rc;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_radio_state_check(RADIO_STATE_SIM_READY);
 	if (rc < 0)
 		return RIL_REQUEST_UNHANDLED;
 
