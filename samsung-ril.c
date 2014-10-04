@@ -1462,6 +1462,7 @@ const RIL_RadioFunctions *RIL_Init(const struct RIL_Env *env, int argc,
 {
 	RIL_RadioFunctions *radio_functions;
 	pthread_attr_t attr;
+	int failures;
 	unsigned int i;
 	int rc;
 
@@ -1491,7 +1492,16 @@ const RIL_RadioFunctions *RIL_Init(const struct RIL_Env *env, int argc,
 		if (ril_clients[i] == NULL)
 			continue;
 
-		rc = ril_client_open(ril_clients[i]);
+		failures = 0;
+
+		do {
+			rc = ril_client_open(ril_clients[i]);
+			if (rc < 0) {
+				failures++;
+				usleep(RIL_CLIENT_RETRY_DELAY);
+			}
+		} while (rc < 0 && failures < RIL_CLIENT_RETRY_COUNT);
+
 		if (rc < 0)
 			goto error;
 
