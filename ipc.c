@@ -153,7 +153,6 @@ int ipc_fmt_create(struct ril_client *client)
 	if (client == NULL)
 		return -1;
 
-
 	RIL_CLIENT_LOCK(client);
 
 	client->available = 0;
@@ -183,12 +182,6 @@ int ipc_fmt_create(struct ril_client *client)
 	rc = ipc_client_log_callback_register(ipc_client, ipc_log_handler, NULL);
 	if (rc < 0) {
 		RIL_LOGE("Setting %s client log handler failed", client->name);
-		goto error;
-	}
-
-	rc = ipc_client_boot(ipc_client);
-	if (rc < 0) {
-		RIL_LOGE("Booting %s client failed", client->name);
 		goto error;
 	}
 
@@ -273,6 +266,12 @@ int ipc_fmt_open(struct ril_client *client)
 	RIL_CLIENT_LOCK(client);
 
 	if (client->failures != 1) {
+		rc = ipc_client_boot(data->ipc_client);
+		if (rc < 0) {
+			RIL_LOGE("Booting %s client failed", client->name);
+			goto error;
+		}
+
 		rc = ipc_client_power_on(data->ipc_client);
 		if (rc < 0) {
 			RIL_LOGE("Powering on %s client failed", client->name);
@@ -285,6 +284,9 @@ int ipc_fmt_open(struct ril_client *client)
 		RIL_LOGE("Opening %s client failed", client->name);
 		goto error;
 	}
+
+	if (client->failures == 1)
+		ril_radio_state_update(RADIO_STATE_OFF);
 
 	eventfd_flush(data->event_fd);
 
@@ -413,7 +415,7 @@ int ipc_fmt_loop(struct ril_client *client)
 	while (1) {
 		if (!client->available) {
 			RIL_LOGE("%s client is not available", client->name);
-			return -1;
+			goto error;
 		}
 
 		fds_array[0] = data->event_fd;
@@ -422,19 +424,20 @@ int ipc_fmt_loop(struct ril_client *client)
 		rc = ipc_client_poll(data->ipc_client, &fds, NULL);
 		if (rc < 0) {
 			RIL_LOGE("Polling %s client failed", client->name);
-			return -1;
+			goto error;
 		}
 
 		if (fds.fds[0] == data->event_fd && fds.count > 0) {
 			rc = eventfd_recv(data->event_fd, &event);
 			if (rc < 0)
-				return -1;
+				goto error;
 
 			switch (event) {
 				case IPC_CLIENT_CLOSE:
-					return 0;
+					rc = 0;
+					goto complete;
 				case IPC_CLIENT_IO_ERROR:
-					return -1;
+					goto error;
 			}
 		}
 
@@ -455,7 +458,7 @@ int ipc_fmt_loop(struct ril_client *client)
 			RIL_CLIENT_UNLOCK(client);
 			RIL_UNLOCK();
 
-			return -1;
+			goto error;
 		}
 
 		release_wake_lock(RIL_VERSION_STRING);
@@ -469,7 +472,7 @@ int ipc_fmt_loop(struct ril_client *client)
 			if (message.data != NULL && message.size > 0)
 				free(message.data);
 
-			return -1;
+			goto error;
 		}
 
 		if (client->failures)
@@ -479,7 +482,18 @@ int ipc_fmt_loop(struct ril_client *client)
 			free(message.data);
 	}
 
-	return 0;
+	rc = 0;
+	goto complete;
+
+error:
+	rc = -1;
+
+	RIL_LOCK();
+	ril_radio_state_update(RADIO_STATE_UNAVAILABLE);
+	RIL_UNLOCK();
+
+complete:
+	return rc;
 }
 
 int ipc_fmt_request_register(struct ril_client *client, int request,
@@ -1095,7 +1109,6 @@ struct ril_client_callbacks ipc_rfs_callbacks = {
 struct ril_client ipc_fmt_client = {
 	.id = RIL_CLIENT_IPC_FMT,
 	.name = "IPC FMT",
-	.critical = 1,
 	.handlers = &ipc_fmt_handlers,
 	.callbacks = &ipc_fmt_callbacks,
 };
@@ -1103,7 +1116,6 @@ struct ril_client ipc_fmt_client = {
 struct ril_client ipc_rfs_client = {
 	.id = RIL_CLIENT_IPC_RFS,
 	.name = "IPC RFS",
-	.critical = 0,
 	.handlers = &ipc_rfs_handlers,
 	.callbacks = &ipc_rfs_callbacks,
 };

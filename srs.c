@@ -1172,7 +1172,6 @@ struct ril_client_callbacks srs_callbacks = {
 struct ril_client srs_client = {
 	.id = RIL_CLIENT_SRS,
 	.name = "SRS",
-	.critical = 0,
 	.handlers = &srs_handlers,
 	.callbacks = &srs_callbacks,
 };

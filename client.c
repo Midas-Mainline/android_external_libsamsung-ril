@@ -146,35 +146,26 @@ void *ril_client_thread(void *data)
 		if (client->failures) {
 			usleep(RIL_CLIENT_RETRY_DELAY);
 
+			RIL_LOCK();
+
 			rc = ril_client_close(client);
-			if (rc < 0)
+			if (rc < 0) {
+				RIL_UNLOCK();
 				goto failure;
-
-			if (client->failures > 1) {
-				rc = ril_client_destroy(client);
-				if (rc < 0)
-					goto failure;
-
-				rc = ril_client_create(client);
-				if (rc < 0)
-					goto failure;
 			}
 
 			rc = ril_client_open(client);
-			if (rc < 0)
+			if (rc < 0) {
+				RIL_UNLOCK();
 				goto failure;
+			}
+
+			RIL_UNLOCK();
 		}
 
 		rc = client->handlers->loop(client);
 		if (rc < 0) {
 			RIL_LOGE("%s client loop failed", client->name);
-
-			if (client->critical) {
-				RIL_LOCK();
-				ril_radio_state_update(RADIO_STATE_UNAVAILABLE);
-				RIL_UNLOCK();
-			}
-
 			goto failure;
 		} else {
 			RIL_LOGE("%s client loop terminated", client->name);
@@ -185,8 +176,12 @@ failure:
 		client->failures++;
 	} while (client->failures < RIL_CLIENT_RETRY_COUNT);
 
+	RIL_LOCK();
+
 	ril_client_close(client);
 	ril_client_destroy(client);
+
+	RIL_UNLOCK();
 
 	RIL_LOGD("Stopped %s client loop", client->name);
 

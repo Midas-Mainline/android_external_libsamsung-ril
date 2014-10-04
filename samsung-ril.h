@@ -103,7 +103,6 @@ struct ril_client_callbacks {
 struct ril_client {
 	int id;
 	char *name;
-	int critical;
 	struct ril_client_handlers *handlers;
 	struct ril_client_callbacks *callbacks;
 
