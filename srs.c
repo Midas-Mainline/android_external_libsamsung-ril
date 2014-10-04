@@ -55,6 +55,8 @@ const char *srs_command_string(unsigned short command)
 			return "SRS_SND_SET_CALL_AUDIO_PATH";
 		case SRS_SND_SET_CALL_CLOCK_SYNC:
 			return "SRS_SND_SET_CALL_CLOCK_SYNC";
+		case SRS_TEST_SET_RADIO_STATE:
+			return "SRS_TEST_SET_RADIO_STATE";
 		default:
 			snprintf((char *) &command_string, sizeof(command_string), "0x%04x", command);
 			return command_string;
@@ -180,6 +182,21 @@ int srs_control_ping(struct srs_message *message)
 			return 0;
 		}
 	}
+
+	return 0;
+}
+
+int srs_test_set_radio_state(struct srs_message *message)
+{
+	struct srs_test_set_radio_state_data *data;
+	int rc;
+
+	if (message == NULL || message->data == NULL || message->size < sizeof(struct srs_test_set_radio_state_data))
+		return -1;
+
+	data = (struct srs_test_set_radio_state_data *) message->data;
+
+	ril_radio_state_update((RIL_RadioState) data->state);
 
 	return 0;
 }

@@ -71,3 +71,19 @@ LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libsrs-client
 
 include $(BUILD_SHARED_LIBRARY)
+
+include $(CLEAR_VARS)
+
+LOCAL_SRC_FILES := tools/srs-test.c
+
+LOCAL_C_INCLUDES := \
+	$(LOCAL_PATH)/include \
+	$(LOCAL_PATH)/srs-client/include \
+
+LOCAL_SHARED_LIBRARIES := liblog libcutils libsrs-client
+
+LOCAL_PRELINK_MODULE := false
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE := srs-test
+
+include $(BUILD_EXECUTABLE)

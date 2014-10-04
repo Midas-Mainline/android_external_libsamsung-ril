@@ -237,6 +237,10 @@ struct srs_dispatch_handler srs_dispatch_handlers[] = {
 		.command = SRS_SND_SET_CALL_CLOCK_SYNC,
 		.handler = srs_snd_set_call_clock_sync,
 	},
+	{
+		.command = SRS_TEST_SET_RADIO_STATE,
+		.handler = srs_test_set_radio_state,
+	},
 };
 
 unsigned int srs_dispatch_handlers_count = sizeof(srs_dispatch_handlers) /

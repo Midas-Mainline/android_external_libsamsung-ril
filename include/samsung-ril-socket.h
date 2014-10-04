@@ -28,6 +28,7 @@
 
 #define SRS_GROUP_CONTROL					0x01
 #define SRS_GROUP_SND						0x02
+#define SRS_GROUP_TEST						0x03
 
 /*
  * Commands
@@ -38,6 +39,8 @@
 #define SRS_SND_SET_CALL_VOLUME					0x0201
 #define SRS_SND_SET_CALL_AUDIO_PATH				0x0202
 #define SRS_SND_SET_CALL_CLOCK_SYNC				0x0203
+
+#define SRS_TEST_SET_RADIO_STATE				0x0301
 
 /*
  * Values
@@ -108,6 +111,10 @@ struct srs_snd_call_audio_path_data {
 
 struct srs_snd_call_clock_sync_data {
 	unsigned char sync;
+} __attribute__((__packed__));
+
+struct srs_test_set_radio_state_data {
+	int state;
 } __attribute__((__packed__));
 
 #endif

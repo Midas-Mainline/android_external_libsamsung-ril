@@ -74,6 +74,7 @@ int srs_message_setup(const struct srs_header *header,
 /* SRS */
 int srs_send(unsigned short command, const void *data, size_t size);
 int srs_control_ping(struct srs_message *message);
+int srs_test_set_radio_state(struct srs_message *message);
 
 /* SRS client */
 int srs_client_register(struct ril_client *ril_client, int fd);
