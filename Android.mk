@@ -47,7 +47,7 @@ LOCAL_C_INCLUDES := \
 
 LOCAL_CFLAGS := -DRIL_SHLIB
 
-LOCAL_SHARED_LIBRARIES := libcutils libnetutils libutils liblog libpower
+LOCAL_SHARED_LIBRARIES := libcutils libnetutils libutils liblog libpower libcrypto
 LOCAL_STATIC_LIBRARIES := libsamsung-ipc
 
 LOCAL_PRELINK_MODULE := false
