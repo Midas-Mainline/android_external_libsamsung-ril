@@ -55,6 +55,8 @@ const char *srs_command_string(unsigned short command)
 			return "SRS_SND_SET_CALL_AUDIO_PATH";
 		case SRS_SND_SET_CALL_CLOCK_SYNC:
 			return "SRS_SND_SET_CALL_CLOCK_SYNC";
+		case SRS_SND_SET_MIC_MUTE:
+			return "SRS_SND_SET_MIC_MUTE";
 		case SRS_TEST_SET_RADIO_STATE:
 			return "SRS_TEST_SET_RADIO_STATE";
 		default:

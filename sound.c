@@ -116,6 +116,27 @@ complete:
 	return rc;
 }
 
+int srs_snd_set_mic_mute(struct srs_message *message)
+{
+	struct ipc_snd_mic_mute_ctrl_data request_data;
+	struct srs_snd_mic_mute_data *data;
+	int rc;
+
+	if (message == NULL || message->data == NULL || message->size < sizeof(struct srs_snd_mic_mute_data))
+		return -1;
+
+	data = (struct srs_snd_mic_mute_data *) message->data;
+
+	memset(&request_data, 0, sizeof(request_data));
+	request_data.mute = !!(data->mute);
+
+	rc = ipc_fmt_send(ipc_fmt_seq(), IPC_SND_MIC_MUTE_CTRL, IPC_TYPE_SET, (void *) &request_data, sizeof(request_data));
+	if (rc < 0)
+		return 0;
+
+	return 0;
+}
+
 int srs_snd_set_call_audio_path(struct srs_message *message)
 {
 	struct ipc_snd_audio_path_ctrl_data request_data;

@@ -347,6 +347,7 @@ int ril_request_set_preferred_network_type(void *data, size_t size,
 
 int srs_snd_set_call_volume(struct srs_message *message);
 int ril_request_set_mute(void *data, size_t size, RIL_Token token);
+int srs_snd_set_mic_mute(struct srs_message *message);
 int srs_snd_set_call_audio_path(struct srs_message *message);
 int srs_snd_set_call_clock_sync(struct srs_message *message);
 
