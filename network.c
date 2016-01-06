@@ -222,13 +222,13 @@ int ipc2ril_net_regist_response(struct ipc_net_regist_response_data *data,
 			status = 1;
 			break;
 		case IPC_NET_REGISTRATION_STATUS_SEARCHING:
-			status = 2;
+			status = 12;
 			break;
 		case IPC_NET_REGISTRATION_STATUS_EMERGENCY:
 			status = 10;
 			break;
 		case IPC_NET_REGISTRATION_STATUS_UNKNOWN:
-			status = 4;
+			status = 14;
 			break;
 		case IPC_NET_REGISTRATION_STATUS_ROAMING:
 			status = 5;
