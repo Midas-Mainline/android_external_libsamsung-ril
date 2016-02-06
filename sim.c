@@ -1088,8 +1088,13 @@ int ril_request_sim_io(void *data, size_t size, RIL_Token token)
 		goto error;
 
 	rc = ril_radio_state_check(RADIO_STATE_SIM_READY);
-	if (rc < 0)
-		return RIL_REQUEST_UNHANDLED;
+	if (rc < 0) {
+		rc = ril_radio_state_check(RADIO_STATE_SIM_LOCKED_OR_ABSENT);
+		if (rc < 0)
+			return RIL_REQUEST_UNHANDLED;
+		else
+			RIL_LOGE("%s: SIM is locked or absent.", __func__);
+	}
 
 	request = ril_request_find_request_status(RIL_REQUEST_SIM_IO, RIL_REQUEST_HANDLED);
 	if (request != NULL)
