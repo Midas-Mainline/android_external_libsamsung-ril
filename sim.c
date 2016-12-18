@@ -244,7 +244,6 @@ int ipc_sec_pin_status(struct ipc_message *message)
 			return 0;
 		}
 
-		return 0;
 	}
 
 	ril_radio_state_update(radio_state);
