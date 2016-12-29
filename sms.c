@@ -194,7 +194,7 @@ complete:
 
 int ril_request_send_sms(void *data, size_t size, RIL_Token token)
 {
-	struct ril_request *request;
+	struct ril_request *request_send_sms, *request_send_sms_expect_more;
 	char **values = NULL;
 	void *smsc = NULL;
 	size_t smsc_size = 0;
@@ -210,8 +210,9 @@ int ril_request_send_sms(void *data, size_t size, RIL_Token token)
 	if (rc < 0)
 		return RIL_REQUEST_UNHANDLED;
 
-	request = ril_request_find_request_status(RIL_REQUEST_SEND_SMS, RIL_REQUEST_HANDLED);
-	if (request != NULL)
+	request_send_sms = ril_request_find_request_status(RIL_REQUEST_SEND_SMS, RIL_REQUEST_HANDLED);
+	request_send_sms_expect_more = ril_request_find_request_status(RIL_REQUEST_SEND_SMS_EXPECT_MORE, RIL_REQUEST_HANDLED);
+	if (request_send_sms != NULL || request_send_sms_expect_more != NULL)
 		return RIL_REQUEST_UNHANDLED;
 
 	values = (char **) data;
