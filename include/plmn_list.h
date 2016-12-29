@@ -21,6 +21,7 @@ struct plmn_list_entry {
 
 struct plmn_list_entry plmn_list[] = {
 	{ 1, 1, "TEST", "TEST" },
+	{ 000, 00, "null", "null" },
 
 	// Abkhazia
 
