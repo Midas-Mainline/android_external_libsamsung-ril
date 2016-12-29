@@ -285,7 +285,10 @@ int ipc2ril_net_operator(char *data, size_t size, char **plmn,
 	*operator_long = NULL;
 	*operator_short = NULL;
 
-	rc = sscanf((char *) &buffer, "%3u%2u", &mcc, &mnc);
+	if (buffer[5] == '\0')
+		rc = sscanf((char *) &buffer, "%3u%2u", &mcc, &mnc);
+	else
+		rc = sscanf((char *) &buffer, "%3u%3u", &mcc, &mnc);
 	if (rc < 2)
 		goto error;
 
