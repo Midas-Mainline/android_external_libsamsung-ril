@@ -33,6 +33,7 @@ LOCAL_SRC_FILES := \
 	network.c \
 	sound.c \
 	misc.c \
+	ss.c \
 	oem.c \
 	data.c \
 	rfs.c \

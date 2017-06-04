@@ -170,6 +170,11 @@ struct ipc_dispatch_handler ipc_fmt_dispatch_handlers[] = {
 		.command = IPC_MISC_TIME_INFO,
 		.handler = ipc_misc_time_info,
 	},
+	/* SS */
+	{
+		.command = IPC_SS_USSD,
+		.handler = ipc_ss_ussd,
+	},
 	/* OEM */
 	{
 		.command = IPC_SVC_DISPLAY_SCREEN,
@@ -439,6 +444,15 @@ struct ril_request_handler ril_request_handlers[] = {
 	{
 		.request = RIL_REQUEST_SCREEN_STATE,
 		.handler = ril_request_screen_state,
+	},
+	/* SS */
+	{
+		.request = RIL_REQUEST_SEND_USSD,
+		.handler = ril_request_send_ussd,
+	},
+	{
+		.request = RIL_REQUEST_CANCEL_USSD,
+		.handler = ril_request_cancel_ussd,
 	},
 	/* OEM */
 	{

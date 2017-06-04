@@ -366,6 +366,20 @@ int ipc_misc_time_info(struct ipc_message *message);
 int ril_request_screen_state(void *data, size_t size, RIL_Token token);
 
 /*
+ * SS
+ */
+
+enum {
+	USSD_ENCODING_UNKNOWN,
+	USSD_ENCODING_GSM7,
+	USSD_ENCODING_UCS2
+};
+
+int ipc_ss_ussd(struct ipc_message *message);
+int ril_request_send_ussd(void *data, size_t size, RIL_Token token);
+int ril_request_cancel_ussd(void *data, size_t size, RIL_Token token);
+
+/*
  * OEM
  */
 
