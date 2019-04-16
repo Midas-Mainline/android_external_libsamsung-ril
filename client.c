@@ -29,7 +29,7 @@ struct ril_client *ril_client_find_id(int id)
 {
 	unsigned int i;
 
-	if (ril_clients == NULL || ril_clients_count == 0)
+	if (ril_clients_count == 0)
 		return NULL;
 
 	for (i = 0; i < ril_clients_count; i++) {
