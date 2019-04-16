@@ -602,7 +602,6 @@ int ipc_fmt_request_flush(struct ril_client *client)
 
 		list_head_free(list);
 
-list_continue:
 		list = list_next;
 	}
 

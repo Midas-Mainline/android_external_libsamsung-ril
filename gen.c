@@ -90,7 +90,6 @@ int ipc_gen_phone_res_expect_unregister(struct ril_client *client,
 			break;
 		}
 
-list_continue:
 		list = list->next;
 	}
 
@@ -128,7 +127,6 @@ int ipc_gen_phone_res_expect_flush(struct ril_client *client)
 
 		list_head_free(list);
 
-list_continue:
 		list = list_next;
 	}
 

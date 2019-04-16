@@ -618,7 +618,6 @@ int ril_request_unregister(struct ril_request *request)
 			break;
 		}
 
-list_continue:
 		list = list->next;
 	}
 
@@ -657,7 +656,6 @@ int ril_request_flush(void)
 
 		list_head_free(list);
 
-list_continue:
 		list = list_next;
 	}
 
@@ -1001,7 +999,6 @@ int ril_request_data_unregister(struct ril_request_data *request_data)
 			break;
 		}
 
-list_continue:
 		list = list->next;
 	}
 
@@ -1036,7 +1033,6 @@ int ril_request_data_flush(void)
 
 		list_head_free(list);
 
-list_continue:
 		list = list_next;
 	}
 

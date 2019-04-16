@@ -122,7 +122,6 @@ int ril_data_connection_unregister(struct ril_data_connection *data_connection)
 			break;
 		}
 
-list_continue:
 		list = list->next;
 	}
 
@@ -156,7 +155,6 @@ int ril_data_connection_flush(void)
 
 		list_head_free(list);
 
-list_continue:
 		list = list_next;
 	}
 

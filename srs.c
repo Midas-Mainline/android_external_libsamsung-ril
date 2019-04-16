@@ -264,7 +264,7 @@ int srs_client_unregister(struct ril_client *ril_client,
 
 			break;
 		}
-list_continue:
+
 		list = list->next;
 	}
 
@@ -302,7 +302,6 @@ int srs_client_flush(struct ril_client *ril_client)
 
 		list_head_free(list);
 
-list_continue:
 		list = list_next;
 	}
 
