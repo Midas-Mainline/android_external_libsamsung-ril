@@ -445,7 +445,9 @@ int ipc_disp_icon_info(struct ipc_message *message)
 	return 0;
 }
 
-int ril_request_signal_strength(void *data, size_t size, RIL_Token token)
+int ril_request_signal_strength(__attribute__((unused)) void *data,
+				__attribute__((unused)) size_t size,
+				RIL_Token token)
 {
 	struct ipc_disp_icon_info_request_data request_data;
 	int rc;
@@ -519,8 +521,9 @@ int ipc_net_plmn_sel(struct ipc_message *message)
 	return 0;
 }
 
-int ril_request_query_network_selection_mode(void *data, size_t size,
-	RIL_Token token)
+int ril_request_query_network_selection_mode(__attribute__((unused)) void *data,
+					     __attribute__((unused)) size_t size,
+					     RIL_Token token)
 {
 	int rc;
 
@@ -563,8 +566,9 @@ int ipc_net_plmn_sel_callback(struct ipc_message *message)
 	return 0;
 }
 
-int ril_request_set_network_selection_automatic(void *data, size_t size,
-	RIL_Token token)
+int ril_request_set_network_selection_automatic(__attribute__((unused)) void *data,
+						__attribute__((unused)) size_t size,
+						RIL_Token token)
 {
 	struct ipc_net_plmn_sel_request_data request_data;
 	int rc;
@@ -682,7 +686,9 @@ int ipc_net_serving_network(struct ipc_message *message)
 	return 0;
 }
 
-int ril_request_operator(void *data, size_t size, RIL_Token token)
+int ril_request_operator(__attribute__((unused)) void *data,
+			 __attribute__((unused)) size_t size,
+			 RIL_Token token)
 {
 	struct ril_request *request;
 	void *operator_data;
@@ -811,8 +817,9 @@ complete:
 	return 0;
 }
 
-int ril_request_query_available_networks(void *data, size_t size,
-	RIL_Token token)
+int ril_request_query_available_networks(__attribute__((unused)) void *data,
+					 __attribute__((unused)) size_t size,
+					 RIL_Token token)
 {
 	struct ril_request *request;
 	int rc;
@@ -939,10 +946,13 @@ complete:
 }
 
 #if RIL_VERSION >= 6
-int ril_request_voice_registration_state(void *data, size_t size,
-	RIL_Token token)
+int ril_request_voice_registration_state(__attribute__((unused)) void *data,
+					 __attribute__((unused)) size_t size,
+					 RIL_Token token)
 #else
-int ril_request_registration_state(void *data, size_t size, RIL_Token token)
+int ril_request_registration_state(__attribute__((unused)) void *data,
+				   __attribute__((unused)) size_t size,
+				   RIL_Token token)
 #endif
 {
 	struct ipc_net_regist_request_data request_data;
@@ -1011,11 +1021,13 @@ complete:
 }
 
 #if RIL_VERSION >= 6
-int ril_request_data_registration_state(void *data, size_t size,
-	RIL_Token token)
+int ril_request_data_registration_state(__attribute__((unused)) void *data,
+					__attribute__((unused)) size_t size,
+					RIL_Token token)
 #else
-int ril_request_gprs_registration_state(void *data, size_t size,
-	RIL_Token token)
+int ril_request_gprs_registration_state(__attribute__((unused)) void *data,
+					__attribute__((unused)) size_t size,
+					RIL_Token token)
 #endif
 {
 	struct ipc_net_regist_request_data request_data;
@@ -1108,8 +1120,9 @@ int ipc_net_mode_sel(struct ipc_message *message)
 	return 0;
 }
 
-int ril_request_get_preferred_network_type(void *data, size_t size,
-	RIL_Token token)
+int ril_request_get_preferred_network_type(__attribute__((unused)) void *data,
+					   __attribute__((unused)) size_t size,
+					   RIL_Token token)
 {
 	int rc;
 

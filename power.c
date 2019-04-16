@@ -26,14 +26,14 @@
 #include <samsung-ril.h>
 #include <utils.h>
 
-int ipc_pwr_phone_pwr_up(struct ipc_message *message)
+int ipc_pwr_phone_pwr_up(__attribute__((unused)) struct ipc_message *message)
 {
 	ril_radio_state_update(RADIO_STATE_OFF);
 
 	return 0;
 }
 
-int ipc_pwr_phone_reset(struct ipc_message *message)
+int ipc_pwr_phone_reset(__attribute__((unused)) struct ipc_message *message)
 {
 	ril_radio_state_update(RADIO_STATE_OFF);
 

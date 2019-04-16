@@ -660,7 +660,9 @@ int ipc_gprs_pdp_context(struct ipc_message *message)
 	return 0;
 }
 
-int ril_request_data_call_list(void *data, size_t size, RIL_Token token)
+int ril_request_data_call_list(__attribute__((unused)) void *data,
+			       __attribute__((unused)) size_t size,
+			       RIL_Token token)
 {
 	int rc;
 
@@ -1015,8 +1017,9 @@ complete:
 	return 0;
 }
 
-int ril_request_last_data_call_fail_cause(void *data, size_t size,
-	RIL_Token token)
+int ril_request_last_data_call_fail_cause(__attribute__((unused)) void *data,
+					  __attribute__((unused)) size_t size,
+					  RIL_Token token)
 {
 	void *fail_cause_data;
 	size_t fail_cause_size;

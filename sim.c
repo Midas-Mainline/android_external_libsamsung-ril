@@ -257,7 +257,9 @@ int ipc_sec_pin_status(struct ipc_message *message)
 	return 0;
 }
 
-int ril_request_get_sim_status(void *data, size_t size, RIL_Token token)
+int ril_request_get_sim_status(__attribute__((unused)) void *data,
+			       __attribute__((unused)) size_t size,
+			       RIL_Token token)
 {
 	void *card_status_data;
 	size_t card_status_size;

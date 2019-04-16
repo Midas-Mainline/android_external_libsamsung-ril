@@ -32,7 +32,8 @@
  * Utils
  */
 
-void ipc_log_handler(void *log_data, const char *message)
+void ipc_log_handler(__attribute__((unused)) void *log_data,
+		     const char *message)
 {
 	RIL_LOGD("%s", message);
 }

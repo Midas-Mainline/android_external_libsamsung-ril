@@ -124,7 +124,7 @@ complete:
 	return rc;
 }
 
-int ipc_call_incoming(struct ipc_message *message)
+int ipc_call_incoming(__attribute__((unused)) struct ipc_message *message)
 {
 	ril_request_unsolicited(RIL_UNSOL_CALL_RING, NULL, 0);
 
@@ -133,7 +133,8 @@ int ipc_call_incoming(struct ipc_message *message)
 	return 0;
 }
 
-int ril_request_hangup(void *data, size_t size, RIL_Token token)
+int ril_request_hangup(__attribute__((unused)) void *data,
+		       __attribute__((unused)) size_t size, RIL_Token token)
 {
 	int hangup;
 	int rc;
@@ -169,7 +170,9 @@ complete:
 	return rc;
 }
 
-int ril_request_answer(void *data, size_t size, RIL_Token token)
+int ril_request_answer(__attribute__((unused)) void *data,
+		       __attribute__((unused)) size_t size,
+		       RIL_Token token)
 {
 	int rc;
 
@@ -228,7 +231,9 @@ int ipc_call_status(struct ipc_message *message)
 	return 0;
 }
 
-int ril_request_last_call_fail_cause(void *data, size_t size, RIL_Token token)
+int ril_request_last_call_fail_cause(__attribute__((unused)) void *data,
+				     __attribute__((unused)) size_t size,
+				     RIL_Token token)
 {
 	void *fail_cause_data;
 	size_t fail_cause_size;
@@ -339,7 +344,9 @@ complete:
 	return 0;
 }
 
-int ril_request_get_current_calls(void *data, size_t size, RIL_Token token)
+int ril_request_get_current_calls(__attribute__((unused)) void *data,
+				  __attribute__((unused)) size_t size,
+				  RIL_Token token)
 {
 	int rc;
 
@@ -647,7 +654,9 @@ int ril_request_dtmf_stop_complete(unsigned char aseq, int callback)
 	return 0;
 }
 
-int ril_request_dtmf_stop(void *data, size_t size, RIL_Token token)
+int ril_request_dtmf_stop(__attribute__((unused)) void *data,
+			  __attribute__((unused)) size_t size,
+			  RIL_Token token)
 {
 	struct ril_request *request;
 	void *dtmf_data;

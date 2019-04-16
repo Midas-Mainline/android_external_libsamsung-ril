@@ -902,7 +902,7 @@ int ril_request_dispatch(struct ril_request *request)
 	return 0;
 }
 
-void *ril_request_loop(void *data)
+void *ril_request_loop(__attribute__((unused)) void *data)
 {
 	struct ril_request *request;
 	int rc;
@@ -1467,8 +1467,9 @@ RIL_RadioFunctions ril_radio_functions = {
 	ril_get_version
 };
 
-const RIL_RadioFunctions *RIL_Init(const struct RIL_Env *env, int argc,
-	char **argv)
+const RIL_RadioFunctions *RIL_Init(const struct RIL_Env *env,
+				   __attribute__((unused)) int argc,
+				   __attribute__((unused)) char **argv)
 {
 	RIL_RadioFunctions *radio_functions;
 	pthread_attr_t attr;

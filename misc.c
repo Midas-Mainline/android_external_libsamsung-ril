@@ -29,7 +29,6 @@ int ipc_misc_me_version(struct ipc_message *message)
 {
 	struct ipc_misc_me_version_response_data *data;
 	char *baseband_version;
-	int active;
 
 	if (message == NULL || message->data == NULL || message->size < sizeof(struct ipc_misc_me_version_response_data))
 		return -1;
@@ -48,7 +47,9 @@ int ipc_misc_me_version(struct ipc_message *message)
 	return 0;
 }
 
-int ril_request_baseband_version(void *data, size_t size, RIL_Token token)
+int ril_request_baseband_version(__attribute__((unused)) void *data,
+				 __attribute__((unused)) size_t size,
+				 RIL_Token token)
 {
 	struct ipc_misc_me_version_request_data request_data;
 	struct ril_request *request;
@@ -105,7 +106,9 @@ int ipc_misc_me_imsi(struct ipc_message *message)
 	return 0;
 }
 
-int ril_request_get_imsi(void *data, size_t size, RIL_Token token)
+int ril_request_get_imsi(__attribute__((unused)) void *data,
+			 __attribute__((unused)) size_t size,
+			 RIL_Token token)
 {
 	struct ril_request *request;
 	int rc;
@@ -178,7 +181,9 @@ int ipc_misc_me_sn(struct ipc_message *message)
 	return 0;
 }
 
-int ril_request_get_imei(void *data, size_t size, RIL_Token token)
+int ril_request_get_imei(__attribute__((unused)) void *data,
+			 __attribute__((unused)) size_t size,
+			 RIL_Token token)
 {
 	struct ipc_misc_me_sn_request_data request_data;
 	struct ril_request *request;
@@ -208,7 +213,9 @@ int ril_request_get_imei(void *data, size_t size, RIL_Token token)
 	return RIL_REQUEST_HANDLED;
 }
 
-int ril_request_get_imeisv(void *data, size_t size, RIL_Token token)
+int ril_request_get_imeisv(__attribute__((unused)) void *data,
+			   __attribute__((unused)) size_t size,
+			   RIL_Token token)
 {
 	struct ipc_misc_me_sn_request_data request_data;
 	struct ril_request *request;
