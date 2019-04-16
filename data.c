@@ -28,6 +28,8 @@
 #include <samsung-ril.h>
 #include <utils.h>
 
+extern int ipv4NetmaskToPrefixLength(in_addr_t mask);
+
 int ipc2ril_gprs_fail_cause(unsigned char fail_cause)
 {
 	switch (fail_cause) {
