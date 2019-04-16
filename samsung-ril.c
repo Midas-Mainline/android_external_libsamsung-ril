@@ -869,7 +869,6 @@ int ril_request_dispatch(struct ril_request *request)
 {
 	unsigned int i;
 	int status;
-	int rc;
 
 	if (request == NULL || ril_data == NULL)
 		return -1;
@@ -955,7 +954,6 @@ int ril_request_data_register(int request, void *data, size_t size)
 	struct ril_request_data *request_data;
 	struct list_head *list_end;
 	struct list_head *list;
-	unsigned int i;
 
 	if (data == NULL || ril_data == NULL)
 		return -1;
@@ -980,7 +978,6 @@ int ril_request_data_register(int request, void *data, size_t size)
 int ril_request_data_unregister(struct ril_request_data *request_data)
 {
 	struct list_head *list;
-	unsigned int i;
 
 	if (request_data == NULL || ril_data == NULL)
 		return -1;
@@ -1148,7 +1145,6 @@ int ril_radio_state_update(RIL_RadioState radio_state)
 {
 	struct ril_request *request;
 	unsigned int i;
-	int rc;
 
 	if (ril_data == NULL)
 		return -1;

@@ -74,7 +74,6 @@ int ipc2ril_disp_icon_info(struct ipc_disp_icon_info_response_data *data,
 	int asu_bars[] = { 1, 3, 5, 8, 12, 15 };
 	unsigned int asu_bars_count = sizeof(asu_bars) / sizeof(int);
 	unsigned char asu_bars_index;
-	int rc;
 
 	if (data == NULL || strength == NULL)
 		return -1;
@@ -738,7 +737,6 @@ int ipc_net_plmn_list(struct ipc_message *message)
 	char **network;
 	unsigned char count;
 	unsigned char index;
-	unsigned int i;
 	int rc;
 
 	if (message == NULL || message->data == NULL || message->size < sizeof(struct ipc_net_plmn_list_header))

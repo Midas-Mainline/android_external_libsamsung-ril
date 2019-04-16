@@ -131,7 +131,6 @@ int srs_send(unsigned short command, const void *data, size_t size)
 {
 	struct ril_client *ril_client;
 	struct srs_data *srs_data;
-	struct srs_client *client;
 	struct srs_message message;
 	int rc;
 
@@ -191,7 +190,6 @@ int srs_control_ping(struct srs_message *message)
 int srs_test_set_radio_state(struct srs_message *message)
 {
 	struct srs_test_set_radio_state_data *data;
-	int rc;
 
 	if (message == NULL || message->data == NULL || message->size < sizeof(struct srs_test_set_radio_state_data))
 		return -1;
@@ -642,7 +640,6 @@ int srs_server_close(struct ril_client *ril_client)
 {
 	struct srs_data *data;
 	struct srs_client *client;
-	eventfd_t event;
 	int rc;
 
 	if (ril_client == NULL || ril_client->data == NULL)
@@ -957,8 +954,6 @@ complete:
 int srs_close(struct ril_client *ril_client)
 {
 	struct srs_data *data;
-	struct srs_client *client;
-	eventfd_t event;
 	int rc;
 
 	if (ril_client == NULL || ril_client->data == NULL)

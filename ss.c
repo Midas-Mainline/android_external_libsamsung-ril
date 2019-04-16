@@ -214,7 +214,9 @@ complete:
 	return rc;
 }
 
-int ril_request_cancel_ussd(void *data, size_t size, RIL_Token token)
+int ril_request_cancel_ussd(__attribute__((unused)) void *data,
+			    __attribute__((unused)) size_t size,
+			    RIL_Token token)
 {
 	struct ipc_ss_ussd_header ussd;
 	int rc;
@@ -419,7 +421,6 @@ int ipc_ss_ussd(struct ipc_message *message)
 	char *ussd_message[2];
 	int ussd_encoding;
 	struct ipc_ss_ussd_header *ussd = NULL;
-	unsigned char state;
 	int rc;
 
 	if (message == NULL || message->data == NULL || message->size < sizeof(struct ipc_ss_ussd_header))

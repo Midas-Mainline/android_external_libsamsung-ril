@@ -200,7 +200,6 @@ int ril_request_send_sms(void *data, size_t size, RIL_Token token)
 	size_t smsc_size = 0;
 	void *pdu = NULL;
 	size_t pdu_size = 0;
-	unsigned int i;
 	int rc;
 
 	if (data == NULL || size < 2 * sizeof(char *))

@@ -60,7 +60,6 @@ RIL_RadioState ipc2ril_sec_pin_status_response(struct ipc_sec_pin_status_respons
 	RIL_RadioState radio_state;
 	unsigned int index;
 	unsigned int count;
-	unsigned int i;
 
 	if (data == NULL || card_status == NULL)
 		return 0;

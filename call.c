@@ -265,7 +265,6 @@ int ipc_call_list(struct ipc_message *message)
 	unsigned char count;
 	unsigned char index;
 	char *number;
-	int rc;
 
 	if (message == NULL || message->data == NULL || message->size < sizeof(struct ipc_call_list_header))
 		return -1;

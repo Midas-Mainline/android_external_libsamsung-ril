@@ -75,7 +75,6 @@ int ril_data_connection_register(unsigned int cid, char *apn, char *username,
 	struct ril_data_connection *data_connection;
 	struct list_head *list_end;
 	struct list_head *list;
-	unsigned int i;
 
 	if (apn == NULL || ril_data == NULL)
 		return -1;
@@ -103,7 +102,6 @@ int ril_data_connection_register(unsigned int cid, char *apn, char *username,
 int ril_data_connection_unregister(struct ril_data_connection *data_connection)
 {
 	struct list_head *list;
-	unsigned int i;
 
 	if (data_connection == NULL || ril_data == NULL)
 		return -1;
@@ -459,7 +457,6 @@ int ril_request_setup_data_call(void *data, size_t size, RIL_Token token)
 	char *username = NULL;
 	char *password = NULL;
 	char **values = NULL;
-	unsigned int i;
 	int rc;
 
 	if (data == NULL || size < 6 * sizeof(char *))
@@ -728,7 +725,6 @@ int ril_request_deactivate_data_call(void *data, size_t size, RIL_Token token)
 	struct ril_request *request;
 	char **values = NULL;
 	unsigned int cid;
-	unsigned int i;
 	int rc;
 
 	if (data == NULL || size < 2 * sizeof(char *))
@@ -872,12 +868,12 @@ int ipc_gprs_call_status(struct ipc_message *message)
 	RIL_Data_Call_Response_v6 response;
 #else
 	char *setup_data_call_response[3];
+	int fail_cause;
+	unsigned int i;
 #endif
 	struct ipc_gprs_call_status_data *data;
 	struct ril_data_connection *data_connection;
 	struct ril_request *request;
-	int fail_cause;
-	unsigned int i;
 	int rc;
 
 	if (message == NULL || message->data == NULL || message->size < sizeof(struct ipc_gprs_call_status_data))

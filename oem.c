@@ -35,7 +35,6 @@ int ipc_svc_display_screen(struct ipc_message *message)
 	void *screen_data = NULL;
 	size_t screen_size = 0;
 	unsigned char count;
-	int rc;
 
 	if (message == NULL || message->data == NULL || message->size < sizeof(struct ipc_svc_display_screen_header))
 		return -1;
