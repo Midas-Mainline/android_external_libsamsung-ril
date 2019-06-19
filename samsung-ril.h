@@ -47,6 +47,33 @@
  * Macros
  */
 
+#if !defined(RADIO_STATE_SIM_NOT_READY)
+#define RADIO_STATE_SIM_NOT_READY		RADIO_STATE_UNAVAILABLE
+#endif
+
+#if !defined(RADIO_STATE_SIM_LOCKED_OR_ABSENT)
+#define RADIO_STATE_SIM_NOT_READY		RADIO_STATE_UNAVAILABLE
+#endif
+
+#if !defined(RADIO_STATE_NV_NOT_READY)
+#define RADIO_STATE_NV_NOT_READY		RADIO_STATE_UNAVAILABLE
+#endif
+
+/* Very big hack, this is unlikely to work */
+#if !defined(RADIO_STATE_SIM_LOCKED_OR_ABSENT)
+#define RADIO_STATE_SIM_LOCKED_OR_ABSENT	RADIO_STATE_UNAVAILABLE
+#endif
+
+/* Very big hack, this is unlikely to work */
+#if !defined(RADIO_STATE_SIM_READY)
+#define RADIO_STATE_SIM_READY			RADIO_STATE_ON
+#endif
+
+/* Very big hack, this is unlikely to work */
+#if !defined(RADIO_STATE_NV_READY)
+#define RADIO_STATE_NV_READY			RADIO_STATE_ON
+#endif
+
 #ifdef ALOGI
 #define RIL_LOGI				ALOGI
 #else
