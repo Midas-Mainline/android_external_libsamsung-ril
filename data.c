@@ -25,6 +25,7 @@
 #include <utils/Log.h>
 #include <netutils/ifc.h>
 
+#include <ril-versions-compat.h>
 #include <samsung-ril.h>
 #include <utils.h>
 
@@ -563,11 +564,7 @@ int ipc_gprs_pdp_context(struct ipc_message *message)
 {
 	struct ipc_gprs_pdp_context_request_get_data *data;
 	struct ril_data_connection *data_connection;
-#if RIL_VERSION >= 6
-	RIL_Data_Call_Response_v6 response[3];
-#else
-	RIL_Data_Call_Response response[3];
-#endif
+	RIL_Data_Call_Response_compat response[3];
 	unsigned int entries_count;
 	unsigned int index = 0;
 	size_t size;
@@ -623,11 +620,7 @@ int ipc_gprs_pdp_context(struct ipc_message *message)
 		index++;
 	}
 
-#if RIL_VERSION >= 6
-	size = index * sizeof(RIL_Data_Call_Response_v6);
-#else
-	size = index * sizeof(RIL_Data_Call_Response);
-#endif
+	size = index * sizeof(RIL_Data_Call_Response_compat);
 
 	if (!ipc_seq_valid(message->aseq))
 		ril_request_unsolicited(RIL_UNSOL_DATA_CALL_LIST_CHANGED, &response, size);
@@ -868,17 +861,15 @@ int ipc_gprs_hsdpa_status(struct ipc_message *message)
 
 int ipc_gprs_call_status(struct ipc_message *message)
 {
-#if RIL_VERSION >= 6
-	RIL_Data_Call_Response_v6 response;
-#else
-	char *setup_data_call_response[3];
-	int fail_cause;
-	unsigned int i;
-#endif
+	RIL_Data_Call_Response_compat response;
 	struct ipc_gprs_call_status_data *data;
 	struct ril_data_connection *data_connection;
 	struct ril_request *request;
 	int rc;
+#if RIL_VERSION < 6
+	int fail_cause;
+	unsigned int i;
+#endif
 
 	if (message == NULL || message->data == NULL || message->size < sizeof(struct ipc_gprs_call_status_data))
 		return -1;

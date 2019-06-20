@@ -23,8 +23,8 @@
 
 #define LOG_TAG "RIL"
 #include <utils/Log.h>
-#include <telephony/ril.h>
 
+#include <ril-versions-compat.h>
 #include <samsung-ril.h>
 #include <utils.h>
 
@@ -1329,38 +1329,24 @@ void ril_on_request(int request, void *data, size_t size, RIL_Token token)
 			strings_count = size / sizeof(char *);
 			break;
 		case RIL_REQUEST_SIM_IO:
-#if RIL_VERSION >= 6
-			if (data == NULL || size < sizeof(RIL_SIM_IO_v6))
-#else
-			if (data == NULL || size < sizeof(RIL_SIM_IO))
-#endif
+			if (data == NULL || size < sizeof(RIL_SIM_IO_compat))
 				break;
 
 			buffer = calloc(1, size);
 
 			memcpy(buffer, data, size);
 
+			if (((RIL_SIM_IO_compat *) data)->path != NULL)
+				((RIL_SIM_IO_compat *) buffer)->path = strdup(((RIL_SIM_IO_compat *) data)->path);
+
+			if (((RIL_SIM_IO_compat *) data)->data != NULL)
+				((RIL_SIM_IO_compat *) buffer)->data = strdup(((RIL_SIM_IO_compat *) data)->data);
+
+			if (((RIL_SIM_IO_compat *) data)->pin2 != NULL)
+				((RIL_SIM_IO_compat *) buffer)->pin2 = strdup(((RIL_SIM_IO_compat *) data)->pin2);
 #if RIL_VERSION >= 6
-			if (((RIL_SIM_IO_v6 *) data)->path != NULL)
-				((RIL_SIM_IO_v6 *) buffer)->path = strdup(((RIL_SIM_IO_v6 *) data)->path);
-
-			if (((RIL_SIM_IO_v6 *) data)->data != NULL)
-				((RIL_SIM_IO_v6 *) buffer)->data = strdup(((RIL_SIM_IO_v6 *) data)->data);
-
-			if (((RIL_SIM_IO_v6 *) data)->pin2 != NULL)
-				((RIL_SIM_IO_v6 *) buffer)->pin2 = strdup(((RIL_SIM_IO_v6 *) data)->pin2);
-
-			if (((RIL_SIM_IO_v6 *) data)->aidPtr != NULL)
-				((RIL_SIM_IO_v6 *) buffer)->aidPtr = strdup(((RIL_SIM_IO_v6 *) data)->aidPtr);
-#else
-			if (((RIL_SIM_IO *) data)->path != NULL)
-				((RIL_SIM_IO *) buffer)->path = strdup(((RIL_SIM_IO *) data)->path);
-
-			if (((RIL_SIM_IO *) data)->data != NULL)
-				((RIL_SIM_IO *) buffer)->data = strdup(((RIL_SIM_IO *) data)->data);
-
-			if (((RIL_SIM_IO *) data)->pin2 != NULL)
-				((RIL_SIM_IO *) buffer)->pin2 = strdup(((RIL_SIM_IO *) data)->pin2);
+			if (((RIL_SIM_IO_compat *) data)->aidPtr != NULL)
+				((RIL_SIM_IO_compat *) buffer)->aidPtr = strdup(((RIL_SIM_IO_compat *) data)->aidPtr);
 #endif
 
 			data = buffer;

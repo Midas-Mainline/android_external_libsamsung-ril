@@ -27,26 +27,19 @@
 #define LOG_TAG "RIL"
 #include <utils/Log.h>
 
+#include <ril-versions-compat.h>
 #include <samsung-ril.h>
 #include <utils.h>
 #include <plmn_list.h>
 
-#if RIL_VERSION >= 6
-int ipc2ril_disp_rssi(unsigned char rssi, RIL_SignalStrength_v6 *strength)
-#else
-int ipc2ril_disp_rssi(unsigned char rssi, RIL_SignalStrength *strength)
-#endif
+int ipc2ril_disp_rssi(unsigned char rssi, RIL_SignalStrength_compat *strength)
 {
 	int asu;
 
 	if (strength == NULL)
 		return -1;
 
-#if RIL_VERSION >= 6
-	memset(strength, -1, sizeof(RIL_SignalStrength_v6));
-#else
-	memset(strength, -1, sizeof(RIL_SignalStrength));
-#endif
+	memset(strength, -1, sizeof(RIL_SignalStrength_compat));
 
 	asu = (int) rssi / -2 + 56;
 
@@ -63,13 +56,8 @@ int ipc2ril_disp_rssi(unsigned char rssi, RIL_SignalStrength *strength)
 	return 0;
 }
 
-#if RIL_VERSION >= 6
 int ipc2ril_disp_icon_info(struct ipc_disp_icon_info_response_data *data,
-	RIL_SignalStrength_v6 *strength)
-#else
-int ipc2ril_disp_icon_info(struct ipc_disp_icon_info_response_data *data,
-	RIL_SignalStrength *strength)
-#endif
+	RIL_SignalStrength_compat *strength)
 {
 	int asu_bars[] = { 1, 3, 5, 8, 12, 15 };
 	unsigned int asu_bars_count = sizeof(asu_bars) / sizeof(int);
@@ -81,11 +69,7 @@ int ipc2ril_disp_icon_info(struct ipc_disp_icon_info_response_data *data,
 	if (!(data->flags & IPC_DISP_ICON_INFO_FLAG_RSSI))
 		return -1;
 
-#if RIL_VERSION >= 6
-	memset(strength, -1, sizeof(RIL_SignalStrength_v6));
-#else
-	memset(strength, -1, sizeof(RIL_SignalStrength));
-#endif
+	memset(strength, -1, sizeof(RIL_SignalStrength_compat));
 
 	asu_bars_index = data->rssi;
 	if (asu_bars_index >= asu_bars_count)
@@ -100,13 +84,8 @@ int ipc2ril_disp_icon_info(struct ipc_disp_icon_info_response_data *data,
 	return 0;
 }
 
-#if RIL_VERSION >= 6
 int ipc2ril_disp_rssi_info(struct ipc_disp_rssi_info_data *data,
-	RIL_SignalStrength_v6 *strength)
-#else
-int ipc2ril_disp_rssi_info(struct ipc_disp_rssi_info_data *data,
-	RIL_SignalStrength *strength)
-#endif
+	RIL_SignalStrength_compat *strength)
 {
 	int rc;
 
@@ -413,11 +392,7 @@ unsigned char ril2ipc_net_mode_sel(int type)
 int ipc_disp_icon_info(struct ipc_message *message)
 {
 	struct ipc_disp_icon_info_response_data *data;
-#if RIL_VERSION >= 6
-	RIL_SignalStrength_v6 strength;
-#else
-	RIL_SignalStrength strength;
-#endif
+	RIL_SignalStrength_compat strength;
 	int rc;
 
 	if (message == NULL || message->data == NULL || message->size < sizeof(struct ipc_disp_icon_info_response_data))
@@ -471,11 +446,7 @@ int ril_request_signal_strength(__attribute__((unused)) void *data,
 int ipc_disp_rssi_info(struct ipc_message *message)
 {
 	struct ipc_disp_rssi_info_data *data;
-#if RIL_VERSION >= 6
-	RIL_SignalStrength_v6 strength;
-#else
-	RIL_SignalStrength strength;
-#endif
+	RIL_SignalStrength_compat strength;
 	int rc;
 
 	if (message == NULL || message->data == NULL || message->size < sizeof(struct ipc_disp_rssi_info_data))

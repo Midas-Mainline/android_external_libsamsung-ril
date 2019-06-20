@@ -23,17 +23,13 @@
 #define LOG_TAG "RIL"
 #include <utils/Log.h>
 
+#include <ril-versions-compat.h>
 #include <samsung-ril.h>
 #include <utils.h>
 #include <sim.h>
 
-#if RIL_VERSION >= 6
 RIL_RadioState ipc2ril_sec_pin_status_response(struct ipc_sec_pin_status_response_data *data,
-	RIL_CardStatus_v6 *card_status)
-#else
-RIL_RadioState ipc2ril_sec_pin_status_response(struct ipc_sec_pin_status_response_data *data,
-	RIL_CardStatus *card_status)
-#endif
+	RIL_CardStatus_compat *card_status)
 {
 	RIL_AppStatus app_statuses[] = {
 		// Absent
@@ -126,11 +122,7 @@ RIL_RadioState ipc2ril_sec_pin_status_response(struct ipc_sec_pin_status_respons
 			radio_state = RADIO_STATE_SIM_LOCKED_OR_ABSENT;
 	}
 
-#if RIL_VERSION >= 6
-	memset(card_status, 0, sizeof(RIL_CardStatus_v6));
-#else
-	memset(card_status, 0, sizeof(RIL_CardStatus));
-#endif
+	memset(card_status, 0, sizeof(RIL_CardStatus_compat));
 
 	if (index == 0)
 		card_status->card_state = RIL_CARDSTATE_ABSENT;
@@ -201,11 +193,7 @@ int ipc_sec_pin_status(struct ipc_message *message)
 {
 	struct ipc_sec_pin_status_response_data *data;
 	struct ipc_sec_pin_status_request_data request_data;
-#if RIL_VERSION >= 6
-	RIL_CardStatus_v6 card_status;
-#else
-	RIL_CardStatus card_status;
-#endif
+	RIL_CardStatus_compat card_status;
 	RIL_RadioState radio_state;
 	int rc;
 
@@ -263,11 +251,7 @@ int ril_request_get_sim_status(__attribute__((unused)) void *data,
 {
 	void *card_status_data;
 	size_t card_status_size;
-#if RIL_VERSION >= 6
-	RIL_CardStatus_v6 *card_status;
-#else
-	RIL_CardStatus *card_status;
-#endif
+	RIL_CardStatus_compat *card_status;
 	struct ril_request *request;
 	int rc;
 
@@ -282,13 +266,8 @@ int ril_request_get_sim_status(__attribute__((unused)) void *data,
 	card_status_size = ril_request_data_size_get(RIL_REQUEST_GET_SIM_STATUS);
 	card_status_data = ril_request_data_get(RIL_REQUEST_GET_SIM_STATUS);
 
-#if RIL_VERSION >= 6
-	if (card_status_data != NULL && card_status_size >= sizeof(RIL_CardStatus_v6)) {
-		card_status = (RIL_CardStatus_v6 *) ril_request_data_get(RIL_REQUEST_GET_SIM_STATUS);
-#else
-	if (card_status_data != NULL && card_status_size >= sizeof(RIL_CardStatus)) {
-		card_status = (RIL_CardStatus *) ril_request_data_get(RIL_REQUEST_GET_SIM_STATUS);
-#endif
+	if (card_status_data != NULL && card_status_size >= sizeof(RIL_CardStatus_compat)) {
+		card_status = (RIL_CardStatus_compat *) ril_request_data_get(RIL_REQUEST_GET_SIM_STATUS);
 		ril_request_complete(token, RIL_E_SUCCESS, card_status_data, card_status_size);
 
 		free(card_status_data);
@@ -917,11 +896,7 @@ int ipc_sec_rsim_access(struct ipc_message *message)
 	struct ril_client *client;
 	struct ipc_fmt_data *ipc_fmt_data;
 	RIL_SIM_IO_Response response;
-#if RIL_VERSION >= 6
-	RIL_SIM_IO_v6 *sim_io;
-#else
-	RIL_SIM_IO *sim_io;
-#endif
+	RIL_SIM_IO_compat *sim_io;
 	unsigned char *p;
 	unsigned int offset;
 	unsigned int i;
@@ -946,18 +921,11 @@ int ipc_sec_rsim_access(struct ipc_message *message)
 	data = ipc_sec_rsim_access_extract(message->data, message->size);
 
 	request = ril_request_find_token(ipc_fmt_request_token(message->aseq));
-#if RIL_VERSION >= 6
-	if (request == NULL || request->data == NULL || request->size < sizeof(RIL_SIM_IO_v6))
-#else
-	if (request == NULL || request->data == NULL || request->size < sizeof(RIL_SIM_IO))
-#endif
+
+	if (request == NULL || request->data == NULL || request->size < sizeof(RIL_SIM_IO_compat))
 		return 0;
 
-#if RIL_VERSION >= 6
-	sim_io = (RIL_SIM_IO_v6 *) request->data;
-#else
-	sim_io = (RIL_SIM_IO *) request->data;
-#endif
+	sim_io = (RIL_SIM_IO_compat *) request->data;
 
 	memset(&response, 0, sizeof(response));
 	response.sw1 = header->sw1;
@@ -1068,11 +1036,7 @@ int ril_request_sim_io(void *data, size_t size, RIL_Token token)
 	struct ipc_sec_rsim_access_request_header request_header;
 	struct ipc_sec_pin_status_request_data pin_request_data;
 	struct ril_request *request;
-#if RIL_VERSION >= 6
-	RIL_SIM_IO_v6 *sim_io = NULL;
-#else
-	RIL_SIM_IO *sim_io = NULL;
-#endif
+	RIL_SIM_IO_compat *sim_io = NULL;
 	void *sim_io_data = NULL;
 	size_t sim_io_size = 0;
 	void *request_data = NULL;
@@ -1080,11 +1044,7 @@ int ril_request_sim_io(void *data, size_t size, RIL_Token token)
 	int pin_request = 0;
 	int rc;
 
-#if RIL_VERSION >= 6
-	if (data == NULL || size < sizeof(RIL_SIM_IO_v6))
-#else
-	if (data == NULL || size < sizeof(RIL_SIM_IO))
-#endif
+	if (data == NULL || size < sizeof(RIL_SIM_IO_compat))
 		goto error;
 
 	rc = ril_radio_state_check(RADIO_STATE_SIM_READY);
@@ -1100,11 +1060,7 @@ int ril_request_sim_io(void *data, size_t size, RIL_Token token)
 	if (request != NULL)
 		return RIL_REQUEST_UNHANDLED;
 
-#if RIL_VERSION >= 6
-	sim_io = (RIL_SIM_IO_v6 *) data;
-#else
-	sim_io = (RIL_SIM_IO *) data;
-#endif
+	sim_io = (RIL_SIM_IO_compat *) data;
 
 	if (sim_io->data != NULL) {
 		sim_io_size = string2data_size(sim_io->data);
