@@ -358,11 +358,7 @@ int ipc2ril_net_mode_sel(struct ipc_net_mode_sel_data *data)
 
 #if RIL_VERSION >= 6
 unsigned char ril2ipc_net_mode_sel(RIL_PreferredNetworkType type)
-#else
-unsigned char ril2ipc_net_mode_sel(int type)
-#endif
 {
-#if RIL_VERSION >= 6
 	switch (type) {
 		case PREF_NET_TYPE_GSM_WCDMA:
 		case PREF_NET_TYPE_GSM_WCDMA_AUTO:
@@ -374,7 +370,10 @@ unsigned char ril2ipc_net_mode_sel(int type)
 		default:
 			return IPC_NET_MODE_SEL_GSM_UMTS;
 	}
+}
 #else
+unsigned char ril2ipc_net_mode_sel(int type)
+{
 	switch (type) {
 		case 0:
 		case 3:
@@ -386,8 +385,8 @@ unsigned char ril2ipc_net_mode_sel(int type)
 		default:
 			return IPC_NET_MODE_SEL_GSM_UMTS;
 	}
-#endif
 }
+#endif
 
 int ipc_disp_icon_info(struct ipc_message *message)
 {
