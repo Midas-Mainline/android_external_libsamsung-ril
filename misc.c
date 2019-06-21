@@ -55,7 +55,7 @@ int ril_request_baseband_version(__attribute__((unused)) void *data,
 	struct ril_request *request;
 	int rc;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0)
 		return RIL_REQUEST_UNHANDLED;
 
@@ -113,7 +113,7 @@ int ril_request_get_imsi(__attribute__((unused)) void *data,
 	struct ril_request *request;
 	int rc;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_READY);
 	if (rc < 0)
 		return RIL_REQUEST_UNHANDLED;
 
@@ -189,7 +189,7 @@ int ril_request_get_imei(__attribute__((unused)) void *data,
 	struct ril_request *request;
 	int rc;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0)
 		return RIL_REQUEST_UNHANDLED;
 
@@ -221,7 +221,7 @@ int ril_request_get_imeisv(__attribute__((unused)) void *data,
 	struct ril_request *request;
 	int rc;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0)
 		return RIL_REQUEST_UNHANDLED;
 
@@ -275,7 +275,7 @@ int ril_request_screen_state(void *data, size_t size, RIL_Token token)
 		return RIL_REQUEST_COMPLETED;
 	}
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0)
 		return RIL_REQUEST_UNHANDLED;
 

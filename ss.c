@@ -121,7 +121,7 @@ int ril_request_send_ussd(void *data, size_t size, RIL_Token token)
 	if (data == NULL || size < sizeof(char *))
 		goto error;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0)
 		return RIL_REQUEST_UNHANDLED;
 
@@ -221,7 +221,7 @@ int ril_request_cancel_ussd(__attribute__((unused)) void *data,
 	struct ipc_ss_ussd_header ussd;
 	int rc;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0)
 		return RIL_REQUEST_UNHANDLED;
 

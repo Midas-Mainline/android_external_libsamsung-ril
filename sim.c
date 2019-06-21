@@ -200,7 +200,7 @@ int ipc_sec_pin_status(struct ipc_message *message)
 	if (message == NULL || message->data == NULL || message->size < sizeof(struct ipc_sec_pin_status_response_data))
 		return -1;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0)
 		return 0;
 
@@ -255,7 +255,7 @@ int ril_request_get_sim_status(__attribute__((unused)) void *data,
 	struct ril_request *request;
 	int rc;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0)
 		return RIL_REQUEST_UNHANDLED;
 
@@ -313,7 +313,7 @@ int ril_request_query_facility_lock(void *data, size_t size, RIL_Token token)
 	if (data == NULL || size < 4 * sizeof(char *))
 		goto error;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_READY);
 	if (rc < 0)
 		return RIL_REQUEST_UNHANDLED;
 
@@ -512,7 +512,7 @@ int ril_request_set_facility_lock(void *data, size_t size, RIL_Token token)
 	if (data == NULL || size < 4 * sizeof(char *))
 		goto error;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_READY);
 	if (rc < 0)
 		return RIL_REQUEST_UNHANDLED;
 
@@ -590,7 +590,7 @@ int ril_request_enter_sim_pin(void *data, size_t size, RIL_Token token)
 	if (data == NULL || size < 2 * sizeof(char *) || ril_data == NULL)
 		goto error;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0)
 		return RIL_REQUEST_UNHANDLED;
 
@@ -647,7 +647,7 @@ int ril_request_enter_sim_puk(void *data, size_t size, RIL_Token token)
 	if (data == NULL || size < 2 * sizeof(char *))
 		goto error;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0)
 		return RIL_REQUEST_UNHANDLED;
 
@@ -697,7 +697,7 @@ int ril_request_enter_sim_pin2(void *data, size_t size, RIL_Token token)
 	if (data == NULL || size < 2 * sizeof(char *))
 		goto error;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0)
 		return RIL_REQUEST_UNHANDLED;
 
@@ -747,7 +747,7 @@ int ril_request_enter_sim_puk2(void *data, size_t size, RIL_Token token)
 	if (data == NULL || size < 2 * sizeof(char *))
 		goto error;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0)
 		return RIL_REQUEST_UNHANDLED;
 
@@ -801,7 +801,7 @@ int ril_request_change_sim_pin(void *data, size_t size, RIL_Token token)
 	if (request != NULL)
 		return RIL_REQUEST_UNHANDLED;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_READY);
 	if (rc < 0)
 		return RIL_REQUEST_UNHANDLED;
 
@@ -851,7 +851,7 @@ int ril_request_change_sim_pin2(void *data, size_t size, RIL_Token token)
 	if (request != NULL)
 		return RIL_REQUEST_UNHANDLED;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_READY);
 	if (rc < 0)
 		return RIL_REQUEST_UNHANDLED;
 
@@ -1047,9 +1047,9 @@ int ril_request_sim_io(void *data, size_t size, RIL_Token token)
 	if (data == NULL || size < sizeof(RIL_SIM_IO_compat))
 		goto error;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_READY);
 	if (rc < 0) {
-		rc = ril_radio_state_check(RADIO_STATE_SIM_LOCKED_OR_ABSENT);
+		rc = ril_has_reached_state(RADIO_STATE_SIM_LOCKED_OR_ABSENT);
 		if (rc < 0)
 			return RIL_REQUEST_UNHANDLED;
 		else
@@ -1210,7 +1210,7 @@ int ipc_sec_lock_infomation(struct ipc_message *message)
 	if (message == NULL || message->data == NULL || message->size < sizeof(struct ipc_sec_lock_infomation_response_data))
 		return -1;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0)
 		return 0;
 

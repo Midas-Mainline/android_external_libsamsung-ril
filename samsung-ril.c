@@ -915,7 +915,7 @@ void *ril_request_loop(__attribute__((unused)) void *data)
 
 		RIL_LOCK();
 
-		rc = ril_radio_state_check(RADIO_STATE_OFF);
+		rc = ril_has_reached_state(RADIO_STATE_OFF);
 		if (rc < 0) {
 			RIL_UNLOCK();
 			continue;
@@ -1196,7 +1196,11 @@ int ril_radio_state_update(RIL_RadioState radio_state)
 	return 0;
 }
 
-int ril_radio_state_check(RIL_RadioState radio_state)
+/* 
+ * Returns 0 if the ril has reached the given radio_state 
+ * Returns -1 otherwise
+ */
+int ril_has_reached_state(RIL_RadioState radio_state)
 {
 	RIL_RadioState radio_states[] = {
 		RADIO_STATE_UNAVAILABLE,

@@ -82,7 +82,7 @@ int ril_request_dial(void *data, size_t size, RIL_Token token)
 	if (data == NULL || size < sizeof(RIL_Dial))
 		goto error;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0)
 		return RIL_REQUEST_UNHANDLED;
 
@@ -139,7 +139,7 @@ int ril_request_hangup(__attribute__((unused)) void *data,
 	int hangup;
 	int rc;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0)
 		return RIL_REQUEST_UNHANDLED;
 
@@ -176,7 +176,7 @@ int ril_request_answer(__attribute__((unused)) void *data,
 {
 	int rc;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0)
 		return RIL_REQUEST_UNHANDLED;
 
@@ -240,7 +240,7 @@ int ril_request_last_call_fail_cause(__attribute__((unused)) void *data,
 	int fail_cause;
 	int rc;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0)
 		return RIL_REQUEST_UNHANDLED;
 
@@ -350,7 +350,7 @@ int ril_request_get_current_calls(__attribute__((unused)) void *data,
 {
 	int rc;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0) {
 		ril_request_complete(token, RIL_E_SUCCESS, NULL, 0);
 		return RIL_REQUEST_COMPLETED;
@@ -486,7 +486,7 @@ int ril_request_dtmf(void *data, size_t size, RIL_Token token)
 	if (data == NULL || size < sizeof(char))
 		goto error;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0)
 		return RIL_REQUEST_UNHANDLED;
 
@@ -571,7 +571,7 @@ int ril_request_dtmf_start(void *data, size_t size, RIL_Token token)
 	if (data == NULL || size < sizeof(char))
 		goto error;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0)
 		return RIL_REQUEST_UNHANDLED;
 

@@ -465,7 +465,7 @@ int ril_request_setup_data_call(void *data, size_t size, RIL_Token token)
 	if (data == NULL || size < 6 * sizeof(char *))
 		goto error;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_READY);
 	if (rc < 0) {
 		ril_request_complete(token, RIL_E_OP_NOT_ALLOWED_BEFORE_REG_TO_NW, NULL, 0);
 		return RIL_REQUEST_COMPLETED;
@@ -661,7 +661,7 @@ int ril_request_data_call_list(__attribute__((unused)) void *data,
 {
 	int rc;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0) {
 		ril_request_complete(token, RIL_E_SUCCESS, NULL, 0);
 		return RIL_REQUEST_COMPLETED;
@@ -727,7 +727,7 @@ int ril_request_deactivate_data_call(void *data, size_t size, RIL_Token token)
 	if (data == NULL || size < 2 * sizeof(char *))
 		goto error;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_READY);
 	if (rc < 0)
 		return RIL_REQUEST_UNHANDLED;
 
@@ -874,7 +874,7 @@ int ipc_gprs_call_status(struct ipc_message *message)
 	if (message == NULL || message->data == NULL || message->size < sizeof(struct ipc_gprs_call_status_data))
 		return -1;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_READY);
 	if (rc < 0)
 		return 0;
 
@@ -1019,7 +1019,7 @@ int ril_request_last_data_call_fail_cause(__attribute__((unused)) void *data,
 	int fail_cause;
 	int rc;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0)
 		return RIL_REQUEST_UNHANDLED;
 

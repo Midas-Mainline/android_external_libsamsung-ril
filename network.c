@@ -397,7 +397,7 @@ int ipc_disp_icon_info(struct ipc_message *message)
 	if (message == NULL || message->data == NULL || message->size < sizeof(struct ipc_disp_icon_info_response_data))
 		return -1;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0)
 		return 0;
 
@@ -426,7 +426,7 @@ int ril_request_signal_strength(__attribute__((unused)) void *data,
 	struct ipc_disp_icon_info_request_data request_data;
 	int rc;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0)
 		return RIL_REQUEST_UNHANDLED;
 
@@ -451,7 +451,7 @@ int ipc_disp_rssi_info(struct ipc_message *message)
 	if (message == NULL || message->data == NULL || message->size < sizeof(struct ipc_disp_rssi_info_data))
 		return -1;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0)
 		return 0;
 
@@ -475,7 +475,7 @@ int ipc_net_plmn_sel(struct ipc_message *message)
 	if (message == NULL || message->data == NULL || message->size < sizeof(struct ipc_net_plmn_sel_response_data))
 		return -1;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0)
 		return 0;
 
@@ -497,7 +497,7 @@ int ril_request_query_network_selection_mode(__attribute__((unused)) void *data,
 {
 	int rc;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0)
 		return RIL_REQUEST_UNHANDLED;
 
@@ -543,7 +543,7 @@ int ril_request_set_network_selection_automatic(__attribute__((unused)) void *da
 	struct ipc_net_plmn_sel_request_data request_data;
 	int rc;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0)
 		return RIL_REQUEST_UNHANDLED;
 
@@ -582,7 +582,7 @@ int ril_request_set_network_selection_manual(void *data, size_t size,
 		return RIL_REQUEST_COMPLETED;
 	}
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0)
 		return RIL_REQUEST_UNHANDLED;
 
@@ -621,7 +621,7 @@ int ipc_net_serving_network(struct ipc_message *message)
 	if (message == NULL || message->data == NULL || message->size < sizeof(struct ipc_net_regist_response_data))
 		return -1;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0)
 		return 0;
 
@@ -668,7 +668,7 @@ int ril_request_operator(__attribute__((unused)) void *data,
 	unsigned int i;
 	int rc;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0)
 		return RIL_REQUEST_UNHANDLED;
 
@@ -718,7 +718,7 @@ int ipc_net_plmn_list(struct ipc_message *message)
 	if (message == NULL || message->data == NULL || message->size < sizeof(struct ipc_net_plmn_list_header))
 		return -1;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0)
 		return 0;
 
@@ -794,7 +794,7 @@ int ril_request_query_available_networks(__attribute__((unused)) void *data,
 	struct ril_request *request;
 	int rc;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0)
 		return RIL_REQUEST_UNHANDLED;
 
@@ -833,7 +833,7 @@ int ipc_net_regist(struct ipc_message *message)
 	if (client == NULL || client->data == NULL)
 		return 0;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0)
 		return 0;
 
@@ -934,7 +934,7 @@ int ril_request_registration_state(__attribute__((unused)) void *data,
 	unsigned int i;
 	int rc;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0)
 		return RIL_REQUEST_UNHANDLED;
 
@@ -1009,7 +1009,7 @@ int ril_request_gprs_registration_state(__attribute__((unused)) void *data,
 	unsigned int i;
 	int rc;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0)
 		return RIL_REQUEST_UNHANDLED;
 
@@ -1074,7 +1074,7 @@ int ipc_net_mode_sel(struct ipc_message *message)
 	if (message == NULL || message->data == NULL || message->size < sizeof(struct ipc_net_mode_sel_data))
 		return -1;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0)
 		return 0;
 
@@ -1096,7 +1096,7 @@ int ril_request_get_preferred_network_type(__attribute__((unused)) void *data,
 {
 	int rc;
 
-	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
+	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
 	if (rc < 0)
 		return RIL_REQUEST_UNHANDLED;
 

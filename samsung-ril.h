@@ -230,7 +230,7 @@ void *ril_request_data_get(int request);
  */
 
 int ril_radio_state_update(RIL_RadioState radio_state);
-int ril_radio_state_check(RIL_RadioState radio_state);
+int ril_has_reached_state(RIL_RadioState radio_state);
 
 /*
  * RIL data
