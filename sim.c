@@ -251,7 +251,6 @@ int ril_request_get_sim_status(__attribute__((unused)) void *data,
 {
 	void *card_status_data;
 	size_t card_status_size;
-	RIL_CardStatus_compat *card_status;
 	struct ril_request *request;
 	int rc;
 
@@ -267,7 +266,6 @@ int ril_request_get_sim_status(__attribute__((unused)) void *data,
 	card_status_data = ril_request_data_get(RIL_REQUEST_GET_SIM_STATUS);
 
 	if (card_status_data != NULL && card_status_size >= sizeof(RIL_CardStatus_compat)) {
-		card_status = (RIL_CardStatus_compat *) ril_request_data_get(RIL_REQUEST_GET_SIM_STATUS);
 		ril_request_complete(token, RIL_E_SUCCESS, card_status_data, card_status_size);
 
 		free(card_status_data);
