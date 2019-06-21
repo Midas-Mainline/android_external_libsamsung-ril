@@ -1200,7 +1200,7 @@ int ril_radio_state_update(RIL_RadioState radio_state)
  * Returns 0 if the ril has reached the given radio_state 
  * Returns -1 otherwise
  */
-int ril_has_reached_state(RIL_RadioState radio_state)
+int ril_has_reached_state(RIL_RadioState given_state)
 {
 	RIL_RadioState radio_states[] = {
 		RADIO_STATE_UNAVAILABLE,
@@ -1212,26 +1212,31 @@ int ril_has_reached_state(RIL_RadioState radio_state)
 		RADIO_STATE_SIM_LOCKED_OR_ABSENT,
 		RADIO_STATE_SIM_READY,
 	};
-	unsigned int index;
-	unsigned int count;
+
+	RIL_RadioState curr_state;
+
+	unsigned int curr_state_index;
+	unsigned int given_state_index;
+	unsigned int radio_states_count;
 	unsigned int i;
 
 	if (ril_data == NULL)
 		return -1;
 
-	count = sizeof(radio_states) / sizeof(RIL_RadioState);
+	curr_state = ril_data->radio_state;
+	radio_states_count = sizeof(radio_states) / sizeof(RIL_RadioState);
 
-	for (i = 0; i < count; i++)
-		if (radio_states[i] == radio_state)
+	for (i = 0; i < radio_states_count; i++)
+		if (radio_states[i] == given_state)
 			break;
+	given_state_index = i;
 
-	index = i;
-
-	for (i = 0; i < count; i++)
-		if (radio_states[i] == ril_data->radio_state)
+	for (i = 0; i < radio_states_count; i++)
+		if (radio_states[i] == curr_state)
 			break;
+	curr_state_index = i;
 
-	if (i < index)
+	if (curr_state_index < given_state_index)
 		return -1;
 
 	return 0;
