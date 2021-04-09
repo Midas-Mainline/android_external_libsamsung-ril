@@ -345,7 +345,7 @@ complete:
 
 int ipc_sec_callback(struct ipc_message *message)
 {
-	struct ipc_sec_lock_infomation_request_data request_data;
+	struct ipc_sec_lock_information_request_data request_data;
 	struct ipc_gen_phone_res_data *data;
 	struct ril_request *request = NULL;
 	void *request_complete_data;
@@ -369,13 +369,13 @@ int ipc_sec_callback(struct ipc_message *message)
 
 		ril_request_data_set_uniq(request->request, (void *) data, sizeof(struct ipc_gen_phone_res_data));
 
-		rc = ipc_sec_lock_infomation_setup(&request_data, IPC_SEC_PIN_TYPE_PIN1);
+		rc = ipc_sec_lock_information_setup(&request_data, IPC_SEC_PIN_TYPE_PIN1);
 		if (rc < 0) {
 			ril_request_data_free(request->request);
 			goto error;
 		}
 
-		rc = ipc_fmt_send(message->aseq, IPC_SEC_LOCK_INFOMATION, IPC_TYPE_GET, (void *) &request_data, sizeof(request_data));
+		rc = ipc_fmt_send(message->aseq, IPC_SEC_LOCK_INFORMATION, IPC_TYPE_GET, (void *) &request_data, sizeof(request_data));
 		if (rc < 0) {
 			ril_request_data_free(request->request);
 			goto error;
@@ -385,13 +385,13 @@ int ipc_sec_callback(struct ipc_message *message)
 
 		ril_request_data_set_uniq(request->request, (void *) data, sizeof(struct ipc_gen_phone_res_data));
 
-		rc = ipc_sec_lock_infomation_setup(&request_data, IPC_SEC_PIN_TYPE_PIN2);
+		rc = ipc_sec_lock_information_setup(&request_data, IPC_SEC_PIN_TYPE_PIN2);
 		if (rc < 0) {
 			ril_request_data_free(request->request);
 			goto error;
 		}
 
-		rc = ipc_fmt_send(message->aseq, IPC_SEC_LOCK_INFOMATION, IPC_TYPE_GET, (void *) &request_data, sizeof(request_data));
+		rc = ipc_fmt_send(message->aseq, IPC_SEC_LOCK_INFORMATION, IPC_TYPE_GET, (void *) &request_data, sizeof(request_data));
 		if (rc < 0) {
 			ril_request_data_free(request->request);
 			goto error;
@@ -428,20 +428,20 @@ int ipc_sec_callback(struct ipc_message *message)
 			ril_request_data_set_uniq(RIL_REQUEST_SET_FACILITY_LOCK, (void *) data, sizeof(struct ipc_gen_phone_res_data));
 
 			if (facility_type == IPC_SEC_FACILITY_TYPE_FD) {
-				rc = ipc_sec_lock_infomation_setup(&request_data, IPC_SEC_PIN_TYPE_PIN2);
+				rc = ipc_sec_lock_information_setup(&request_data, IPC_SEC_PIN_TYPE_PIN2);
 				if (rc < 0) {
 					ril_request_data_free(request->request);
 					goto error;
 				}
 			} else {
-				rc = ipc_sec_lock_infomation_setup(&request_data, IPC_SEC_PIN_TYPE_PIN1);
+				rc = ipc_sec_lock_information_setup(&request_data, IPC_SEC_PIN_TYPE_PIN1);
 				if (rc < 0) {
 					ril_request_data_free(request->request);
 					goto error;
 				}
 			}
 
-			rc = ipc_fmt_send(message->aseq, IPC_SEC_LOCK_INFOMATION, IPC_TYPE_GET, (void *) &request_data, sizeof(request_data));
+			rc = ipc_fmt_send(message->aseq, IPC_SEC_LOCK_INFORMATION, IPC_TYPE_GET, (void *) &request_data, sizeof(request_data));
 			if (rc < 0) {
 				ril_request_data_free(request->request);
 				goto error;
@@ -1193,9 +1193,9 @@ int ipc_sec_sim_icc_type(struct ipc_message *message)
 	return 0;
 }
 
-int ipc_sec_lock_infomation(struct ipc_message *message)
+int ipc_sec_lock_information(struct ipc_message *message)
 {
-	struct ipc_sec_lock_infomation_response_data *data;
+	struct ipc_sec_lock_information_response_data *data;
 	struct ipc_gen_phone_res_data *gen_phone_res;
 	int requests[] = { RIL_REQUEST_ENTER_SIM_PIN, RIL_REQUEST_CHANGE_SIM_PIN, RIL_REQUEST_ENTER_SIM_PIN2, RIL_REQUEST_CHANGE_SIM_PIN2, RIL_REQUEST_SET_FACILITY_LOCK };
 	void *gen_phone_res_data = NULL;
@@ -1205,7 +1205,7 @@ int ipc_sec_lock_infomation(struct ipc_message *message)
 	unsigned int i;
 	int rc;
 
-	if (message == NULL || message->data == NULL || message->size < sizeof(struct ipc_sec_lock_infomation_response_data))
+	if (message == NULL || message->data == NULL || message->size < sizeof(struct ipc_sec_lock_information_response_data))
 		return -1;
 
 	rc = ril_has_reached_state(RADIO_STATE_SIM_NOT_READY);
@@ -1215,7 +1215,7 @@ int ipc_sec_lock_infomation(struct ipc_message *message)
 	if (message->type != IPC_TYPE_RESP || !ipc_seq_valid(message->aseq))
 		return 0;
 
-	data = (struct ipc_sec_lock_infomation_response_data *) message->data;
+	data = (struct ipc_sec_lock_information_response_data *) message->data;
 	if (data->type != IPC_SEC_PIN_TYPE_PIN1 && data->type != IPC_SEC_PIN_TYPE_PIN2)
 		return 0;
 

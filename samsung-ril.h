@@ -326,7 +326,7 @@ int ril_request_change_sim_pin2(void *data, size_t size, RIL_Token token);
 int ipc_sec_rsim_access(struct ipc_message *message);
 int ril_request_sim_io(void *data, size_t size, RIL_Token token);
 int ipc_sec_sim_icc_type(struct ipc_message *message);
-int ipc_sec_lock_infomation(struct ipc_message *message);
+int ipc_sec_lock_information(struct ipc_message *message);
 
 /*
  * Network

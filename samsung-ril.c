@@ -121,8 +121,8 @@ struct ipc_dispatch_handler ipc_fmt_dispatch_handlers[] = {
 		.handler = ipc_sec_sim_icc_type,
 	},
 	{
-		.command = IPC_SEC_LOCK_INFOMATION,
-		.handler = ipc_sec_lock_infomation,
+		.command = IPC_SEC_LOCK_INFORMATION,
+		.handler = ipc_sec_lock_information,
 	},
 	/* Network */
 	{
